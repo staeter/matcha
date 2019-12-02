@@ -1,6 +1,5 @@
 <?php
 	require $_SERVER["DOCUMENT_ROOT"] . '/config/database.php';
-	require $_SERVER["DOCUMENT_ROOT"] . '/config/variables.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/classes/Database.class.php';
 
 	// /!\ the present database will be deleted if set to true /!\
@@ -26,7 +25,7 @@
 			if ($insert_dumb_data)
 			{
 				echo "Dumb data insertion...<br>";
-				
+
 				$db->exec(file_get_contents($dumb_data_file));
 			}
 		}

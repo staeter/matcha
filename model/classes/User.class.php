@@ -454,22 +454,5 @@
 			}
 			return true;
 		}
-
-		/*
-		** -------------------- Tools --------------------
-		*/
-		// public function link_cookie($id_cookie) {
-		// 	if (!User::is_valid_id($id_cookie)) {
-		// 		throw new InvalidParamException("Failed running " . __METHOD__ . ". Invalid id_cookie.", 1);
-		// 	}
-		//
-		// 	// update db
-		// 	$query = 'UPDATE cookie SET id_user = :idu WHERE id_cookie = :idc;';
-		// 	$this->_db->query($query, array(':idu' => $this->_id, ':idc' => $id_cookie));
-		// 	$modified_row_count = $this->_db->rowCount();
-		// 	if ($modified_row_count !== 1) {
-		// 		throw new DatabaseException("Fail linking cookie. " . $modified_row_count . " rows have been modified in the database.");
-		// 	}
-		// }
 	}
 ?>
