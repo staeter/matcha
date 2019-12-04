@@ -1,8 +1,8 @@
 <?php
 	$hostname = "127.0.0.1";
 	$username = "root";
-	$password = "password";
+	$password = "rootroot";
 	$dsn = 'mysql:host='.$hostname.';port=3306;charset=utf8';
-	$setup_file= $_SERVER["DOCUMENT_ROOT"] . '/config/database.sql';
+	$setup_file= $_SERVER["DOCUMENT_ROOT"] . '/Matcha/config/database.sql';
 	$dbname = 'matcha';
 ?>

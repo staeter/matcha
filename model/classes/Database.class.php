@@ -1,6 +1,6 @@
 <?php
 	// require_once "../../model/functions/verbose.php";
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/exceptions/DatabaseException.class.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/Matcha/model/exceptions/DatabaseException.class.php';
 
 	class Database implements Serializable {
 		private $_db;

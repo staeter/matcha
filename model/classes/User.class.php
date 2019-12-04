@@ -1,7 +1,7 @@
 <?php
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/exceptions/InvalidParamException.class.php';
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/exceptions/DatabaseException.class.php';
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/functions/send_mail.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/Matcha/model/exceptions/InvalidParamException.class.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/Matcha/model/exceptions/DatabaseException.class.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/Matcha/model/functions/send_mail.php';
 
 	class User {
 		private $_id;
