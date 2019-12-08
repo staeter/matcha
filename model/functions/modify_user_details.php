@@ -31,20 +31,20 @@ function update_biography($id_user, $datatoinsert)
   // on retourne row qui contient toutes les infos contenu dans la table user
 }
 
-function is_logged($id_user)
+function set_log($bool)
 {
+  //tester qu il capte bien la variable = a true or false
   $query = ('UPDATE user SET is_loged = :logged WHERE id_user = :id VALUE ');
-  $db->query($query, array(':logged' => TRUE, ':id' => $id_user));
+  $db->query($query, array(':logged' => $bool, ':id' => $id_user));
   $db->execute();
 }
 
-function is_logout($id_user)
-{
-  $query = ('UPDATE user SET is_loged = :logged WHERE id_user = :id VALUE ');
-  $db->query($query, array(':logged' => FALSE, ':id' => $id_user));
-  $db->execute();
-}
-
+// function set_logout($bool)
+// {
+//   $query = ('UPDATE user SET is_loged = :logged WHERE id_user = :id VALUE ');
+//   $db->query($query, array(':logged' => 'FALSE', ':id' => $id_user));
+//   $db->execute();
+// }
 
 
 ?>

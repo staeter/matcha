@@ -9,6 +9,10 @@
 		private $_email;
 		private $_db;
 
+
+
+		// quand on cree l objet user; l user est connecte via l objet
+		// ajouter certain parma SI y on utilise le meme souvent ex gender
 		/*
 		** -------------------- Serialize --------------------
 		*/
@@ -343,6 +347,15 @@
 			}
 		}
 
+		public function  set_gender($datatoinsert)
+		{
+		    $query = ('UPDATE user SET gender = :genre WHERE id_user = :id');
+		    $db->query($query, array(':genre' => $datatoinsert, ':id' => $this->_id));
+				$row = $db->fetch();
+		    return $row;
+		    // on retourne row qui contient toutes les infos contenu dans la table user
+		}
+
 		/*
 		** -------------------- Get --------------------
 		*/
@@ -454,5 +467,6 @@
 			}
 			return true;
 		}
+
 	}
 ?>
