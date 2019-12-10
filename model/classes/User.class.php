@@ -379,8 +379,10 @@
 
 		public function set_last_log()
 		{
-			$query = ('UPDATE user SET is_loged = :logged WHERE id_user = :id');
-		  $db->query($query, array(':logged' => $bool, ':id' => $id_user));
+			date_default_timezone_set('Europe/Paris');
+		  $timenow = date("Y-m-d H:i:s");
+			$query = ('UPDATE user SET last_log = :lastlog WHERE id_user = :id');
+		  $db->query($query, array(':lastlog' => $timenow, ':id' => $this->_id));
 		  $db->execute();
 		}
 
