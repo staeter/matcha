@@ -152,66 +152,77 @@ view : Model -> Document Msg
 view model =
   { title = "matcha"
   , body =
-    [ form_sign model.sign
+    [ view_sign model.sign
     , p [] [ text (Debug.toString model) ]
     ]
   }
 
-form_sign : Sign -> Html Msg
-form_sign sign =
+view_sign : Sign -> Html Msg
+view_sign sign =
   case sign of
     In form_signin ->
-      Html.form []
-        [ input [ type_ "text"
-                , placeholder "pseudo"
-                , onInput Input_Form_SignIn_pseudo
-                , value form_signin.pseudo
-                ] []
-        , input [ type_ "password"
-                , placeholder "password"
-                , onInput Input_Form_SignIn_password
-                , value form_signin.password
-                ] []
-        , button [ type_ "submit" ]
-                 [ text "Sign In" ]
-        , a [ onClick To_SignUp ]
-            [ text "You don't have any account?" ]
-        ]
+      view_signin form_signin
 
     Out ->
-      Html.form []
-        [ button [ type_ "submit" ]
-                 [ text "Sign Out" ]
-        ]
+      view_signout
 
     Up form_signup ->
-      Html.form []
-        [ input [ type_ "text"
-                , placeholder "pseudo"
-                , onInput Input_Form_SignUp_pseudo
-                , value form_signup.pseudo
-                ] []
-        , input [ type_ "text"
-                , placeholder "email"
-                , onInput Input_Form_SignUp_email
-                , value form_signup.email
-                ] []
-        , input [ type_ "password"
-                , placeholder "password"
-                , onInput Input_Form_SignUp_password
-                , value form_signup.password
-                ] []
-        , input [ type_ "password"
-                , placeholder "confirm your password"
-                , onInput Input_Form_SignUp_confirm
-                , value form_signup.confirm
-                ] []
-        , button [ type_ "submit" ]
-                 [ text "Sign Up" ]
-        , a [ onClick To_SignIn ]
-            [ text "You alredy have an account?" ]
-        ]
+      view_signup form_signup
 
+view_signin : Form_SignIn -> Html Msg
+view_signin form_signin =
+  Html.form []
+    [ input [ type_ "text"
+            , placeholder "pseudo"
+            , onInput Input_Form_SignIn_pseudo
+            , value form_signin.pseudo
+            ] []
+    , input [ type_ "password"
+            , placeholder "password"
+            , onInput Input_Form_SignIn_password
+            , value form_signin.password
+            ] []
+    , button [ type_ "submit" ]
+             [ text "Sign In" ]
+    , a [ onClick To_SignUp ]
+        [ text "You don't have any account?" ]
+    ]
+
+view_signout : Html Msg
+view_signout =
+  Html.form []
+    [ button [ type_ "submit" ]
+             [ text "Sign Out" ]
+    ]
+
+view_signup : Form_SignUp -> Html Msg
+view_signup form_signup =
+  Html.form []
+    [ input [ type_ "text"
+            , placeholder "pseudo"
+            , onInput Input_Form_SignUp_pseudo
+            , value form_signup.pseudo
+            ] []
+    , input [ type_ "text"
+            , placeholder "email"
+            , onInput Input_Form_SignUp_email
+            , value form_signup.email
+            ] []
+    , input [ type_ "password"
+            , placeholder "password"
+            , onInput Input_Form_SignUp_password
+            , value form_signup.password
+            ] []
+    , input [ type_ "password"
+            , placeholder "confirm your password"
+            , onInput Input_Form_SignUp_confirm
+            , value form_signup.confirm
+            ] []
+    , button [ type_ "submit" ]
+             [ text "Sign Up" ]
+    , a [ onClick To_SignIn ]
+        [ text "You alredy have an account?" ]
+    ]
 
 -- subscriptions
 
