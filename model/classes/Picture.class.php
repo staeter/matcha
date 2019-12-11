@@ -256,8 +256,12 @@
 
 			$this->_path = $new_path;
 		}
-		
 
+		public function set_is_picture_profil($id_picture)
+		{
+			$query = 'UPDATE picture SET is_profile_picture = :p WHERE id_picture = :id;';
+			$this->_db->query($query, array(':p' => $idpicture, ':id' => $this->_id));
+		}
 
 		/*
 		** -------------------- Advenced gets --------------------
