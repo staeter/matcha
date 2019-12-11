@@ -7,8 +7,6 @@
 		private $_user_id;
 		private $_user_pseudo;
 		private $_path;
-		private $_public;
-		private $_date;
 		private $_db;
 
 		/*
@@ -64,8 +62,8 @@
 				throw new InvalidParamException("Failed constructing " . __CLASS__ . ". Invalid db object.\n", 22);
 			}
 
-			// query from database
-			$query = "SELECT picture.id_picture, picture.path, picture.public, picture.date, user.id_user, user.pseudo FROM user JOIN picture ON picture.id_user = user.id_user WHERE id_picture = :idp;";
+			// WTF IS THIS ?
+			$query = "SELECT picture.id_picture, picture.path, user.id_user FROM user JOIN picture ON picture.id_user = user.id_user WHERE id_picture = :idp;";
 			$db->query($query, array(':idp' => $id_picture));
 			$row = $db->fetch();
 			if ($row === false) {
@@ -77,8 +75,6 @@
 			$this->_user_id = $row['id_user'];
 			$this->_user_pseudo = $row['pseudo'];
 			$this->_path = $row['path'];
-			$this->_public = $row['public'];
-			$this->_date = $row['date'];
 			$this->_db = $db;
 		}
 
@@ -108,10 +104,7 @@
 			// set object properties
 			$this->_id = $row['id_picture'];
 			$this->_user_id = $row['id_user'];
-			$this->_user_pseudo = $row['pseudo'];
 			$this->_path = $path;
-			$this->_public = $row['public'];
-			$this->_date = $row['date'];
 			$this->_db = $db;
 		}
 
@@ -145,9 +138,6 @@
 		{
 			$this->_id = null;
 			$this->_user_id = null;
-			$this->_user_pseudo = null;
-			$this->_path = null;
-			$this->_date = null;
 			$this->_db = null;
 		}
 		public function __toString()
@@ -175,10 +165,7 @@
 		{
 			return $this->_path;
 		}
-		public function get_date()
-		{
-			return $this->_date;
-		}
+
 		public function get_likes()
 		{
 			// query from database
@@ -257,10 +244,10 @@
 			$this->_path = $new_path;
 		}
 
-		public function set_is_picture_profil($id_picture)
+		public function set_is_picture_profil($bool)
 		{
 			$query = 'UPDATE picture SET is_profile_picture = :p WHERE id_picture = :id;';
-			$this->_db->query($query, array(':p' => $idpicture, ':id' => $this->_id));
+			$this->_db->query($query, array(':p' => $bool, ':id' => $this->_id));
 		}
 
 		/*
