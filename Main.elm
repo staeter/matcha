@@ -22,6 +22,14 @@ type Sign
   | Out
   | Up Form_SignUp
 
+new_signin : Sign
+new_signin =
+  In { pseudo = "", password = "" }
+
+new_signup : Sign
+new_signup =
+  Up { pseudo = "", email = "", password = "", confirm = "" }
+
 type alias Form_SignIn =
   { pseudo : String
   , password : String
@@ -36,9 +44,7 @@ type alias Form_SignUp =
 
 init : () -> (Model, Cmd Msg)
 init _ =
-  ( { sign = In { pseudo = ""
-                , password = ""
-                }
+  ( { sign = new_signin
     }
   , Cmd.none
   )
@@ -53,43 +59,40 @@ type Msg
   | Input_Form_SignUp_email String
   | Input_Form_SignUp_password String
   | Input_Form_SignUp_confirm String
+  | To_SignIn
+  | To_SignOut
+  | To_SignUp
   | Submit_Sign
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Input_Form_SignIn_pseudo pseudo ->
-      ( model |> set_form_signin_pseudo pseudo
-      , Cmd.none
-      )
+      ( model |> set_form_signin_pseudo pseudo, Cmd.none )
 
     Input_Form_SignIn_password password ->
-      ( model |> set_form_signin_password password
-      , Cmd.none
-      )
+      ( model |> set_form_signin_password password, Cmd.none )
 
     Input_Form_SignUp_pseudo pseudo ->
-      ( model |> set_form_signup_pseudo pseudo
-      , Cmd.none
-      )
+      ( model |> set_form_signup_pseudo pseudo, Cmd.none )
 
     Input_Form_SignUp_email email ->
-      ( model |> set_form_signup_email email
-      , Cmd.none
-      )
+      ( model |> set_form_signup_email email, Cmd.none )
 
     Input_Form_SignUp_password password ->
-      ( model |> set_form_signup_password password
-      , Cmd.none
-      )
+      ( model |> set_form_signup_password password, Cmd.none )
 
     Input_Form_SignUp_confirm confirm ->
-      ( model |> set_form_signup_confirm confirm
-      , Cmd.none
-      )
+      ( model |> set_form_signup_confirm confirm, Cmd.none )
 
-    Submit_Sign ->
-      (model, Cmd.none)
+    To_SignIn ->
+      ( { model | sign = new_signin }, Cmd.none )
+
+    To_SignOut ->
+      ( { model | sign = Out }, Cmd.none )
+
+    To_SignUp ->
+      ( { model | sign = new_signup }, Cmd.none )
 
     _ ->
        (model, Cmd.none)
@@ -171,6 +174,8 @@ form_sign sign =
                 ] []
         , button [ type_ "submit" ]
                  [ text "Sign In" ]
+        , a [ onClick To_SignUp ]
+            [ text "You don't have any account?" ]
         ]
 
     Out ->
@@ -203,6 +208,8 @@ form_sign sign =
                 ] []
         , button [ type_ "submit" ]
                  [ text "Sign Up" ]
+        , a [ onClick To_SignIn ]
+            [ text "You alredy have an account?" ]
         ]
 
 
