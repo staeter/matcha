@@ -386,6 +386,20 @@
 		  $db->execute();
 		}
 
+		public function set_birthdate($data)
+		{
+			$query = ('UPDATE user SET birth = :data WHERE id_user = :id');
+		 	$db->query($query, array(':data' => $data, ':id' => $this->_id));
+		 	$db->execute();
+		}
+
+		public function set_popularity_score($value)
+		{
+			$query = ('UPDATE user SET popularity_score = :value WHERE id_user = :id');
+		 	$db->query($query, array(':value' => $value, ':id' => $this->_id));
+		 	$db->execute();
+		}
+
 
 
 		/*
