@@ -14,28 +14,20 @@ import Debug exposing (..)
 -- model
 
 type alias Model =
-  { sign : Sign
+  { account : Account
   }
 
-type Sign
-  = In Form_SignIn
-  | Out
-  | Up Form_SignUp
+type Account
+  = SignIn SignInData
+  | SignOut
+  | SignUp SignUpData
 
-new_signin : Sign
-new_signin =
-  In { pseudo = "", password = "" }
-
-new_signup : Sign
-new_signup =
-  Up { pseudo = "", email = "", password = "", confirm = "" }
-
-type alias Form_SignIn =
+type alias SignInData =
   { pseudo : String
   , password : String
   }
 
-type alias Form_SignUp =
+type alias SignUpData =
   { pseudo : String
   , email : String
   , password : String
@@ -44,7 +36,7 @@ type alias Form_SignUp =
 
 init : () -> (Model, Cmd Msg)
 init _ =
-  ( { sign = new_signin
+  ( { account = new_signindata
     }
   , Cmd.none
   )
@@ -53,12 +45,12 @@ init _ =
 
 type Msg
   = NoOp
-  | Input_Form_SignIn_pseudo String
-  | Input_Form_SignIn_password String
-  | Input_Form_SignUp_pseudo String
-  | Input_Form_SignUp_email String
-  | Input_Form_SignUp_password String
-  | Input_Form_SignUp_confirm String
+  | Input_SignIn_pseudo String
+  | Input_SignIn_password String
+  | Input_SignUp_pseudo String
+  | Input_SignUp_email String
+  | Input_SignUp_password String
+  | Input_SignUp_confirm String
   | To_SignIn
   | To_SignOut
   | To_SignUp
@@ -67,84 +59,91 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Input_Form_SignIn_pseudo pseudo ->
-      ( model |> set_form_signin_pseudo pseudo, Cmd.none )
+    Input_SignIn_pseudo pseudo ->
+      ( model |> set_signindata_pseudo pseudo, Cmd.none )
 
-    Input_Form_SignIn_password password ->
-      ( model |> set_form_signin_password password, Cmd.none )
+    Input_SignIn_password password ->
+      ( model |> set_signindata_password password, Cmd.none )
 
-    Input_Form_SignUp_pseudo pseudo ->
-      ( model |> set_form_signup_pseudo pseudo, Cmd.none )
+    Input_SignUp_pseudo pseudo ->
+      ( model |> set_signupdata_pseudo pseudo, Cmd.none )
 
-    Input_Form_SignUp_email email ->
-      ( model |> set_form_signup_email email, Cmd.none )
+    Input_SignUp_email email ->
+      ( model |> set_signupdata_email email, Cmd.none )
 
-    Input_Form_SignUp_password password ->
-      ( model |> set_form_signup_password password, Cmd.none )
+    Input_SignUp_password password ->
+      ( model |> set_signupdata_password password, Cmd.none )
 
-    Input_Form_SignUp_confirm confirm ->
-      ( model |> set_form_signup_confirm confirm, Cmd.none )
+    Input_SignUp_confirm confirm ->
+      ( model |> set_signupdata_confirm confirm, Cmd.none )
 
     To_SignIn ->
-      ( { model | sign = new_signin }, Cmd.none )
+      ( { model | account = new_signindata }, Cmd.none )
 
     To_SignOut ->
-      ( { model | sign = Out }, Cmd.none )
+      ( { model | account = SignOut }, Cmd.none )
 
     To_SignUp ->
-      ( { model | sign = new_signup }, Cmd.none )
+      ( { model | account = new_signupdata }, Cmd.none )
 
     _ ->
        (model, Cmd.none)
 
-set_form_signin_pseudo : String -> Model -> Model
-set_form_signin_pseudo pseudo model =
-  case model.sign of
-    In form_signin ->
-      { model | sign = In { form_signin | pseudo = pseudo } }
+set_signindata_pseudo : String -> Model -> Model
+set_signindata_pseudo pseudo model =
+  case model.account of
+    SignIn signindata ->
+      { model | account = SignIn { signindata | pseudo = pseudo } }
     _ ->
       model
 
-set_form_signin_password : String -> Model -> Model
-set_form_signin_password password model =
-  case model.sign of
-    In form_signin ->
-      { model | sign = In { form_signin | password = password } }
+set_signindata_password : String -> Model -> Model
+set_signindata_password password model =
+  case model.account of
+    SignIn signindata ->
+      { model | account = SignIn { signindata | password = password } }
     _ ->
       model
 
-set_form_signup_pseudo : String -> Model -> Model
-set_form_signup_pseudo pseudo model =
-  case model.sign of
-    Up form_signup ->
-      { model | sign = Up { form_signup | pseudo = pseudo } }
+set_signupdata_pseudo : String -> Model -> Model
+set_signupdata_pseudo pseudo model =
+  case model.account of
+    SignUp signupdata ->
+      { model | account = SignUp { signupdata | pseudo = pseudo } }
     _ ->
       model
 
-set_form_signup_email : String -> Model -> Model
-set_form_signup_email email model =
-  case model.sign of
-    Up form_signup ->
-      { model | sign = Up { form_signup | email = email } }
+set_signupdata_email : String -> Model -> Model
+set_signupdata_email email model =
+  case model.account of
+    SignUp signupdata ->
+      { model | account = SignUp { signupdata | email = email } }
     _ ->
       model
 
-set_form_signup_password : String -> Model -> Model
-set_form_signup_password password model =
-  case model.sign of
-    Up form_signup ->
-      { model | sign = Up { form_signup | password = password } }
+set_signupdata_password : String -> Model -> Model
+set_signupdata_password password model =
+  case model.account of
+    SignUp signupdata ->
+      { model | account = SignUp { signupdata | password = password } }
     _ ->
       model
 
-set_form_signup_confirm : String -> Model -> Model
-set_form_signup_confirm confirm model =
-  case model.sign of
-    Up form_signup ->
-      { model | sign = Up { form_signup | confirm = confirm } }
+set_signupdata_confirm : String -> Model -> Model
+set_signupdata_confirm confirm model =
+  case model.account of
+    SignUp signupdata ->
+      { model | account = SignUp { signupdata | confirm = confirm } }
     _ ->
       model
 
+new_signindata : Account
+new_signindata =
+  SignIn { pseudo = "", password = "" }
+
+new_signupdata : Account
+new_signupdata =
+  SignUp { pseudo = "", email = "", password = "", confirm = "" }
 
 -- view
 
@@ -152,35 +151,35 @@ view : Model -> Document Msg
 view model =
   { title = "matcha"
   , body =
-    [ view_sign model.sign
+    [ view_account model.account
     , p [] [ text (Debug.toString model) ]
     ]
   }
 
-view_sign : Sign -> Html Msg
-view_sign sign =
-  case sign of
-    In form_signin ->
-      view_signin form_signin
+view_account : Account -> Html Msg
+view_account account =
+  case account of
+    SignIn signindata ->
+      view_signin signindata
 
-    Out ->
+    SignOut ->
       view_signout
 
-    Up form_signup ->
-      view_signup form_signup
+    SignUp signupdata ->
+      view_signup signupdata
 
-view_signin : Form_SignIn -> Html Msg
-view_signin form_signin =
+view_signin : SignInData -> Html Msg
+view_signin signindata =
   Html.form []
     [ input [ type_ "text"
             , placeholder "pseudo"
-            , onInput Input_Form_SignIn_pseudo
-            , value form_signin.pseudo
+            , onInput Input_SignIn_pseudo
+            , value signindata.pseudo
             ] []
     , input [ type_ "password"
             , placeholder "password"
-            , onInput Input_Form_SignIn_password
-            , value form_signin.password
+            , onInput Input_SignIn_password
+            , value signindata.password
             ] []
     , button [ type_ "submit" ]
              [ text "Sign In" ]
@@ -195,34 +194,35 @@ view_signout =
              [ text "Sign Out" ]
     ]
 
-view_signup : Form_SignUp -> Html Msg
-view_signup form_signup =
+view_signup : SignUpData -> Html Msg
+view_signup signupdata =
   Html.form []
     [ input [ type_ "text"
             , placeholder "pseudo"
-            , onInput Input_Form_SignUp_pseudo
-            , value form_signup.pseudo
+            , onInput Input_SignUp_pseudo
+            , value signupdata.pseudo
             ] []
     , input [ type_ "text"
             , placeholder "email"
-            , onInput Input_Form_SignUp_email
-            , value form_signup.email
+            , onInput Input_SignUp_email
+            , value signupdata.email
             ] []
     , input [ type_ "password"
             , placeholder "password"
-            , onInput Input_Form_SignUp_password
-            , value form_signup.password
+            , onInput Input_SignUp_password
+            , value signupdata.password
             ] []
     , input [ type_ "password"
             , placeholder "confirm your password"
-            , onInput Input_Form_SignUp_confirm
-            , value form_signup.confirm
+            , onInput Input_SignUp_confirm
+            , value signupdata.confirm
             ] []
     , button [ type_ "submit" ]
              [ text "Sign Up" ]
     , a [ onClick To_SignIn ]
         [ text "You alredy have an account?" ]
     ]
+
 
 -- subscriptions
 
