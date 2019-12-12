@@ -53,6 +53,7 @@
 			}
 		}
 
+		//construct object
 		private function __construct2($id_picture, $db)
 		{
 			if (!Picture::is_valid_id($id_picture)) {
@@ -61,9 +62,7 @@
 			if (!Database::is_valid($db)) {
 				throw new InvalidParamException("Failed constructing " . __CLASS__ . ". Invalid db object.\n", 22);
 			}
-
-			// WTF IS THIS ?
-			$query = "SELECT picture.id_picture, picture.path, user.id_user FROM user JOIN picture ON picture.id_user = user.id_user WHERE id_picture = :idp;";
+			$query = "SELECT picture.id_picture, picture.path, user.id_user, user.pseudo FROM user JOIN picture ON picture.id_user = user.id_user WHERE id_picture = :idp;";
 			$db->query($query, array(':idp' => $id_picture));
 			$row = $db->fetch();
 			if ($row === false) {
@@ -78,6 +77,7 @@
 			$this->_db = $db;
 		}
 
+		//add row on db
 		private function __construct3($path, $user, $db)
 		{
 			// test parameters validity
@@ -94,8 +94,6 @@
 			// adding new user to database and pull the id_user
 			$query = 'INSERT INTO picture (`id_user`, `path`) VALUES (:idu, :p);';
 			$db->query($query, array(':idu' => $user->get_id(), ':p' => $path));
-			$query = 'SELECT `id_picture`, user.id_user, `pseudo`, `public`, `date` FROM picture JOIN user ON picture.id_user = user.id_user WHERE id_picture = LAST_INSERT_ID();';
-			$db->query($query, array());
 			$row = $db->fetch();
 			if ($row === false) {
 				throw new DatabaseException("Failed constructing " . __CLASS__ . ". Id not pulled from db.\n");
@@ -187,10 +185,7 @@
 		/*
 		** -------------------- Is --------------------
 		*/
-		public function is_public()
-		{
-			return $this->_public ? TRUE : FALSE;
-		}
+
 		public static function is_valid($picture)
 		{
 			return (gettype($picture) === 'object'
@@ -198,9 +193,7 @@
 			&& Picture::is_valid_id($picture->get_id())
 			&& User::is_valid_id($picture->get_user_id())
 			&& User::is_valid_pseudo($picture->get_user_pseudo())
-			&& Picture::is_valid_path($picture->get_path())
-			&& $picture->is_public() != null
-			&& $picture->get_date() != null);
+			&& Picture::is_valid_path($picture->get_path()));
 		}
 		public static function is_valid_id($id)
 		{
@@ -221,17 +214,17 @@
 		/*
 		** --- Set ---
 		*/
-		public function set_public()
-		{
-			$query = 'UPDATE picture SET `public` = :p WHERE id_picture = :id;';
-			$this->_db->query($query, array(':p' => $this->is_public() ? '0' : '1', ':id' => $this->_id));
-			$modified_row_count = $this->_db->rowCount();
-			if ($modified_row_count !== 1) {
-				throw new DatabaseException("Fail setting public. " . $modified_row_count . " rows have been modified in the database.\n");
-			}
-
-			$this->_public = !$this->is_public();
-		}
+		// public function set_public()
+		// {
+		// 	$query = 'UPDATE picture SET `public` = :p WHERE id_picture = :id;';
+		// 	$this->_db->query($query, array(':p' => $this->is_public() ? '0' : '1', ':id' => $this->_id));
+		// 	$modified_row_count = $this->_db->rowCount();
+		// 	if ($modified_row_count !== 1) {
+		// 		throw new DatabaseException("Fail setting public. " . $modified_row_count . " rows have been modified in the database.\n");
+		// 	}
+		//
+		// 	$this->_public = !$this->is_public();
+		// }
 		public function set_path($new_path)
 		{
 			$query = 'UPDATE picture SET `path` = :p WHERE id_picture = :id;';
@@ -253,35 +246,35 @@
 		/*
 		** -------------------- Advenced gets --------------------
 		*/
-		public static function get_most_recent_public($db)
-		{
-			if (!Database::is_valid($db)) {
-				throw new InvalidParamException("Failed constructing " . __CLASS__ . " in get_most_recent_public. Invalid db object.\n", 1);
-			}
-
-			$query = "SELECT max(id_picture) AS id_picture FROM picture WHERE public = true;";
-			$db->query($query, array());
-			$row = $db->fetch();
-			if ($row === false) {
-				throw new DatabaseException(__CLASS__ . "::get_most_recent_public failed. Id not pulled from db.\n");
-			}
-
-			return new Picture($row['id_picture'], $db);
-		}
-		public function get_next_public()
-		{
-			$query = "SELECT max(id_picture) AS id_picture FROM picture WHERE public = true AND id_picture < :idp;";
-			$this->_db->query($query, array(':idp' => $this->_id));
-			$row = $this->_db->fetch();
-			if ($row === false) {
-				throw new DatabaseException(__CLASS__ . "::get_next_public failed. Id not pulled from db.\n");
-			}
-			if ($row['id_picture'] == null) {
-				return FALSE;
-			}
-
-			return new Picture($row['id_picture'], $this->_db);
-		}
+		// public static function get_most_recent_public($db)
+		// {
+		// 	if (!Database::is_valid($db)) {
+		// 		throw new InvalidParamException("Failed constructing " . __CLASS__ . " in get_most_recent_public. Invalid db object.\n", 1);
+		// 	}
+		//
+		// 	$query = "SELECT max(id_picture) AS id_picture FROM picture WHERE public = true;";
+		// 	$db->query($query, array());
+		// 	$row = $db->fetch();
+		// 	if ($row === false) {
+		// 		throw new DatabaseException(__CLASS__ . "::get_most_recent_public failed. Id not pulled from db.\n");
+		// 	}
+		//
+		// 	return new Picture($row['id_picture'], $db);
+		// }
+		// public function get_next_public()
+		// {
+		// 	$query = "SELECT max(id_picture) AS id_picture FROM picture WHERE public = true AND id_picture < :idp;";
+		// 	$this->_db->query($query, array(':idp' => $this->_id));
+		// 	$row = $this->_db->fetch();
+		// 	if ($row === false) {
+		// 		throw new DatabaseException(__CLASS__ . "::get_next_public failed. Id not pulled from db.\n");
+		// 	}
+		// 	if ($row['id_picture'] == null) {
+		// 		return FALSE;
+		// 	}
+		//
+		// 	return new Picture($row['id_picture'], $this->_db);
+		// }
 		public static function get_most_recent_from_user($user, $db)
 		{
 			if (!User::is_valid($user)) {
@@ -323,26 +316,29 @@
 		** --- like and comment ---
 		*/
 		// output format: array(array('id' => ..., 'content' => ..., 'pseudo' => ..., 'date' => ...), ...)
-		public function get_comments()
-		{
-			$query = "SELECT id_comment AS id, content, pseudo, comment.`date` AS `date` FROM comment JOIN user ON comment.id_user = user.id_user WHERE id_picture = :idp ORDER BY comment.`date` ASC;";
-			$this->_db->query($query, array(':idp' => $this->get_id()));
-			$row = $this->_db->fetchAll();
-			return $row;
-		}
-		public function add_comment($usr, $content)
-		{
-			if (!User::is_valid($usr)) {
-				throw new InvalidParamException("Failed liking " . __CLASS__ . ". Invalid user.\n", 1);
-			}
+		// public function get_comments()
+		// {
+		// 	$query = "SELECT id_comment AS id, content, pseudo, comment.`date` AS `date` FROM comment JOIN user ON comment.id_user = user.id_user WHERE id_picture = :idp ORDER BY comment.`date` ASC;";
+		// 	$this->_db->query($query, array(':idp' => $this->get_id()));
+		// 	$row = $this->_db->fetchAll();
+		// 	return $row;
+		// }
+		// public function add_comment($usr, $content)
+		// {
+		// 	if (!User::is_valid($usr)) {
+		// 		throw new InvalidParamException("Failed liking " . __CLASS__ . ". Invalid user.\n", 1);
+		// 	}
+		//
+		// 	try {
+		// 		$query = 'INSERT INTO `comment` (`id_user`, `id_picture`, `content`) VALUES (:idu, :idp, :c);';
+		// 		$this->_db->query($query, array(':idu' => $usr->get_id(), ':idp' => $this->get_id(), ':c' => $content));
+		// 	} catch (Exception $e) {
+		// 		echo $e;
+		// 	}
+		// }
 
-			try {
-				$query = 'INSERT INTO `comment` (`id_user`, `id_picture`, `content`) VALUES (:idu, :idp, :c);';
-				$this->_db->query($query, array(':idu' => $usr->get_id(), ':idp' => $this->get_id(), ':c' => $content));
-			} catch (Exception $e) {
-				echo $e;
-			}
-		}
+
+
 		public function like($usr)
 		{
 			if (!User::is_valid($usr)) {
