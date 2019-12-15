@@ -7,6 +7,9 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Browser exposing (..)
+import Http exposing (..)
+import Json.Encode exposing (..)
+import Json.Decode exposing (..)
 
 import Debug exposing (..)
 
@@ -15,12 +18,14 @@ import Debug exposing (..)
 
 type alias Model =
   { account : Account
+  , message : Maybe String
   }
 
 type Account
   = SignIn SignInData
   | SignOut
   | SignUp SignUpData
+  | Load
 
 type alias SignInData =
   { pseudo : String
@@ -34,9 +39,24 @@ type alias SignUpData =
   , confirm : String
   }
 
+type alias SD =
+  { status : Status
+  , data : Data
+  }
+
+type Status
+  = Success
+  | Failure
+
+type alias Data =
+  { message : Maybe String
+  , log : Maybe String
+  }
+
 init : () -> (Model, Cmd Msg)
 init _ =
   ( { account = new_signindata
+    , message = Just "hello"
     }
   , Cmd.none
   )
@@ -54,7 +74,10 @@ type Msg
   | To_SignIn
   | To_SignOut
   | To_SignUp
-  | Submit_Sign
+  | Query_Submit_Account
+  | Result_Submit_SignIn (Result Http.Error SD)
+  | Result_Submit_SignOut (Result Http.Error SD)
+  | Result_Submit_SignUp (Result Http.Error SD)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -86,8 +109,94 @@ update msg model =
     To_SignUp ->
       ( { model | account = new_signupdata }, Cmd.none )
 
+    Query_Submit_Account ->
+      ( { model | account = Load }, query_submit_account model.account )
+
+    Result_Submit_SignIn result ->
+      case result of
+        Ok sd -> ({ model | message = sd.data.message, account = SignOut }, Cmd.none)
+        Err _ -> ({ model | message = Just "err", account = new_signindata }, Cmd.none)
+    --
+    -- Result_Submit_SignOut result ->
+    --   case result of
+    --     Ok sd -> (model, Cmd.none)
+    --     Err _ ->
+    --
+    -- Result_Submit_SignUp result ->
+    --   case result of
+    --     Ok sd -> (model, Cmd.none)
+    --     Err _ ->
+
     _ ->
        (model, Cmd.none)
+
+query_submit_account : Account -> Cmd Msg
+query_submit_account account =
+  case account of
+    SignIn signindata ->
+      Http.post { url = "http://localhost/control/signin.php"
+                , body = multipartBody
+                            [ stringPart "pseudo" signindata.pseudo
+                            , stringPart "password" signindata.password
+                            ]
+                , expect = Http.expectJson Result_Submit_SignIn sdDecoder
+                }
+    SignOut ->
+      Http.post { url = "http://localhost/control/signout.php"
+                , body = Http.emptyBody
+                , expect = Http.expectJson Result_Submit_SignOut sdDecoder
+                }
+    SignUp signupdata ->
+      Http.post { url = "http://localhost/control/signup.php"
+                , body = multipartBody
+                            [ stringPart "pseudo" signupdata.pseudo
+                            , stringPart "email" signupdata.email
+                            , stringPart "password" signupdata.password
+                            , stringPart "confirm" signupdata.confirm
+                            ]
+                , expect = Http.expectJson Result_Submit_SignUp sdDecoder
+                }
+    Load -> Cmd.none
+
+sdDecoder : Decoder SD
+sdDecoder =
+  Json.Decode.map2 SD
+    (field "status" statusDecoder)
+    (field "data" dataDecoder)
+
+statusDecoder : Decoder Status
+statusDecoder =
+  Json.Decode.string |> andThen
+    (\ str ->
+      case str of
+        "Success" ->
+          Json.Decode.succeed Success
+
+        "Failure" ->
+          Json.Decode.succeed Failure
+
+        _ ->
+          Json.Decode.fail "statusDecoder failed : not valid status"
+    )
+
+dataDecoder : Decoder Data
+dataDecoder =
+  Json.Decode.map2 Data
+    (maybe (field "message" Json.Decode.string))
+    (maybe (field "log" Json.Decode.string))
+
+
+result_submit_account_Ok : Model -> SD -> (Model, Cmd Msg)
+result_submit_account_Ok model sd =
+  ( model
+  , Cmd.none
+  )
+
+result_submit_account_Err : Model -> (Model, Cmd Msg)
+result_submit_account_Err model =
+  ( model
+  , Cmd.none
+  )
 
 set_signindata_pseudo : String -> Model -> Model
 set_signindata_pseudo pseudo model =
@@ -168,18 +277,21 @@ view_account account =
     SignUp signupdata ->
       view_signup signupdata
 
+    Load ->
+      view_load
+
 view_signin : SignInData -> Html Msg
 view_signin signindata =
-  Html.form []
+  Html.form [ onSubmit Query_Submit_Account ]
     [ input [ type_ "text"
             , placeholder "pseudo"
             , onInput Input_SignIn_pseudo
-            , value signindata.pseudo
+            , Html.Attributes.value signindata.pseudo
             ] []
     , input [ type_ "password"
             , placeholder "password"
             , onInput Input_SignIn_password
-            , value signindata.password
+            , Html.Attributes.value signindata.password
             ] []
     , button [ type_ "submit" ]
              [ text "Sign In" ]
@@ -189,39 +301,44 @@ view_signin signindata =
 
 view_signout : Html Msg
 view_signout =
-  Html.form []
+  Html.form [ onSubmit Query_Submit_Account  ]
     [ button [ type_ "submit" ]
              [ text "Sign Out" ]
     ]
 
 view_signup : SignUpData -> Html Msg
 view_signup signupdata =
-  Html.form []
+  Html.form [ onSubmit Query_Submit_Account ]
     [ input [ type_ "text"
             , placeholder "pseudo"
             , onInput Input_SignUp_pseudo
-            , value signupdata.pseudo
+            , Html.Attributes.value signupdata.pseudo
             ] []
     , input [ type_ "text"
             , placeholder "email"
             , onInput Input_SignUp_email
-            , value signupdata.email
+            , Html.Attributes.value signupdata.email
             ] []
     , input [ type_ "password"
             , placeholder "password"
             , onInput Input_SignUp_password
-            , value signupdata.password
+            , Html.Attributes.value signupdata.password
             ] []
     , input [ type_ "password"
             , placeholder "confirm your password"
             , onInput Input_SignUp_confirm
-            , value signupdata.confirm
+            , Html.Attributes.value signupdata.confirm
             ] []
     , button [ type_ "submit" ]
              [ text "Sign Up" ]
     , a [ onClick To_SignIn ]
         [ text "You alredy have an account?" ]
     ]
+
+view_load : Html Msg
+view_load =
+  Html.form [ onSubmit Query_Submit_Account ]
+    [ text "Loading..." ]
 
 
 -- subscriptions
