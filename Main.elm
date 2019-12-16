@@ -10,6 +10,7 @@ import Browser exposing (..)
 import Http exposing (..)
 import Json.Encode exposing (..)
 import Json.Decode exposing (..)
+import Time exposing (..)
 
 import Debug exposing (..)
 
@@ -64,9 +65,41 @@ type Orientation
 
 type Account
   = SignIn SignInData
-  | SignOut
   | SignUp SignUpData
-  | Load
+  | SignOut (Maybe Settings)
+
+type alias Settings =
+  { basicinfos : BasicInfosData
+  , details : DetailsData
+  , pictures : PicturesData
+  , password : PasswordData
+  }
+
+type alias BasicInfosData =
+  { pseudo : String
+  , name : String
+  , firstname : String
+  , email : String
+  }
+
+type alias PicturesData =
+  { main : String
+  , other : List String
+  }
+
+type alias DetailsData =
+  { gender : Gender
+  , orientation : Orientation
+  , tags : List String
+  , description : String
+  -- , localisation : ??? //ni
+  }
+
+type alias PasswordData =
+  { oldpassword : String
+  , password : String
+  , confirm : String
+  }
 
 type alias SignInData =
   { pseudo : String
@@ -85,6 +118,12 @@ type alias Alert =
   , content : String
   }
 
+load : Alert
+load =
+  { id = 0
+  , content = "Loading..."
+  }
+
 type alias SD =
   { status : Status
   , data : Data
@@ -97,12 +136,13 @@ type Status
 type alias Data =
   { alert : Maybe Alert
   , log : Maybe String
+  , settings : Maybe Settings
   }
 
 init : () -> (Model, Cmd Msg)
 init _ =
   ( { account = new_signindata
-    , alert = Just { id = 1, content = "hello"}
+    , alert = Nothing
     , log = Nothing
     }
   , Cmd.none
@@ -125,6 +165,10 @@ type Msg
   | Result_Submit_SignIn (Result Http.Error SD)
   | Result_Submit_SignOut (Result Http.Error SD)
   | Result_Submit_SignUp (Result Http.Error SD)
+  | Query_Current_Settings
+  | Result_Current_Settings (Result Http.Error SD)
+  | Query_Submit_Settings
+  | Result_Submit_Settings (Result Http.Error SD)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -150,29 +194,26 @@ update msg model =
     To_SignIn ->
       ( { model | account = new_signindata }, Cmd.none )
 
-    To_SignOut ->
-      ( { model | account = SignOut }, Cmd.none )
-
     To_SignUp ->
       ( { model | account = new_signupdata }, Cmd.none )
 
     Query_Submit_Account ->
-      ( { model | account = Load }, query_submit_account model.account )
+      ( { model | alert = Just load }, query_submit_account model.account )
 
     Result_Submit_SignIn result ->
       case result of
-        Ok sd -> ({ model | alert = new_alert model.alert sd.data.alert, account = SignOut }, Cmd.none)
-        Err _ -> ({ model | log = Just "Result Err in Result_Submit_SignIn", account = new_signindata }, Cmd.none)
+        Ok sd -> ({ model | alert = new_alert model.alert sd.data.alert |> remove_alert 0, account = SignOut Nothing }, Cmd.none)
+        Err _ -> ({ model | alert = remove_alert 0 model.alert, log = Just "Result Err in Result_Submit_SignIn" }, Cmd.none)
 
     Result_Submit_SignOut result ->
       case result of
-        Ok sd -> ({ model | alert = new_alert model.alert sd.data.alert, account = new_signindata }, Cmd.none)
-        Err _ -> ({ model | log = Just "Result Err in Result_Submit_SignOut", account = SignOut }, Cmd.none)
+        Ok sd -> ({ model | alert = new_alert model.alert sd.data.alert |> remove_alert 0, account = new_signindata }, Cmd.none)
+        Err _ -> ({ model | alert = remove_alert 0 model.alert, log = Just "Result Err in Result_Submit_SignOut" }, Cmd.none)
 
     Result_Submit_SignUp result ->
       case result of
-        Ok sd -> ({ model | alert = new_alert model.alert sd.data.alert, account = new_signindata }, Cmd.none)
-        Err _ -> ({ model | log = Just "Result Err in Result_Submit_SignUp", account = new_signupdata }, Cmd.none)
+        Ok sd -> ({ model | alert = new_alert model.alert sd.data.alert |> remove_alert 0, account = new_signindata }, Cmd.none)
+        Err _ -> ({ model | alert = remove_alert 0 model.alert, log = Just "Result Err in Result_Submit_SignUp" }, Cmd.none)
 
     _ ->
        (model, Cmd.none)
@@ -185,6 +226,15 @@ new_alert alert newalert =
     (Just msg, Nothing) -> alert
     (Nothing, Nothing) -> Nothing
 
+remove_alert : Int -> Maybe Alert -> Maybe Alert
+remove_alert idtoremove alert =
+  case alert of
+    Just a ->
+      if a.id == idtoremove
+      then Nothing
+      else Just a
+    Nothing -> Nothing
+
 query_submit_account : Account -> Cmd Msg
 query_submit_account account =
   case account of
@@ -196,7 +246,7 @@ query_submit_account account =
                             ]
                 , expect = Http.expectJson Result_Submit_SignIn sdDecoder
                 }
-    SignOut ->
+    SignOut _ ->
       Http.post { url = "http://localhost/control/signout.php"
                 , body = Http.emptyBody
                 , expect = Http.expectJson Result_Submit_SignOut sdDecoder
@@ -211,7 +261,6 @@ query_submit_account account =
                             ]
                 , expect = Http.expectJson Result_Submit_SignUp sdDecoder
                 }
-    Load -> Cmd.none
 
 sdDecoder : Decoder SD
 sdDecoder =
@@ -236,15 +285,86 @@ statusDecoder =
 
 dataDecoder : Decoder Data
 dataDecoder =
-  Json.Decode.map2 Data
+  Json.Decode.map3 Data
     (maybe (field "alert" alertDecoder))
     (maybe (field "log" Json.Decode.string))
+    (maybe (field "settings" settingsDecoder))
 
 alertDecoder : Decoder Alert
 alertDecoder =
   Json.Decode.map2 Alert
     (Json.Decode.succeed 1)
     (field "content" Json.Decode.string)
+
+settingsDecoder : Decoder Settings
+settingsDecoder =
+  Json.Decode.map4 Settings
+    (field "basicinfos" basicInfosDataDecoder)
+    (field "details" detailsDataDecoder)
+    (field "pictures" picturesDataDecoder)
+    (field "password" passwordDataDecoder)
+
+basicInfosDataDecoder : Decoder BasicInfosData
+basicInfosDataDecoder =
+  Json.Decode.map4 BasicInfosData
+    (field "pseudo" Json.Decode.string)
+    (field "name" Json.Decode.string)
+    (field "firstname" Json.Decode.string)
+    (field "email" Json.Decode.string)
+
+picturesDataDecoder : Decoder PicturesData
+picturesDataDecoder =
+  Json.Decode.map2 PicturesData
+    (field "main" Json.Decode.string)
+    (field "other" (Json.Decode.list Json.Decode.string))
+
+detailsDataDecoder : Decoder DetailsData
+detailsDataDecoder =
+  Json.Decode.map4 DetailsData
+    (field "gender" genderDecoder)
+    (field "orientation" orientationDecoder)
+    (field "tags" (Json.Decode.list Json.Decode.string))
+    (field "description" Json.Decode.string)
+
+passwordDataDecoder : Decoder PasswordData
+passwordDataDecoder =
+  Json.Decode.map3 PasswordData
+    (field "oldpassword" Json.Decode.string)
+    (field "password" Json.Decode.string)
+    (field "confirm" Json.Decode.string)
+
+genderDecoder : Decoder Gender
+genderDecoder =
+  Json.Decode.string |> andThen
+    (\ str ->
+      case str of
+        "Man" ->
+          Json.Decode.succeed Man
+
+        "Woman" ->
+          Json.Decode.succeed Woman
+
+        _ ->
+          Json.Decode.fail "genderDecoder failed : not valid gender"
+    )
+
+orientationDecoder : Decoder Orientation
+orientationDecoder =
+  Json.Decode.string |> andThen
+    (\ str ->
+      case str of
+        "Homosexual" ->
+          Json.Decode.succeed Homosexual
+
+        "Bisexual" ->
+          Json.Decode.succeed Bisexual
+
+        "Heterosexual" ->
+          Json.Decode.succeed Heterosexual
+
+        _ ->
+          Json.Decode.fail "orientationDecoder failed : not valid orientation"
+    )
 
 result_submit_account_Ok : Model -> SD -> (Model, Cmd Msg)
 result_submit_account_Ok model sd =
@@ -314,6 +434,7 @@ new_signupdata : Account
 new_signupdata =
   SignUp { pseudo = "", email = "", password = "", confirm = "" }
 
+
 -- view
 
 view : Model -> Document Msg
@@ -331,14 +452,11 @@ view_account account =
     SignIn signindata ->
       view_signin signindata
 
-    SignOut ->
+    SignOut _ ->
       view_signout
 
     SignUp signupdata ->
       view_signup signupdata
-
-    Load ->
-      view_load
 
 view_signin : SignInData -> Html Msg
 view_signin signindata =
@@ -394,11 +512,6 @@ view_signup signupdata =
     , a [ onClick To_SignIn ]
         [ text "You alredy have an account?" ]
     ]
-
-view_load : Html Msg
-view_load =
-  Html.form [ onSubmit Query_Submit_Account ]
-    [ text "Loading..." ]
 
 
 -- subscriptions

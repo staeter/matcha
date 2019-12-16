@@ -1,7 +1,7 @@
 <?php echo '{
   "status" : "Success",
   "data" : {
-    "message" : {
+    "alert" : {
       "content" : "signed in"
     },
     "log" : "some log"
