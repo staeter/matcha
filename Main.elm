@@ -18,7 +18,8 @@ import Debug exposing (..)
 
 type alias Model =
   { account : Account
-  , message : Maybe String
+  , message : Maybe Message
+  , log : Maybe String
   }
 
 type Account
@@ -39,6 +40,11 @@ type alias SignUpData =
   , confirm : String
   }
 
+type alias Message =
+  { id : Int
+  , content : String
+  }
+
 type alias SD =
   { status : Status
   , data : Data
@@ -49,14 +55,15 @@ type Status
   | Failure
 
 type alias Data =
-  { message : Maybe String
+  { message : Maybe Message
   , log : Maybe String
   }
 
 init : () -> (Model, Cmd Msg)
 init _ =
   ( { account = new_signindata
-    , message = Just "hello"
+    , message = Just { id = 1, content = "hello"}
+    , log = Nothing
     }
   , Cmd.none
   )
@@ -114,21 +121,29 @@ update msg model =
 
     Result_Submit_SignIn result ->
       case result of
-        Ok sd -> ({ model | message = sd.data.message, account = SignOut }, Cmd.none)
-        Err _ -> ({ model | message = Just "err", account = new_signindata }, Cmd.none)
-    --
-    -- Result_Submit_SignOut result ->
-    --   case result of
-    --     Ok sd -> (model, Cmd.none)
-    --     Err _ ->
-    --
-    -- Result_Submit_SignUp result ->
-    --   case result of
-    --     Ok sd -> (model, Cmd.none)
-    --     Err _ ->
+        Ok sd -> ({ model | message = new_message model.message sd.data.message, account = SignOut }, Cmd.none)
+        Err _ -> ({ model | log = Just "Result Err in Result_Submit_SignIn", account = new_signindata }, Cmd.none)
+
+    Result_Submit_SignOut result ->
+      case result of
+        Ok sd -> ({ model | message = new_message model.message sd.data.message, account = new_signindata }, Cmd.none)
+        Err _ -> ({ model | log = Just "Result Err in Result_Submit_SignOut", account = SignOut }, Cmd.none)
+
+    Result_Submit_SignUp result ->
+      case result of
+        Ok sd -> ({ model | message = new_message model.message sd.data.message, account = new_signindata }, Cmd.none)
+        Err _ -> ({ model | log = Just "Result Err in Result_Submit_SignUp", account = new_signupdata }, Cmd.none)
 
     _ ->
        (model, Cmd.none)
+
+new_message : Maybe Message -> Maybe Message -> Maybe Message
+new_message message newmessage =
+  case (message, newmessage) of
+    (Just msg, Just nm) -> Just { nm | id = msg.id + 1 }
+    (Nothing, Just nm) -> Just nm
+    (Just msg, Nothing) -> message
+    (Nothing, Nothing) -> Nothing
 
 query_submit_account : Account -> Cmd Msg
 query_submit_account account =
@@ -182,9 +197,14 @@ statusDecoder =
 dataDecoder : Decoder Data
 dataDecoder =
   Json.Decode.map2 Data
-    (maybe (field "message" Json.Decode.string))
+    (maybe (field "message" messageDecoder))
     (maybe (field "log" Json.Decode.string))
 
+messageDecoder : Decoder Message
+messageDecoder =
+  Json.Decode.map2 Message
+    (Json.Decode.succeed 1)
+    (field "content" Json.Decode.string)
 
 result_submit_account_Ok : Model -> SD -> (Model, Cmd Msg)
 result_submit_account_Ok model sd =
