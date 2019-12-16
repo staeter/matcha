@@ -18,9 +18,49 @@ import Debug exposing (..)
 
 type alias Model =
   { account : Account
-  , message : Maybe Message
+  -- , filters : Filters
+  -- , browse : List User
+  , alert : Maybe Alert
   , log : Maybe String
   }
+
+type alias Filters =
+  { ageMin : Int
+  , ageMax : Int
+  , distanceMax : Int
+  , popularityMin : Int
+  , popularityMax : Int
+  , tags : List String
+  , viewed : Bool
+  , liked : Bool
+  }
+
+type alias UserOverview =
+  { id : Int
+  , pseudo : String
+  , picture : String
+  }
+
+type alias User =
+  { id : Int
+  , pseudo : String
+  , gender : Gender
+  , orientation : Orientation
+  , age : Int
+  , picture : String
+  , tags : List String
+  , distance : Int
+  , description : String
+  }
+
+type Gender
+  = Man
+  | Woman
+
+type Orientation
+  = Homosexual
+  | Bisexual
+  | Heterosexual
 
 type Account
   = SignIn SignInData
@@ -40,7 +80,7 @@ type alias SignUpData =
   , confirm : String
   }
 
-type alias Message =
+type alias Alert =
   { id : Int
   , content : String
   }
@@ -55,14 +95,14 @@ type Status
   | Failure
 
 type alias Data =
-  { message : Maybe Message
+  { alert : Maybe Alert
   , log : Maybe String
   }
 
 init : () -> (Model, Cmd Msg)
 init _ =
   ( { account = new_signindata
-    , message = Just { id = 1, content = "hello"}
+    , alert = Just { id = 1, content = "hello"}
     , log = Nothing
     }
   , Cmd.none
@@ -121,28 +161,28 @@ update msg model =
 
     Result_Submit_SignIn result ->
       case result of
-        Ok sd -> ({ model | message = new_message model.message sd.data.message, account = SignOut }, Cmd.none)
+        Ok sd -> ({ model | alert = new_alert model.alert sd.data.alert, account = SignOut }, Cmd.none)
         Err _ -> ({ model | log = Just "Result Err in Result_Submit_SignIn", account = new_signindata }, Cmd.none)
 
     Result_Submit_SignOut result ->
       case result of
-        Ok sd -> ({ model | message = new_message model.message sd.data.message, account = new_signindata }, Cmd.none)
+        Ok sd -> ({ model | alert = new_alert model.alert sd.data.alert, account = new_signindata }, Cmd.none)
         Err _ -> ({ model | log = Just "Result Err in Result_Submit_SignOut", account = SignOut }, Cmd.none)
 
     Result_Submit_SignUp result ->
       case result of
-        Ok sd -> ({ model | message = new_message model.message sd.data.message, account = new_signindata }, Cmd.none)
+        Ok sd -> ({ model | alert = new_alert model.alert sd.data.alert, account = new_signindata }, Cmd.none)
         Err _ -> ({ model | log = Just "Result Err in Result_Submit_SignUp", account = new_signupdata }, Cmd.none)
 
     _ ->
        (model, Cmd.none)
 
-new_message : Maybe Message -> Maybe Message -> Maybe Message
-new_message message newmessage =
-  case (message, newmessage) of
+new_alert : Maybe Alert -> Maybe Alert -> Maybe Alert
+new_alert alert newalert =
+  case (alert, newalert) of
     (Just msg, Just nm) -> Just { nm | id = msg.id + 1 }
     (Nothing, Just nm) -> Just nm
-    (Just msg, Nothing) -> message
+    (Just msg, Nothing) -> alert
     (Nothing, Nothing) -> Nothing
 
 query_submit_account : Account -> Cmd Msg
@@ -197,12 +237,12 @@ statusDecoder =
 dataDecoder : Decoder Data
 dataDecoder =
   Json.Decode.map2 Data
-    (maybe (field "message" messageDecoder))
+    (maybe (field "alert" alertDecoder))
     (maybe (field "log" Json.Decode.string))
 
-messageDecoder : Decoder Message
-messageDecoder =
-  Json.Decode.map2 Message
+alertDecoder : Decoder Alert
+alertDecoder =
+  Json.Decode.map2 Alert
     (Json.Decode.succeed 1)
     (field "content" Json.Decode.string)
 
