@@ -6,13 +6,22 @@ module Main exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+
 import Browser exposing (..)
+
 import Http exposing (..)
-import Json.Encode as Encode exposing (..)
+
 import Json.Decode as Decode exposing (..)
 import Json.Decode.Field as Field exposing (..)
 
 import Debug exposing (..)
+
+
+-- my own modules
+
+import Model exposing (..)
+import Account exposing (..)
+import Query exposing (..)
 
 
 -- model
@@ -25,122 +34,9 @@ type alias Model =
   , log : Maybe String
   }
 
-type alias Filters =
-  { ageMin : Int
-  , ageMax : Int
-  , distanceMax : Int
-  , popularityMin : Int
-  , popularityMax : Int
-  , tags : List String
-  , viewed : Bool
-  , liked : Bool
-  }
-
-type alias UserOverview =
-  { id : Int
-  , pseudo : String
-  , picture : String
-  }
-
-type alias User =
-  { id : Int
-  , pseudo : String
-  , gender : Gender
-  , orientation : Orientation
-  , age : Int
-  , picture : String
-  , tags : List String
-  , distance : Int
-  , description : String
-  }
-
-type Gender
-  = Man
-  | Woman
-
-type Orientation
-  = Homosexual
-  | Bisexual
-  | Heterosexual
-
-type Account
-  = SignIn SignInData
-  | SignUp SignUpData
-  | SignOut (Maybe Settings)
-
-type alias Settings =
-  { pseudo : String
-  , name : String
-  , firstname : String
-  , email : String
-  , gender : Gender
-  , orientation : Orientation
-  , tags : List String
-  , description : String
-  -- , localisation : ??? //ni
-  , pictures : PicturesData
-  , password : PasswordData
-  }
-
-type alias PicturesData =
-  { main : String
-  , other : List String
-  }
-
-type alias PasswordData =
-  { oldpassword : String
-  , newpassword : String
-  , confirm : String
-  }
-
-empty_passworddata : PasswordData
-empty_passworddata =
-  { oldpassword = ""
-  , newpassword = ""
-  , confirm = ""
-  }
-
-type alias SignInData =
-  { pseudo : String
-  , password : String
-  }
-
-type alias SignUpData =
-  { pseudo : String
-  , email : String
-  , password : String
-  , confirm : String
-  }
-
-type alias Alert =
-  { id : Int
-  , content : String
-  }
-
-load : Alert
-load =
-  { id = 0
-  , content = "Loading..."
-  }
-
-type alias SD =
-  { status : Status
-  , data : Data
-  }
-
-type Status
-  = Success
-  | Failure
-
-type alias Data =
-  { alert : Maybe Alert
-  , log : Maybe String
-  , settings : Maybe Settings
-  }
-
 init : () -> (Model, Cmd Msg)
 init _ =
-  ( { account = new_signindata
+  ( { account = empty_signindata
     , alert = Nothing
     , log = Nothing
     }
@@ -191,48 +87,31 @@ update msg model =
       ( model |> set_signupdata_confirm confirm, Cmd.none )
 
     To_SignIn ->
-      ( { model | account = new_signindata }, Cmd.none )
+      ( { model | account = empty_signindata }, Cmd.none )
 
     To_SignUp ->
-      ( { model | account = new_signupdata }, Cmd.none )
+      ( { model | account = empty_signupdata }, Cmd.none )
 
     Query_Submit_Account ->
       ( { model | alert = Just load }, query_submit_account model.account )
 
     Result_Submit_SignIn result ->
       case result of
-        Ok sd -> ({ model | alert = new_alert model.alert sd.data.alert |> remove_alert 0, account = SignOut Nothing }, Cmd.none)
+        Ok sd -> ({ model | alert = replace_alert model.alert sd.data.alert |> remove_alert 0, account = SignOut Nothing }, Cmd.none)
         Err _ -> ({ model | alert = remove_alert 0 model.alert, log = Just "Result Err in Result_Submit_SignIn" }, Cmd.none)
 
     Result_Submit_SignOut result ->
       case result of
-        Ok sd -> ({ model | alert = new_alert model.alert sd.data.alert |> remove_alert 0, account = new_signindata }, Cmd.none)
+        Ok sd -> ({ model | alert = replace_alert model.alert sd.data.alert |> remove_alert 0, account = empty_signindata }, Cmd.none)
         Err _ -> ({ model | alert = remove_alert 0 model.alert, log = Just "Result Err in Result_Submit_SignOut" }, Cmd.none)
 
     Result_Submit_SignUp result ->
       case result of
-        Ok sd -> ({ model | alert = new_alert model.alert sd.data.alert |> remove_alert 0, account = new_signindata }, Cmd.none)
+        Ok sd -> ({ model | alert = replace_alert model.alert sd.data.alert |> remove_alert 0, account = empty_signindata }, Cmd.none)
         Err _ -> ({ model | alert = remove_alert 0 model.alert, log = Just "Result Err in Result_Submit_SignUp" }, Cmd.none)
 
     _ ->
        (model, Cmd.none)
-
-new_alert : Maybe Alert -> Maybe Alert -> Maybe Alert
-new_alert alert newalert =
-  case (alert, newalert) of
-    (Just msg, Just nm) -> Just { nm | id = msg.id + 1 }
-    (Nothing, Just nm) -> Just nm
-    (Just msg, Nothing) -> alert
-    (Nothing, Nothing) -> Nothing
-
-remove_alert : Int -> Maybe Alert -> Maybe Alert
-remove_alert idtoremove alert =
-  case alert of
-    Just a ->
-      if a.id == idtoremove
-      then Nothing
-      else Just a
-    Nothing -> Nothing
 
 query_submit_account : Account -> Cmd Msg
 query_submit_account account =
@@ -261,122 +140,6 @@ query_submit_account account =
                 , expect = Http.expectJson Result_Submit_SignUp sdDecoder
                 }
 
-sdDecoder : Decoder SD
-sdDecoder =
-  Field.require "status" statusDecoder <| \status ->
-  Field.require "data" dataDecoder <| \data ->
-
-  Decode.succeed
-    { status = status
-    , data = data
-    }
-
-statusDecoder : Decoder Status
-statusDecoder =
-  Decode.string |> andThen
-    (\ str ->
-      case str of
-        "Success" ->
-          Decode.succeed Success
-
-        "Failure" ->
-          Decode.succeed Failure
-
-        _ ->
-          Decode.fail "statusDecoder failed : not valid status"
-    )
-
-dataDecoder : Decoder Data
-dataDecoder =
-  Field.attempt "alert" alertDecoder <| \alert ->
-  Field.attempt "log" Decode.string <| \log ->
-  Field.attempt "settings" settingsDecoder <| \settings ->
-
-  Decode.succeed
-    { alert = alert
-    , log = log
-    , settings = settings
-    }
-
-alertDecoder : Decoder Alert
-alertDecoder =
-  Field.require "content" Decode.string <| \content ->
-
-  Decode.succeed
-    { id = 1
-    , content = content
-    }
-
-andMap = Decode.map2 (|>)
-
-settingsDecoder : Decoder Settings
-settingsDecoder =
-  Field.require "pseudo" Decode.string <| \pseudo ->
-  Field.require "name" Decode.string <| \name ->
-  Field.require "firstname" Decode.string <| \firstname ->
-  Field.require "email" Decode.string <| \email ->
-  Field.require "gender" genderDecoder <| \gender ->
-  Field.require "orientation" orientationDecoder <| \orientation ->
-  Field.require "tags" (Decode.list Decode.string) <| \tags ->
-  Field.require "description" Decode.string <| \description ->
-  Field.require "pictures" picturesDataDecoder <| \pictures ->
-
-  Decode.succeed
-    { pseudo = pseudo
-    , name = name
-    , firstname = firstname
-    , email = email
-    , gender = gender
-    , orientation = orientation
-    , tags = tags
-    , description = description
-    , pictures = pictures
-    , password = empty_passworddata
-    }
-
-picturesDataDecoder : Decoder PicturesData
-picturesDataDecoder =
-  Field.require "main" Decode.string <| \main_ ->
-  Field.require "other" (Decode.list Decode.string) <| \other ->
-
-  Decode.succeed
-    { main = main_
-    , other = other
-    }
-
-genderDecoder : Decoder Gender
-genderDecoder =
-  Decode.string |> andThen
-    (\ str ->
-      case str of
-        "Man" ->
-          Decode.succeed Man
-
-        "Woman" ->
-          Decode.succeed Woman
-
-        _ ->
-          Decode.fail "genderDecoder failed : not valid gender"
-    )
-
-orientationDecoder : Decoder Orientation
-orientationDecoder =
-  Decode.string |> andThen
-    (\ str ->
-      case str of
-        "Homosexual" ->
-          Decode.succeed Homosexual
-
-        "Bisexual" ->
-          Decode.succeed Bisexual
-
-        "Heterosexual" ->
-          Decode.succeed Heterosexual
-
-        _ ->
-          Decode.fail "orientationDecoder failed : not valid orientation"
-    )
-
 result_submit_account_Ok : Model -> SD -> (Model, Cmd Msg)
 result_submit_account_Ok model sd =
   ( model
@@ -388,6 +151,9 @@ result_submit_account_Err model =
   ( model
   , Cmd.none
   )
+
+
+-- sets
 
 set_signindata_pseudo : String -> Model -> Model
 set_signindata_pseudo pseudo model =
@@ -436,14 +202,6 @@ set_signupdata_confirm confirm model =
       { model | account = SignUp { signupdata | confirm = confirm } }
     _ ->
       model
-
-new_signindata : Account
-new_signindata =
-  SignIn { pseudo = "", password = "" }
-
-new_signupdata : Account
-new_signupdata =
-  SignUp { pseudo = "", email = "", password = "", confirm = "" }
 
 
 -- view
