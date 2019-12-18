@@ -8,9 +8,9 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Browser exposing (..)
 import Http exposing (..)
-import Json.Encode exposing (..)
-import Json.Decode exposing (..)
-import Time exposing (..)
+import Json.Encode as Encode exposing (..)
+import Json.Decode as Decode exposing (..)
+import Json.Decode.Field as Field exposing (..)
 
 import Debug exposing (..)
 
@@ -69,17 +69,17 @@ type Account
   | SignOut (Maybe Settings)
 
 type alias Settings =
-  { basicinfos : BasicInfosData
-  , details : DetailsData
-  , pictures : PicturesData
-  , password : PasswordData
-  }
-
-type alias BasicInfosData =
   { pseudo : String
   , name : String
   , firstname : String
   , email : String
+  , gender : Gender
+  , orientation : Orientation
+  , tags : List String
+  , description : String
+  -- , localisation : ??? //ni
+  , pictures : PicturesData
+  , password : PasswordData
   }
 
 type alias PicturesData =
@@ -87,18 +87,17 @@ type alias PicturesData =
   , other : List String
   }
 
-type alias DetailsData =
-  { gender : Gender
-  , orientation : Orientation
-  , tags : List String
-  , description : String
-  -- , localisation : ??? //ni
-  }
-
 type alias PasswordData =
   { oldpassword : String
-  , password : String
+  , newpassword : String
   , confirm : String
+  }
+
+empty_passworddata : PasswordData
+empty_passworddata =
+  { oldpassword = ""
+  , newpassword = ""
+  , confirm = ""
   }
 
 type alias SignInData =
@@ -264,106 +263,118 @@ query_submit_account account =
 
 sdDecoder : Decoder SD
 sdDecoder =
-  Json.Decode.map2 SD
-    (field "status" statusDecoder)
-    (field "data" dataDecoder)
+  Field.require "status" statusDecoder <| \status ->
+  Field.require "data" dataDecoder <| \data ->
+
+  Decode.succeed
+    { status = status
+    , data = data
+    }
 
 statusDecoder : Decoder Status
 statusDecoder =
-  Json.Decode.string |> andThen
+  Decode.string |> andThen
     (\ str ->
       case str of
         "Success" ->
-          Json.Decode.succeed Success
+          Decode.succeed Success
 
         "Failure" ->
-          Json.Decode.succeed Failure
+          Decode.succeed Failure
 
         _ ->
-          Json.Decode.fail "statusDecoder failed : not valid status"
+          Decode.fail "statusDecoder failed : not valid status"
     )
 
 dataDecoder : Decoder Data
 dataDecoder =
-  Json.Decode.map3 Data
-    (maybe (field "alert" alertDecoder))
-    (maybe (field "log" Json.Decode.string))
-    (maybe (field "settings" settingsDecoder))
+  Field.attempt "alert" alertDecoder <| \alert ->
+  Field.attempt "log" Decode.string <| \log ->
+  Field.attempt "settings" settingsDecoder <| \settings ->
+
+  Decode.succeed
+    { alert = alert
+    , log = log
+    , settings = settings
+    }
 
 alertDecoder : Decoder Alert
 alertDecoder =
-  Json.Decode.map2 Alert
-    (Json.Decode.succeed 1)
-    (field "content" Json.Decode.string)
+  Field.require "content" Decode.string <| \content ->
+
+  Decode.succeed
+    { id = 1
+    , content = content
+    }
+
+andMap = Decode.map2 (|>)
 
 settingsDecoder : Decoder Settings
 settingsDecoder =
-  Json.Decode.map4 Settings
-    (field "basicinfos" basicInfosDataDecoder)
-    (field "details" detailsDataDecoder)
-    (field "pictures" picturesDataDecoder)
-    (field "password" passwordDataDecoder)
+  Field.require "pseudo" Decode.string <| \pseudo ->
+  Field.require "name" Decode.string <| \name ->
+  Field.require "firstname" Decode.string <| \firstname ->
+  Field.require "email" Decode.string <| \email ->
+  Field.require "gender" genderDecoder <| \gender ->
+  Field.require "orientation" orientationDecoder <| \orientation ->
+  Field.require "tags" (Decode.list Decode.string) <| \tags ->
+  Field.require "description" Decode.string <| \description ->
+  Field.require "pictures" picturesDataDecoder <| \pictures ->
 
-basicInfosDataDecoder : Decoder BasicInfosData
-basicInfosDataDecoder =
-  Json.Decode.map4 BasicInfosData
-    (field "pseudo" Json.Decode.string)
-    (field "name" Json.Decode.string)
-    (field "firstname" Json.Decode.string)
-    (field "email" Json.Decode.string)
+  Decode.succeed
+    { pseudo = pseudo
+    , name = name
+    , firstname = firstname
+    , email = email
+    , gender = gender
+    , orientation = orientation
+    , tags = tags
+    , description = description
+    , pictures = pictures
+    , password = empty_passworddata
+    }
 
 picturesDataDecoder : Decoder PicturesData
 picturesDataDecoder =
-  Json.Decode.map2 PicturesData
-    (field "main" Json.Decode.string)
-    (field "other" (Json.Decode.list Json.Decode.string))
+  Field.require "main" Decode.string <| \main_ ->
+  Field.require "other" (Decode.list Decode.string) <| \other ->
 
-detailsDataDecoder : Decoder DetailsData
-detailsDataDecoder =
-  Json.Decode.map4 DetailsData
-    (field "gender" genderDecoder)
-    (field "orientation" orientationDecoder)
-    (field "tags" (Json.Decode.list Json.Decode.string))
-    (field "description" Json.Decode.string)
-
-passwordDataDecoder : Decoder PasswordData
-passwordDataDecoder =
-  Json.Decode.map3 PasswordData
-    (field "oldpassword" Json.Decode.string)
-    (field "password" Json.Decode.string)
-    (field "confirm" Json.Decode.string)
+  Decode.succeed
+    { main = main_
+    , other = other
+    }
 
 genderDecoder : Decoder Gender
 genderDecoder =
-  Json.Decode.string |> andThen
+  Decode.string |> andThen
     (\ str ->
       case str of
         "Man" ->
-          Json.Decode.succeed Man
+          Decode.succeed Man
 
         "Woman" ->
-          Json.Decode.succeed Woman
+          Decode.succeed Woman
 
         _ ->
-          Json.Decode.fail "genderDecoder failed : not valid gender"
+          Decode.fail "genderDecoder failed : not valid gender"
     )
 
 orientationDecoder : Decoder Orientation
 orientationDecoder =
-  Json.Decode.string |> andThen
+  Decode.string |> andThen
     (\ str ->
       case str of
         "Homosexual" ->
-          Json.Decode.succeed Homosexual
+          Decode.succeed Homosexual
 
         "Bisexual" ->
-          Json.Decode.succeed Bisexual
+          Decode.succeed Bisexual
 
         "Heterosexual" ->
-          Json.Decode.succeed Heterosexual
+          Decode.succeed Heterosexual
 
         _ ->
-          Json.Decode.fail "orientationDecoder failed : not valid orientation"
+          Decode.fail "orientationDecoder failed : not valid orientation"
     )
 
 result_submit_account_Ok : Model -> SD -> (Model, Cmd Msg)
