@@ -47,6 +47,7 @@ init _ =
 
 type Msg
   = NoOp
+  -- Sign In, Up and Out
   | Input_SignIn_pseudo String
   | Input_SignIn_password String
   | Input_SignUp_pseudo String
@@ -54,14 +55,21 @@ type Msg
   | Input_SignUp_password String
   | Input_SignUp_confirm String
   | To_SignIn
-  | To_SignOut
   | To_SignUp
   | Query_Submit_Account
   | Result_Submit_SignIn (Result Http.Error SD)
   | Result_Submit_SignOut (Result Http.Error SD)
   | Result_Submit_SignUp (Result Http.Error SD)
+  -- Settings
   | Query_Current_Settings
   | Result_Current_Settings (Result Http.Error SD)
+  | Input_Settings_pseudo String
+  | Input_Settings_name String
+  | Input_Settings_firstname String
+  | Input_Settings_email String
+  | Input_Settings_gender Gender
+  | Input_Settings_orientation Orientation
+  | Input_Settings_description String
   | Query_Submit_Settings
   | Result_Submit_Settings (Result Http.Error SD)
 
@@ -69,22 +77,95 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Input_SignIn_pseudo pseudo ->
-      ( model |> set_signindata_pseudo pseudo, Cmd.none )
+      ( case model.account of
+          SignIn signindata -> { model | account = SignIn { signindata | pseudo = pseudo } }
+          _ -> model
+      , Cmd.none
+      )
 
     Input_SignIn_password password ->
-      ( model |> set_signindata_password password, Cmd.none )
+      ( case model.account of
+          SignIn signindata -> { model | account = SignIn { signindata | password = password } }
+          _ -> model
+      , Cmd.none
+      )
 
     Input_SignUp_pseudo pseudo ->
-      ( model |> set_signupdata_pseudo pseudo, Cmd.none )
+      ( case model.account of
+          SignUp signupdata -> { model | account = SignUp { signupdata | pseudo = pseudo } }
+          _ -> model
+      , Cmd.none
+      )
 
     Input_SignUp_email email ->
-      ( model |> set_signupdata_email email, Cmd.none )
+      ( case model.account of
+          SignUp signupdata -> { model | account = SignUp { signupdata | email = email } }
+          _ -> model
+      , Cmd.none
+      )
 
     Input_SignUp_password password ->
-      ( model |> set_signupdata_password password, Cmd.none )
+      ( case model.account of
+          SignUp signupdata -> { model | account = SignUp { signupdata | password = password } }
+          _ -> model
+      , Cmd.none
+      )
 
     Input_SignUp_confirm confirm ->
-      ( model |> set_signupdata_confirm confirm, Cmd.none )
+      ( case model.account of
+          SignUp signupdata -> { model | account = SignUp { signupdata | confirm = confirm } }
+          _ -> model
+      , Cmd.none
+      )
+
+    Input_Settings_pseudo pseudo ->
+      ( case model.account of
+          SignOut (Just settings) -> { model | account = SignOut (Just { settings | pseudo = pseudo }) }
+          _ -> model
+      , Cmd.none
+      )
+
+    Input_Settings_name name ->
+      ( case model.account of
+          SignOut (Just settings) -> { model | account = SignOut (Just { settings | name = name }) }
+          _ -> model
+      , Cmd.none
+      )
+
+    Input_Settings_firstname firstname ->
+      ( case model.account of
+          SignOut (Just settings) -> { model | account = SignOut (Just { settings | firstname = firstname }) }
+          _ -> model
+      , Cmd.none
+      )
+
+    Input_Settings_email email ->
+      ( case model.account of
+          SignOut (Just settings) -> { model | account = SignOut (Just { settings | email = email }) }
+          _ -> model
+      , Cmd.none
+      )
+
+    Input_Settings_gender gender ->
+      ( case model.account of
+          SignOut (Just settings) -> { model | account = SignOut (Just { settings | gender = gender }) }
+          _ -> model
+      , Cmd.none
+      )
+
+    Input_Settings_orientation orientation ->
+      ( case model.account of
+          SignOut (Just settings) -> { model | account = SignOut (Just { settings | orientation = orientation }) }
+          _ -> model
+      , Cmd.none
+      )
+
+    Input_Settings_description description ->
+      ( case model.account of
+          SignOut (Just settings) -> { model | account = SignOut (Just { settings | description = description }) }
+          _ -> model
+      , Cmd.none
+      )
 
     To_SignIn ->
       ( { model | account = empty_signindata }, Cmd.none )
@@ -139,69 +220,6 @@ query_submit_account account =
                             ]
                 , expect = Http.expectJson Result_Submit_SignUp sdDecoder
                 }
-
-result_submit_account_Ok : Model -> SD -> (Model, Cmd Msg)
-result_submit_account_Ok model sd =
-  ( model
-  , Cmd.none
-  )
-
-result_submit_account_Err : Model -> (Model, Cmd Msg)
-result_submit_account_Err model =
-  ( model
-  , Cmd.none
-  )
-
-
--- sets
-
-set_signindata_pseudo : String -> Model -> Model
-set_signindata_pseudo pseudo model =
-  case model.account of
-    SignIn signindata ->
-      { model | account = SignIn { signindata | pseudo = pseudo } }
-    _ ->
-      model
-
-set_signindata_password : String -> Model -> Model
-set_signindata_password password model =
-  case model.account of
-    SignIn signindata ->
-      { model | account = SignIn { signindata | password = password } }
-    _ ->
-      model
-
-set_signupdata_pseudo : String -> Model -> Model
-set_signupdata_pseudo pseudo model =
-  case model.account of
-    SignUp signupdata ->
-      { model | account = SignUp { signupdata | pseudo = pseudo } }
-    _ ->
-      model
-
-set_signupdata_email : String -> Model -> Model
-set_signupdata_email email model =
-  case model.account of
-    SignUp signupdata ->
-      { model | account = SignUp { signupdata | email = email } }
-    _ ->
-      model
-
-set_signupdata_password : String -> Model -> Model
-set_signupdata_password password model =
-  case model.account of
-    SignUp signupdata ->
-      { model | account = SignUp { signupdata | password = password } }
-    _ ->
-      model
-
-set_signupdata_confirm : String -> Model -> Model
-set_signupdata_confirm confirm model =
-  case model.account of
-    SignUp signupdata ->
-      { model | account = SignUp { signupdata | confirm = confirm } }
-    _ ->
-      model
 
 
 -- view
