@@ -22,17 +22,20 @@ import Browser.Navigation as Nav exposing (..)
 -- modules
 
 import Signin exposing (..)
+import Signup exposing (..)
 
 
 -- model
 
 type alias Model =
   { signin : Signin.Model
+  , signup : Signup.Model
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
 init _ _ _ =
   ( { signin = Signin.init
+    , signup = Signup.init
     }
   , Cmd.none
   )
@@ -54,6 +57,7 @@ onUrlChange url =
 type Msg
   = NoOp
   | Signin Signin.Msg
+  | Signup Signup.Msg
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -64,6 +68,14 @@ update msg model =
       in
         ( { model | signin = signinModel }
         , signinCmd |> Cmd.map Signin
+        )
+
+    Signup signupMsg ->
+      let
+        (signupModel, signupCmd) = Signup.update signupMsg model.signup
+      in
+        ( { model | signup = signupModel }
+        , signupCmd |> Cmd.map Signup
         )
 
     _ ->
@@ -77,6 +89,7 @@ view model =
   { title = "matcha"
   , body =
     [ Signin.view model.signin |> Html.map Signin
+    , Signup.view model.signup |> Html.map Signup
     ]
   }
 
