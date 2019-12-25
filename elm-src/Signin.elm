@@ -7,6 +7,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
+
 -- modules
 
 
@@ -22,17 +23,6 @@ init =
   { pseudo = ""
   , password = ""
   }
-
-
--- url
-
--- onUrlRequest : UrlRequest -> Msg
--- onUrlRequest request =
---   NoOp
---
--- onUrlChange : Url -> Msg
--- onUrlChange url =
---   NoOp
 
 
 -- update

@@ -25,6 +25,7 @@ import Browser.Navigation as Nav exposing (..)
 
 import Signin exposing (..)
 import Signup exposing (..)
+import Browse exposing (..)
 
 
 -- model
