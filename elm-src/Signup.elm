@@ -129,4 +129,6 @@ view model =
             ] []
     , button [ type_ "submit" ]
              [ text "Sign Up" ]
+    , a [ href "/signin" ]
+        [ text "You alredy have an account?" ]
     ]

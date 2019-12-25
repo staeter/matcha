@@ -28,13 +28,17 @@ import Signup exposing (..)
 -- model
 
 type alias Model =
-  { signin : Signin.Model
+  { url : Url
+  , key : Nav.Key
+  , signin : Signin.Model
   , signup : Signup.Model
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
-init _ _ _ =
-  ( { signin = Signin.init
+init flags url key =
+  ( { url = url
+    , key = key
+    , signin = Signin.init
     , signup = Signup.init
     }
   , Cmd.none
@@ -45,17 +49,25 @@ init _ _ _ =
 
 onUrlRequest : UrlRequest -> Msg
 onUrlRequest request =
-  NoOp
+  case request of
+    Browser.Internal url ->
+      InternalLinkClicked url
+
+    Browser.External href ->
+      ExternalLinkClicked href
 
 onUrlChange : Url -> Msg
 onUrlChange url =
-  NoOp
+  UrlChange url
 
 
 -- update
 
 type Msg
   = NoOp
+  | InternalLinkClicked Url
+  | ExternalLinkClicked String
+  | UrlChange Url
   | Signin Signin.Msg
   | Signup Signup.Msg
 
@@ -78,8 +90,17 @@ update msg model =
         , signupCmd |> Cmd.map Signup
         )
 
+    InternalLinkClicked url ->
+      (model, Nav.pushUrl model.key (Url.toString url) )
+
+    ExternalLinkClicked href ->
+      (model, Nav.load href)
+
+    UrlChange url ->
+      ({ model | url = url }, Cmd.none)
+
     _ ->
-       (model, Cmd.none)
+      (model, Cmd.none)
 
 
 -- view
@@ -103,6 +124,7 @@ subscriptions model =
 
 -- main
 
+main : Program () Model Msg
 main =
   Browser.application
     { init = init
