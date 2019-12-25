@@ -35,6 +35,7 @@ type alias Model =
   , key : Nav.Key
   , signin : Signin.Model
   , signup : Signup.Model
+  , browse : Browse.Model
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -43,6 +44,7 @@ init flags url key =
     , key = key
     , signin = Signin.init
     , signup = Signup.init
+    , browse = Browse.init
     }
   , Cmd.none
   )
@@ -66,7 +68,7 @@ onUrlChange url =
 type Route
   = Signin
   | Signup
-  -- | Browse
+  | Browse
   -- | User
   -- | Account
   -- | Chat
@@ -78,6 +80,7 @@ routeParser =
   oneOf
     [ Parser.map Signin (Parser.s "signin")
     , Parser.map Signup (Parser.s "signup")
+    , Parser.map Browse (Parser.s "browse")
     ]
 
 
@@ -90,6 +93,7 @@ type Msg
   | UrlChange Url
   | SigninMsg Signin.Msg
   | SignupMsg Signup.Msg
+  | BrowseMsg Browse.Msg
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -108,6 +112,14 @@ update msg model =
       in
         ( { model | signup = signupModel }
         , signupCmd |> Cmd.map SignupMsg
+        )
+
+    BrowseMsg browseMsg ->
+      let
+        (browseModel, browseCmd) = Browse.update browseMsg model.browse
+      in
+        ( { model | browse = browseModel }
+        , browseCmd |> Cmd.map BrowseMsg
         )
 
     InternalLinkClicked url ->
@@ -143,6 +155,9 @@ page model =
 
         Signup ->
           Signup.view model.signup |> Html.map SignupMsg
+
+        Browse ->
+          Browse.view model.browse |> Html.map BrowseMsg
     )
     (Parser.parse routeParser model.url)
 
