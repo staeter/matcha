@@ -15,7 +15,9 @@ module Main exposing (..)
 
 import Browser exposing (application, UrlRequest)
 import Html exposing (..)
+import Html.Attributes exposing (..)
 import Url exposing (..)
+import Url.Parser as Parser exposing (..)
 import Browser.Navigation as Nav exposing (..)
 
 
@@ -60,6 +62,23 @@ onUrlChange : Url -> Msg
 onUrlChange url =
   UrlChange url
 
+type Route
+  = Signin
+  | Signup
+  -- | Browse
+  -- | User
+  -- | Account
+  -- | Chat
+  -- | Retreive
+  -- | Confirm
+
+routeParser : Parser (Route -> a) a
+routeParser =
+  oneOf
+    [ Parser.map Signin (Parser.s "signin")
+    , Parser.map Signup (Parser.s "signup")
+    ]
+
 
 -- update
 
@@ -68,26 +87,26 @@ type Msg
   | InternalLinkClicked Url
   | ExternalLinkClicked String
   | UrlChange Url
-  | Signin Signin.Msg
-  | Signup Signup.Msg
+  | SigninMsg Signin.Msg
+  | SignupMsg Signup.Msg
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Signin signinMsg ->
+    SigninMsg signinMsg ->
       let
         (signinModel, signinCmd) = Signin.update signinMsg model.signin
       in
         ( { model | signin = signinModel }
-        , signinCmd |> Cmd.map Signin
+        , signinCmd |> Cmd.map SigninMsg
         )
 
-    Signup signupMsg ->
+    SignupMsg signupMsg ->
       let
         (signupModel, signupCmd) = Signup.update signupMsg model.signup
       in
         ( { model | signup = signupModel }
-        , signupCmd |> Cmd.map Signup
+        , signupCmd |> Cmd.map SignupMsg
         )
 
     InternalLinkClicked url ->
@@ -109,10 +128,22 @@ view : Model -> Browser.Document Msg
 view model =
   { title = "matcha"
   , body =
-    [ Signin.view model.signin |> Html.map Signin
-    , Signup.view model.signup |> Html.map Signup
+    [ Maybe.withDefault (a [ href "/signin" ] [ text "Go to sign in" ]) (page model)
     ]
   }
+
+page : Model -> Maybe (Html Msg)
+page model =
+  Maybe.map
+    (\route ->
+      case route of
+        Signin ->
+          Signin.view model.signin |> Html.map SigninMsg
+
+        Signup ->
+          Signup.view model.signup |> Html.map SignupMsg
+    )
+    (Parser.parse routeParser model.url)
 
 
 -- subscriptions
