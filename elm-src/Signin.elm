@@ -78,7 +78,7 @@ update msg model =
     Submit ->
       ( model
       , Http.post
-          { url = "/control/signin.php"
+          { url = "http://localhost/control/signin.php"
           , body =
               multipartBody
                 [ stringPart "pseudo" model.pseudo

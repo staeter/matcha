@@ -1,9 +1,4 @@
 <?php echo '{
-  "status" : "Success",
-  "data" : {
-    "alert" : {
-      "content" : "signed in"
-    },
-    "log" : "some log"
-  }
+  "result" : "Success",
+  "message" : "Welcome!"
 }' ?>
