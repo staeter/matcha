@@ -9,23 +9,35 @@ import Html.Events exposing (..)
 
 import Http exposing (..)
 
+import Url exposing (..)
+import Url.Parser as Parser exposing (..)
+import Browser.Navigation as Nav exposing (..)
+
 import Json.Decode as Decode exposing (..)
 import Json.Decode.Field as Field exposing (..)
 
 
 -- modules
 
+import Header exposing (..)
+
 
 -- model
 
 type alias Model =
-  { pseudo : String
+  { url : Url
+  , key : Nav.Key
+  , header : Header.Model
+  , pseudo : String
   , password : String
   }
 
-init : Model
-init =
-  { pseudo = ""
+init : Url -> Nav.Key -> Model
+init url key =
+  { url = url
+  , key = key
+  , header = Header.init url key
+  , pseudo = ""
   , password = ""
   }
 
@@ -34,6 +46,9 @@ init =
 
 type Msg
   = NoOp
+  -- other modules msgs
+  | HeaderMsg Header.Msg
+  -- local msgs
   | Input_pseudo String
   | Input_password String
   | Submit
@@ -42,6 +57,14 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
+    HeaderMsg headerMsg ->
+      let
+        (headerModel, headerCmd) = Header.update headerMsg model.header
+      in
+        ( { model | header = headerModel }
+        , headerCmd |> Cmd.map HeaderMsg
+        )
+
     Input_pseudo pseudo ->
       ( { model | pseudo = pseudo }
       , Cmd.none
@@ -65,6 +88,21 @@ update msg model =
           }
       )
 
+    Answer result ->
+      case result of
+        Ok (Ok message) ->
+          ( { model
+            | pseudo = ""
+            , password = ""
+            , header = Header.successAlert message model.header
+            }
+          , Nav.pushUrl model.key "/browse"
+          )
+        Ok (Err message) ->
+          ({ model | header = Header.invalidImputAlert message model.header }, Cmd.none)
+        Err _ ->
+          ({ model | header = Header.serverNotReachedAlert model.header }, Cmd.none)
+
     _ ->
        (model, Cmd.none)
 
@@ -73,10 +111,10 @@ update msg model =
 
 answerDecoder : Decoder (Result String String)
 answerDecoder =
-  Field.require "status" resultDecoder <| \status ->
+  Field.require "result" resultDecoder <| \result ->
   Field.require "message" Decode.string <| \message ->
 
-  Decode.succeed (status message)
+  Decode.succeed (result message)
 
 resultDecoder : Decoder (String -> Result String String)
 resultDecoder =
@@ -98,19 +136,22 @@ resultDecoder =
 
 view : Model -> Html Msg
 view model =
-  Html.form [ onSubmit Submit ]
-    [ input [ type_ "text"
-            , placeholder "pseudo"
-            , onInput Input_pseudo
-            , Html.Attributes.value model.pseudo
-            ] []
-    , input [ type_ "password"
-            , placeholder "password"
-            , onInput Input_password
-            , Html.Attributes.value model.password
-            ] []
-    , button [ type_ "submit" ]
-             [ text "Sign In" ]
-    , a [ href "/signup" ]
-        [ text "You don't have any account?" ]
-    ]
+  div []
+      [ Header.view model.header |> Html.map HeaderMsg
+      , Html.form [ onSubmit Submit ]
+                  [ input [ type_ "text"
+                          , placeholder "pseudo"
+                          , onInput Input_pseudo
+                          , Html.Attributes.value model.pseudo
+                          ] []
+                  , input [ type_ "password"
+                          , placeholder "password"
+                          , onInput Input_password
+                          , Html.Attributes.value model.password
+                          ] []
+                  , button [ type_ "submit" ]
+                           [ text "Sign In" ]
+                  , a [ href "/signup" ]
+                      [ text "You don't have any account?" ]
+        ]
+      ]

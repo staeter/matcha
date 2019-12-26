@@ -16,6 +16,7 @@ module Main exposing (..)
 import Browser exposing (application, UrlRequest)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+
 import Url exposing (..)
 import Url.Parser as Parser exposing (..)
 import Browser.Navigation as Nav exposing (..)
@@ -42,8 +43,8 @@ init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
 init flags url key =
   ( { url = url
     , key = key
-    , signin = Signin.init
-    , signup = Signup.init
+    , signin = Signin.init url key
+    , signup = Signup.init url key
     , browse = Browse.init
     }
   , Cmd.none
