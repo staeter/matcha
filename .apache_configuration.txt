@@ -1,0 +1,19 @@
+-> put this code in httpd.conf
+-> set path to app root
+
+# single page web app
+LoadModule rewrite_module modules/mod_rewrite.so
+<Directory "C:/WorkSpace/matcha">
+	RewriteEngine On
+	# set the base URL prefix
+	RewriteBase /
+	# for requests for index.html, just respond with the file
+	RewriteRule ^index.html$ - [L]
+	# if requested path is not a valid filename, continue rewrite
+	RewriteCond %{REQUEST_FILENAME} !-f
+	# if requested path is not a valid directory, continue rewrite
+	RewriteCond %{REQUEST_FILENAME} !-d
+	# if you have continue to here, respond with index.html
+	RewriteRule . /index.html [L]
+  # code found here: https://blog.pshrmn.com/single-page-applications-and-the-server/
+</Directory>
