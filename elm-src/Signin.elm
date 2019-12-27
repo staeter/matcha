@@ -27,7 +27,6 @@ import Header exposing (..)
 type alias Model =
   { url : Url
   , key : Nav.Key
-  , header : Header.Model
   , pseudo : String
   , password : String
   }
@@ -36,7 +35,6 @@ init : Url -> Nav.Key -> Model
 init url key =
   { url = url
   , key = key
-  , header = Header.init url key
   , pseudo = ""
   , password = ""
   }
@@ -46,33 +44,24 @@ init url key =
 
 type Msg
   = NoOp
-  -- other modules msgs
-  | HeaderMsg Header.Msg
-  -- local msgs
   | Input_pseudo String
   | Input_password String
   | Submit
   | Answer (Result Http.Error (Result String String))
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> (Model, Cmd Msg, (Header.Model -> Header.Model))
 update msg model =
   case msg of
-    HeaderMsg headerMsg ->
-      let
-        (headerModel, headerCmd) = Header.update headerMsg model.header
-      in
-        ( { model | header = headerModel }
-        , headerCmd |> Cmd.map HeaderMsg
-        )
-
     Input_pseudo pseudo ->
       ( { model | pseudo = pseudo }
       , Cmd.none
+      , (\hm -> hm)
       )
 
     Input_password password ->
       ( { model | password = password }
       , Cmd.none
+      , (\hm -> hm)
       )
 
     Submit ->
@@ -86,6 +75,7 @@ update msg model =
                 ]
           , expect = Http.expectJson Answer answerDecoder
           }
+      , (\hm -> hm)
       )
 
     Answer result ->
@@ -94,17 +84,17 @@ update msg model =
           ( { model
             | pseudo = ""
             , password = ""
-            , header = Header.successAlert message model.header
             }
           , Nav.pushUrl model.key "/browse"
+          , (\hm -> hm |> Header.successAlert message)
           )
         Ok (Err message) ->
-          ({ model | header = Header.invalidImputAlert message model.header }, Cmd.none)
+          (model, Cmd.none, (\hm -> hm |> Header.invalidImputAlert message))
         Err _ ->
-          ({ model | header = Header.serverNotReachedAlert model.header }, Cmd.none)
+          (model, Cmd.none, (\hm -> hm |> Header.serverNotReachedAlert))
 
     _ ->
-       (model, Cmd.none)
+       (model, Cmd.none, (\hm -> hm))
 
 
 -- decoder
@@ -136,22 +126,19 @@ resultDecoder =
 
 view : Model -> Html Msg
 view model =
-  div []
-      [ Header.view model.header |> Html.map HeaderMsg
-      , Html.form [ onSubmit Submit ]
-                  [ input [ type_ "text"
-                          , placeholder "pseudo"
-                          , onInput Input_pseudo
-                          , Html.Attributes.value model.pseudo
-                          ] []
-                  , input [ type_ "password"
-                          , placeholder "password"
-                          , onInput Input_password
-                          , Html.Attributes.value model.password
-                          ] []
-                  , button [ type_ "submit" ]
-                           [ text "Sign In" ]
-                  , a [ href "/signup" ]
-                      [ text "You don't have any account?" ]
-        ]
-      ]
+  Html.form [ onSubmit Submit ]
+            [ input [ type_ "text"
+                    , placeholder "pseudo"
+                    , onInput Input_pseudo
+                    , Html.Attributes.value model.pseudo
+                    ] []
+            , input [ type_ "password"
+                    , placeholder "password"
+                    , onInput Input_password
+                    , Html.Attributes.value model.password
+                    ] []
+            , button [ type_ "submit" ]
+                     [ text "Sign In" ]
+            , a [ href "/signup" ]
+                [ text "You don't have any account?" ]
+            ]

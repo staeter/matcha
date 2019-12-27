@@ -24,6 +24,7 @@ import Browser.Navigation as Nav exposing (..)
 
 -- modules
 
+import Header exposing (..)
 import Signin exposing (..)
 import Signup exposing (..)
 import Browse exposing (..)
@@ -34,6 +35,7 @@ import Browse exposing (..)
 type alias Model =
   { url : Url
   , key : Nav.Key
+  , header : Header.Model
   , signin : Signin.Model
   , signup : Signup.Model
   , browse : Browse.Model
@@ -43,6 +45,7 @@ init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
 init flags url key =
   ( { url = url
     , key = key
+    , header = Header.init url key
     , signin = Signin.init url key
     , signup = Signup.init url key
     , browse = Browse.init
@@ -92,6 +95,7 @@ type Msg
   | InternalLinkClicked Url
   | ExternalLinkClicked String
   | UrlChange Url
+  | HeaderMsg Header.Msg
   | SigninMsg Signin.Msg
   | SignupMsg Signup.Msg
   | BrowseMsg Browse.Msg
@@ -99,11 +103,19 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
+    HeaderMsg headerMsg ->
+      let
+        (headerModel, headerCmd) = Header.update headerMsg model.header
+      in
+        ( { model | header = headerModel }
+        , headerCmd |> Cmd.map HeaderMsg
+        )
+
     SigninMsg signinMsg ->
       let
-        (signinModel, signinCmd) = Signin.update signinMsg model.signin
+        (signinModel, signinCmd, signinHeaderFun) = Signin.update signinMsg model.signin
       in
-        ( { model | signin = signinModel }
+        ( { model | signin = signinModel, header = signinHeaderFun model.header }
         , signinCmd |> Cmd.map SigninMsg
         )
 
@@ -142,7 +154,8 @@ view : Model -> Browser.Document Msg
 view model =
   { title = "matcha"
   , body =
-    [ Maybe.withDefault (a [ href "/signin" ] [ text "Go to sign in" ]) (page model)
+    [ Header.view model.header |> Html.map HeaderMsg
+    , Maybe.withDefault (a [ href "/signin" ] [ text "Go to sign in" ]) (page model)
     ]
   }
 
