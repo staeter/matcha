@@ -1,12 +1,44 @@
 -- Signin
+{- authentify user -} -- signin.php
+
 -- Signup
+{- create  an user and send an email -} -- signup.php
+
 -- Browse
+{- get users list and default filters -} -- default_filters.php
+{- send filters and get users list back -} -- fileter.php
+{- get next page of users -} -- next_page.php
+{- get last page of users -} -- last_page.php
+{- like a user -} -- like.php
+
 -- User
+{- get all infos of an user -} -- user.php
+
 -- Account
+{- get current settings -}  -- current_settings.php
+{- update settings -} -- update_settings.php
+{- update password -} -- update_password.php
+
 -- Chat
+{- get list of chats and the amout of unread messages -} -- chats.php
+{- get list of messages exchanged with a user -} -- chat.php
+{- send a new message -} -- message.php
+
 -- Retreive
+{- update password -} -- retreive_password.php
+
 -- Confirm
+{- confirm new account -} -- confirm_account.php
+
+-- Header
+{- get amount of unread messages -} -- unread_messages.php
+{- get amount of unread notifications -} -- unread_notifications.php
+
 -- Notif
+{- get notif list -} -- notifs.php
+
+-- Other
+{- sign out -} -- signout.php
 
 module Main exposing (..)
 
