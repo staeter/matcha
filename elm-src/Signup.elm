@@ -19,6 +19,8 @@ import Json.Decode.Field as Field exposing (..)
 
 -- modules
 
+import Header exposing (..)
+
 
 -- model
 
@@ -59,41 +61,103 @@ type Msg
   | Submit
   | Answer (Result Http.Error (Result String String))
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> (Model, Cmd Msg, (Header.Model -> Header.Model))
 update msg model =
   case msg of
     Input_pseudo pseudo ->
       ( { model | pseudo = pseudo }
       , Cmd.none
+      , (\hm -> hm)
       )
 
     Input_lastname lastname ->
       ( { model | lastname = lastname }
       , Cmd.none
+      , (\hm -> hm)
       )
 
     Input_firstname firstname ->
       ( { model | firstname = firstname }
       , Cmd.none
+      , (\hm -> hm)
       )
 
     Input_email email ->
       ( { model | email = email }
       , Cmd.none
+      , (\hm -> hm)
       )
 
     Input_password password ->
       ( { model | password = password }
       , Cmd.none
+      , (\hm -> hm)
       )
 
     Input_confirm confirm ->
       ( { model | confirm = confirm }
       , Cmd.none
+      , (\hm -> hm)
       )
 
+    Submit ->
+      ( model
+      , Http.post
+          { url = "http://localhost/control/signup.php"
+          , body =
+              multipartBody
+                [ stringPart "pseudo" model.pseudo
+                , stringPart "lastname" model.lastname
+                , stringPart "firstname" model.firstname
+                , stringPart "email" model.email
+                , stringPart "password" model.password
+                , stringPart "confirm" model.confirm
+                ]
+          , expect = Http.expectJson Answer answerDecoder
+          }
+      , (\hm -> hm)
+      )
+
+    Answer result ->
+      case result of
+        Ok (Ok message) ->
+          ( init model.url model.key
+          , Nav.pushUrl model.key "/signin"
+          , (\hm -> hm |> Header.successAlert message)
+          )
+        Ok (Err message) ->
+          (model, Cmd.none, (\hm -> hm |> Header.invalidImputAlert message))
+        Err _ ->
+          (model, Cmd.none, (\hm -> hm |> Header.serverNotReachedAlert))
+
+
     _ ->
-       (model, Cmd.none)
+       (model, Cmd.none, (\hm -> hm))
+
+
+-- decoder
+
+answerDecoder : Decoder (Result String String)
+answerDecoder =
+  Field.require "result" resultDecoder <| \result ->
+  Field.require "message" Decode.string <| \message ->
+
+  Decode.succeed (result message)
+
+resultDecoder : Decoder (String -> Result String String)
+resultDecoder =
+  Decode.string |> andThen
+    (\ str ->
+      case str of
+        "Success" ->
+          Decode.succeed Ok
+
+        "Failure" ->
+          Decode.succeed Err
+
+        _ ->
+          Decode.fail "statusDecoder failed : not a valid status"
+    )
 
 
 -- view

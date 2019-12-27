@@ -81,10 +81,7 @@ update msg model =
     Answer result ->
       case result of
         Ok (Ok message) ->
-          ( { model
-            | pseudo = ""
-            , password = ""
-            }
+          ( init model.url model.key
           , Nav.pushUrl model.key "/browse"
           , (\hm -> hm |> Header.successAlert message)
           )

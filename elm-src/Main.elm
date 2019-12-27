@@ -121,9 +121,9 @@ update msg model =
 
     SignupMsg signupMsg ->
       let
-        (signupModel, signupCmd) = Signup.update signupMsg model.signup
+        (signupModel, signupCmd, signupHeaderFun) = Signup.update signupMsg model.signup
       in
-        ( { model | signup = signupModel }
+        ( { model | signup = signupModel, header = signupHeaderFun model.header }
         , signupCmd |> Cmd.map SignupMsg
         )
 
