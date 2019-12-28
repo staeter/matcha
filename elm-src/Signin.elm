@@ -24,18 +24,21 @@ import Header exposing (..)
 
 -- model
 
-type alias Model =
-  { url : Url
-  , key : Nav.Key
-  , pseudo : String
+type alias Model a =
+  { a
+    | url : Url
+    , key : Nav.Key
+    , signin : Data
+  }
+
+type alias Data =
+  { pseudo : String
   , password : String
   }
 
-init : Url -> Nav.Key -> Model
-init url key =
-  { url = url
-  , key = key
-  , pseudo = ""
+data : Data
+data =
+  { pseudo = ""
   , password = ""
   }
 
@@ -44,25 +47,32 @@ init url key =
 
 type Msg
   = NoOp
-  | Input_pseudo String
-  | Input_password String
+  | Input Field
   | Submit
   | Answer (Result Http.Error (Result String String))
 
-update : Msg -> Model -> (Model, Cmd Msg, (Header.Model -> Header.Model))
+type Field
+  = Pseudo String
+  | Password String
+
+update : Msg -> Model a -> (Model a, Cmd Msg, (Header.Model -> Header.Model))
 update msg model =
   case msg of
-    Input_pseudo pseudo ->
-      ( { model | pseudo = pseudo }
-      , Cmd.none
-      , (\hm -> hm)
-      )
+    Input field ->
+      case field of
+        Pseudo pseudo ->
+          let signinData = model.signin in
+            ( { model | signin = { signinData | pseudo = pseudo} }
+            , Cmd.none
+            , (\hm -> hm)
+            )
 
-    Input_password password ->
-      ( { model | password = password }
-      , Cmd.none
-      , (\hm -> hm)
-      )
+        Password password ->
+          let signinData = model.signin in
+            ( { model | signin = { signinData | password = password} }
+            , Cmd.none
+            , (\hm -> hm)
+            )
 
     Submit ->
       ( model
@@ -70,8 +80,8 @@ update msg model =
           { url = "http://localhost/control/signin.php"
           , body =
               multipartBody
-                [ stringPart "pseudo" model.pseudo
-                , stringPart "password" model.password
+                [ stringPart "pseudo" model.signin.pseudo
+                , stringPart "password" model.signin.password
                 ]
           , expect = Http.expectJson Answer answerDecoder
           }
@@ -81,7 +91,7 @@ update msg model =
     Answer result ->
       case result of
         Ok (Ok message) ->
-          ( init model.url model.key
+          ( { model | signin = data }
           , Nav.pushUrl model.key "/browse"
           , (\hm -> hm |> Header.successAlert message)
           )
@@ -121,18 +131,18 @@ resultDecoder =
 
 -- view
 
-view : Model -> Html Msg
+view : Model a -> Html Msg
 view model =
   Html.form [ onSubmit Submit ]
             [ input [ type_ "text"
                     , placeholder "pseudo"
-                    , onInput Input_pseudo
-                    , Html.Attributes.value model.pseudo
+                    , onInput (Input << Pseudo)
+                    , Html.Attributes.value model.signin.pseudo
                     ] []
             , input [ type_ "password"
                     , placeholder "password"
-                    , onInput Input_password
-                    , Html.Attributes.value model.password
+                    , onInput (Input << Password)
+                    , Html.Attributes.value model.signin.password
                     ] []
             , button [ type_ "submit" ]
                      [ text "Sign In" ]

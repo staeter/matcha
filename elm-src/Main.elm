@@ -68,7 +68,7 @@ type alias Model =
   { url : Url
   , key : Nav.Key
   , header : Header.Model
-  , signin : Signin.Model
+  , signin : Signin.Data
   , signup : Signup.Model
   , browse : Browse.Model
   }
@@ -78,7 +78,7 @@ init flags url key =
   ( { url = url
     , key = key
     , header = Header.init url key
-    , signin = Signin.init url key
+    , signin = Signin.data
     , signup = Signup.init url key
     , browse = Browse.init
     }
@@ -145,9 +145,9 @@ update msg model =
 
     SigninMsg signinMsg ->
       let
-        (signinModel, signinCmd, signinHeaderFun) = Signin.update signinMsg model.signin
+        (signinModel, signinCmd, signinHeaderFun) = Signin.update signinMsg model
       in
-        ( { model | signin = signinModel, header = signinHeaderFun model.header }
+        ( { signinModel | header = signinHeaderFun model.header }
         , signinCmd |> Cmd.map SigninMsg
         )
 
@@ -197,7 +197,7 @@ page model =
     (\route ->
       case route of
         Signin ->
-          Signin.view model.signin |> Html.map SigninMsg
+          Signin.view model |> Html.map SigninMsg
 
         Signup ->
           Signup.view model.signup |> Html.map SignupMsg
