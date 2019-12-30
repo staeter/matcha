@@ -19,7 +19,7 @@ import Json.Decode.Field as Field exposing (..)
 
 -- modules
 
-import Header exposing (..)
+import Alert exposing (..)
 
 
 -- model
@@ -28,6 +28,7 @@ type alias Model a =
   { a
     | url : Url
     , key : Nav.Key
+    , alert : Maybe Alert
     , signin : Data
   }
 
@@ -55,7 +56,7 @@ type Field
   = Pseudo String
   | Password String
 
-update : Msg -> Model a -> (Model a, Cmd Msg, (Header.Model -> Header.Model))
+update : Msg -> Model a -> (Model a, Cmd Msg)
 update msg model =
   case msg of
     Input field ->
@@ -64,14 +65,12 @@ update msg model =
           let signinData = model.signin in
             ( { model | signin = { signinData | pseudo = pseudo} }
             , Cmd.none
-            , (\hm -> hm)
             )
 
         Password password ->
           let signinData = model.signin in
             ( { model | signin = { signinData | password = password} }
             , Cmd.none
-            , (\hm -> hm)
             )
 
     Submit ->
@@ -85,23 +84,21 @@ update msg model =
                 ]
           , expect = Http.expectJson Answer answerDecoder
           }
-      , (\hm -> hm)
       )
 
     Answer result ->
       case result of
         Ok (Ok message) ->
-          ( { model | signin = data }
+          ( { model | signin = data } |> Alert.successAlert message
           , Nav.pushUrl model.key "/browse"
-          , (\hm -> hm |> Header.successAlert message)
           )
         Ok (Err message) ->
-          (model, Cmd.none, (\hm -> hm |> Header.invalidImputAlert message))
+          (model |> Alert.invalidImputAlert message, Cmd.none)
         Err _ ->
-          (model, Cmd.none, (\hm -> hm |> Header.serverNotReachedAlert))
+          (model |> Alert.serverNotReachedAlert, Cmd.none)
 
     _ ->
-       (model, Cmd.none, (\hm -> hm))
+       (model, Cmd.none)
 
 
 -- decoder

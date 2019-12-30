@@ -19,15 +19,21 @@ import Json.Decode.Field as Field exposing (..)
 
 -- modules
 
-import Header exposing (..)
+import Alert exposing (..)
 
 
 -- model
 
-type alias Model =
-  { url : Url
-  , key : Nav.Key
-  , pseudo : String
+type alias Model a =
+  { a
+    | url : Url
+    , key : Nav.Key
+    , signup : Data
+    , alert : Maybe Alert
+  }
+
+type alias Data =
+  { pseudo : String
   , lastname : String
   , firstname : String
   , email : String
@@ -35,11 +41,9 @@ type alias Model =
   , confirm : String
   }
 
-init : Url -> Nav.Key -> Model
-init url key =
-  { url = url
-  , key = key
-  , pseudo = ""
+data : Data
+data =
+  { pseudo = ""
   , lastname = ""
   , firstname = ""
   , email = ""
@@ -52,53 +56,59 @@ init url key =
 
 type Msg
   = NoOp
-  | Input_pseudo String
-  | Input_firstname String
-  | Input_lastname String
-  | Input_email String
-  | Input_password String
-  | Input_confirm String
+  | Imput Field
   | Submit
   | Answer (Result Http.Error (Result String String))
 
-update : Msg -> Model -> (Model, Cmd Msg, (Header.Model -> Header.Model))
+type Field
+  = Pseudo String
+  | Firstname String
+  | Lastname String
+  | Email String
+  | Password String
+  | Confirm String
+
+update : Msg -> Model a -> (Model a, Cmd Msg)
 update msg model =
   case msg of
-    Input_pseudo pseudo ->
-      ( { model | pseudo = pseudo }
-      , Cmd.none
-      , (\hm -> hm)
-      )
+    Imput field ->
+      case field of
+        Pseudo pseudo ->
+          let signupData = model.signup in
+            ( { model | signup = { signupData | pseudo = pseudo } }
+            , Cmd.none
+            )
 
-    Input_lastname lastname ->
-      ( { model | lastname = lastname }
-      , Cmd.none
-      , (\hm -> hm)
-      )
+        Lastname lastname ->
+          let signupData = model.signup in
+            ( { model | signup = { signupData | lastname = lastname } }
+            , Cmd.none
+            )
 
-    Input_firstname firstname ->
-      ( { model | firstname = firstname }
-      , Cmd.none
-      , (\hm -> hm)
-      )
+        Firstname firstname ->
+          let signupData = model.signup in
+            ( { model | signup = { signupData | firstname = firstname } }
+            , Cmd.none
+            )
 
-    Input_email email ->
-      ( { model | email = email }
-      , Cmd.none
-      , (\hm -> hm)
-      )
+        Email email ->
+          let signupData = model.signup in
+            ( { model | signup = { signupData | email = email } }
+            , Cmd.none
+            )
 
-    Input_password password ->
-      ( { model | password = password }
-      , Cmd.none
-      , (\hm -> hm)
-      )
+        Password password ->
+          let signupData = model.signup in
+            ( { model | signup = { signupData | password = password } }
+            , Cmd.none
+            )
 
-    Input_confirm confirm ->
-      ( { model | confirm = confirm }
-      , Cmd.none
-      , (\hm -> hm)
-      )
+        Confirm confirm ->
+          let signupData = model.signup in
+            ( { model | signup = { signupData | confirm = confirm } }
+            , Cmd.none
+            )
+
 
     Submit ->
       ( model
@@ -106,33 +116,31 @@ update msg model =
           { url = "http://localhost/control/signup.php"
           , body =
               multipartBody
-                [ stringPart "pseudo" model.pseudo
-                , stringPart "lastname" model.lastname
-                , stringPart "firstname" model.firstname
-                , stringPart "email" model.email
-                , stringPart "password" model.password
-                , stringPart "confirm" model.confirm
+                [ stringPart "pseudo" model.signup.pseudo
+                , stringPart "lastname" model.signup.lastname
+                , stringPart "firstname" model.signup.firstname
+                , stringPart "email" model.signup.email
+                , stringPart "password" model.signup.password
+                , stringPart "confirm" model.signup.confirm
                 ]
           , expect = Http.expectJson Answer answerDecoder
           }
-      , (\hm -> hm)
       )
 
     Answer result ->
       case result of
         Ok (Ok message) ->
-          ( init model.url model.key
+          ( { model | signup = data } |> Alert.successAlert message
           , Nav.pushUrl model.key "/signin"
-          , (\hm -> hm |> Header.successAlert message)
           )
         Ok (Err message) ->
-          (model, Cmd.none, (\hm -> hm |> Header.invalidImputAlert message))
+          (model |> Alert.invalidImputAlert message, Cmd.none)
         Err _ ->
-          (model, Cmd.none, (\hm -> hm |> Header.serverNotReachedAlert))
+          (model |> Alert.serverNotReachedAlert, Cmd.none)
 
 
     _ ->
-       (model, Cmd.none, (\hm -> hm))
+       (model, Cmd.none)
 
 
 -- decoder
@@ -162,38 +170,38 @@ resultDecoder =
 
 -- view
 
-view : Model -> Html Msg
+view : Model a -> Html Msg
 view model =
   Html.form [ onSubmit Submit ]
             [ input [ type_ "text"
                     , placeholder "pseudo"
-                    , onInput Input_pseudo
-                    , Html.Attributes.value model.pseudo
+                    , onInput (Imput << Pseudo)
+                    , Html.Attributes.value model.signup.pseudo
                     ] []
             , input [ type_ "text"
                     , placeholder "first name"
-                    , onInput Input_firstname
-                    , Html.Attributes.value model.firstname
+                    , onInput (Imput << Firstname)
+                    , Html.Attributes.value model.signup.firstname
                     ] []
             , input [ type_ "text"
                     , placeholder "last name"
-                    , onInput Input_lastname
-                    , Html.Attributes.value model.lastname
+                    , onInput (Imput << Lastname)
+                    , Html.Attributes.value model.signup.lastname
                     ] []
             , input [ type_ "text"
                     , placeholder "email"
-                    , onInput Input_email
-                    , Html.Attributes.value model.email
+                    , onInput (Imput << Email)
+                    , Html.Attributes.value model.signup.email
                     ] []
             , input [ type_ "password"
                     , placeholder "password"
-                    , onInput Input_password
-                    , Html.Attributes.value model.password
+                    , onInput (Imput << Password)
+                    , Html.Attributes.value model.signup.password
                     ] []
             , input [ type_ "password"
                     , placeholder "confirm"
-                    , onInput Input_confirm
-                    , Html.Attributes.value model.confirm
+                    , onInput (Imput << Confirm)
+                    , Html.Attributes.value model.signup.confirm
                     ] []
             , button [ type_ "submit" ]
                      [ text "Sign Up" ]
