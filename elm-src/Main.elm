@@ -61,6 +61,8 @@ import Signin exposing (..)
 import Signup exposing (..)
 import Browse exposing (..)
 
+import Form exposing (..)
+
 
 -- model
 
@@ -68,7 +70,7 @@ type alias Model =
   { url : Url
   , key : Nav.Key
   , alert : Maybe Alert
-  , signin : Signin.Data
+  , signin : Form (Result String String)
   , signup : Signup.Data
   , browse : Browse.Model
   }
@@ -78,7 +80,7 @@ init flags url key =
   ( { url = url
     , key = key
     , alert = Nothing
-    , signin = Signin.data
+    , signin = signinForm
     , signup = Signup.data
     , browse = Browse.init
     }

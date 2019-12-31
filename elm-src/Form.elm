@@ -36,10 +36,9 @@ type alias Condition =
   , validation : Value -> Bool
   }
 
--- type Result a
---   = Success a
---   | Failure a
---   | Error Http.Error
+-- type Submit -- //ni
+--  = OnSubmit String
+--  | LiveUpdate
 
 form : Decoder a -> String -> Form a
 form decoder url =
@@ -67,7 +66,7 @@ type Msg a
 update :  Msg a -> Form a -> (Form a, Cmd (Msg a), Maybe (Result Http.Error a))
 update msg myForm =
   case msg of
-    Input id updatedValue ->
+    Input id updatedValue -> -- //ni
       let
         myField = Array.get id myForm.fields
         myNewField = Maybe.map
@@ -85,7 +84,7 @@ update msg myForm =
       in
         (Maybe.withDefault myForm myNewForm, Cmd.none, Nothing)
 
-    Submit ->
+    Submit -> -- //ni
       ( myForm
       , Http.post
           { url = myForm.url
@@ -112,7 +111,7 @@ view myForm =
   Html.form [ onSubmit Submit ]
             (List.append
               (Array.toList (Array.indexedMap view_field myForm.fields))
-              (List.singleton (button [ type_ "submit" ] [ text "Submit" ]))
+              (List.singleton (button [ type_ "submit" ] [ text "Submit" ])) -- //ni
             )
 
 view_field : Int -> Field -> Html (Msg a)
@@ -124,7 +123,7 @@ view_field id myField =
             , onInput (Input id)
             , Html.Attributes.value val
             ] []
-            
+
     Password val ->
       input [ type_ "password"
             , placeholder "pseudo"
