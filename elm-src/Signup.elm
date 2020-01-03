@@ -48,17 +48,6 @@ signupForm =
 type Msg
   = NoOp
   | SignupForm (Form.Msg (Result String String))
-  -- | Imput Field
-  -- | Submit
-  -- | Answer (Result Http.Error (Result String String))
-
--- type Field
---   = Pseudo String
---   | Firstname String
---   | Lastname String
---   | Email String
---   | Password String
---   | Confirm String
 
 update : Msg -> Model a -> (Model a, Cmd Msg)
 update msg model =
@@ -82,75 +71,7 @@ update msg model =
             ( { model | signup = newForm }
             , formCmd |> Cmd.map SignupForm
             )
-  -- case msg of
-  --   Imput field ->
-  --     case field of
-  --       Pseudo pseudo ->
-  --         let signupData = model.signup in
-  --           ( { model | signup = { signupData | pseudo = pseudo } }
-  --           , Cmd.none
-  --           )
-  --
-  --       Lastname lastname ->
-  --         let signupData = model.signup in
-  --           ( { model | signup = { signupData | lastname = lastname } }
-  --           , Cmd.none
-  --           )
-  --
-  --       Firstname firstname ->
-  --         let signupData = model.signup in
-  --           ( { model | signup = { signupData | firstname = firstname } }
-  --           , Cmd.none
-  --           )
-  --
-  --       Email email ->
-  --         let signupData = model.signup in
-  --           ( { model | signup = { signupData | email = email } }
-  --           , Cmd.none
-  --           )
-  --
-  --       Password password ->
-  --         let signupData = model.signup in
-  --           ( { model | signup = { signupData | password = password } }
-  --           , Cmd.none
-  --           )
-  --
-  --       Confirm confirm ->
-  --         let signupData = model.signup in
-  --           ( { model | signup = { signupData | confirm = confirm } }
-  --           , Cmd.none
-  --           )
-  --
-  --
-  --   Submit ->
-  --     ( model
-  --     , Http.post
-  --         { url = "http://localhost/control/signup.php"
-  --         , body =
-  --             multipartBody
-  --               [ stringPart "pseudo" model.signup.pseudo
-  --               , stringPart "lastname" model.signup.lastname
-  --               , stringPart "firstname" model.signup.firstname
-  --               , stringPart "email" model.signup.email
-  --               , stringPart "password" model.signup.password
-  --               , stringPart "confirm" model.signup.confirm
-  --               ]
-  --         , expect = Http.expectJson Answer answerDecoder
-  --         }
-  --     )
-  --
-  --   Answer result ->
-  --     case result of
-  --       Ok (Ok message) ->
-  --         ( { model | signup = data } |> Alert.successAlert message
-  --         , Nav.pushUrl model.key "/signin"
-  --         )
-  --       Ok (Err message) ->
-  --         (model |> Alert.invalidImputAlert message, Cmd.none)
-  --       Err _ ->
-  --         (model |> Alert.serverNotReachedAlert, Cmd.none)
-
-
+            
     _ ->
        (model, Cmd.none)
 

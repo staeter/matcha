@@ -44,8 +44,6 @@ signinForm =
 type Msg
   = NoOp
   | SigninForm (Form.Msg (Result String String))
-  -- | Submit
-  -- | Answer (Result Http.Error (Result String String))
 
 update : Msg -> Model a -> (Model a, Cmd Msg)
 update msg model =
@@ -76,30 +74,6 @@ update msg model =
             ( { model | signin = newForm }
             , formCmd |> Cmd.map SigninForm
             )
-
-    -- Submit ->
-    --   ( model
-    --   , Http.post
-    --       { url = "http://localhost/control/signin.php"
-    --       , body =
-    --           multipartBody
-    --             [ stringPart "pseudo" model.signin.pseudo
-    --             , stringPart "password" model.signin.password
-    --             ]
-    --       , expect = Http.expectJson Answer answerDecoder
-    --       }
-    --   )
-    --
-    -- Answer result ->
-    --   case result of
-    --     Ok (Ok message) ->
-    --       ( { model | signin = data } |> Alert.successAlert message
-    --       , Nav.pushUrl model.key "/browse"
-    --       )
-    --     Ok (Err message) ->
-    --       (model |> Alert.invalidImputAlert message, Cmd.none)
-    --     Err _ ->
-    --       (model |> Alert.serverNotReachedAlert, Cmd.none)
 
     _ ->
        (model, Cmd.none)
