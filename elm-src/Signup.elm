@@ -58,22 +58,32 @@ update msg model =
       in
         case response of
           Just result ->
-            case result of
-              Ok (Ok message) ->
-                ( { model | signup = newForm } |> Alert.successAlert message
-                , Nav.pushUrl model.key "/signin"
-                )
-              Ok (Err message) ->
-                ( { model | signup = newForm } |> Alert.invalidImputAlert message, Cmd.none)
-              Err _ ->
-                ( { model | signup = newForm } |> Alert.serverNotReachedAlert, Cmd.none)
+            resultHandler result { model | signup = newForm } formCmd
           Nothing ->
             ( { model | signup = newForm }
             , formCmd |> Cmd.map SignupForm
             )
-            
+
     _ ->
        (model, Cmd.none)
+
+resultHandler result model cmd =
+  case result of
+    Ok (Ok message) ->
+      ( model |> Alert.successAlert message
+      , Cmd.batch
+        [ Nav.pushUrl model.key "/signin"
+        , cmd |> Cmd.map SignupForm
+        ]
+      )
+    Ok (Err message) ->
+      ( model |> Alert.invalidImputAlert message
+      , cmd |> Cmd.map SignupForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map SignupForm
+      )
 
 
 -- decoder
