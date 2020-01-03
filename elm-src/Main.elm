@@ -62,8 +62,6 @@ import Array exposing (..)
 -- modules
 
 import Alert exposing (..)
-import Browse exposing (..)
-
 import Form exposing (..)
 
 
@@ -75,7 +73,6 @@ type alias Model =
   , alert : Maybe Alert
   , signin : Form (Result String String)
   , signup : Form (Result String String)
-  , browse : Browse.Model
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -85,7 +82,6 @@ init flags url key =
     , alert = Nothing
     , signin = signinForm
     , signup = signupForm
-    , browse = Browse.init
     }
   , Cmd.none
   )
@@ -150,7 +146,6 @@ type Msg
   | UrlChange Url
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
-  | BrowseMsg Browse.Msg
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -178,14 +173,6 @@ update msg model =
             ( { model | signup = newForm }
             , formCmd |> Cmd.map SignupForm
             )
-
-    BrowseMsg browseMsg ->
-      let
-        (browseModel, browseCmd) = Browse.update browseMsg model.browse
-      in
-        ( { model | browse = browseModel }
-        , browseCmd |> Cmd.map BrowseMsg
-        )
 
     InternalLinkClicked url ->
       (model, Nav.pushUrl model.key (Url.toString url) )
@@ -284,7 +271,7 @@ page model =
           signupView model
 
         Browse ->
-          Browse.view model.browse |> Html.map BrowseMsg
+          text "Hello World!"
     )
     (Parser.parse routeParser model.url)
 
