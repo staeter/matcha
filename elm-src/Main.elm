@@ -53,12 +53,15 @@ import Url exposing (..)
 import Url.Parser as Parser exposing (..)
 import Browser.Navigation as Nav exposing (..)
 
+import Json.Decode as Decode exposing (..)
+import Json.Decode.Field as Field exposing (..)
+
+import Array exposing (..)
+
 
 -- modules
 
 import Alert exposing (..)
-import Signin exposing (..)
-import Signup exposing (..)
 import Browse exposing (..)
 
 import Form exposing (..)
@@ -86,6 +89,22 @@ init flags url key =
     }
   , Cmd.none
   )
+
+signinForm : Form (Result String String)
+signinForm =
+  Form.form resultMessageDecoder "http://localhost/control/signin.php"
+  |> Form.textField "pseudo" Array.empty
+  |> Form.passwordField "password" Array.empty
+
+signupForm : Form (Result String String)
+signupForm =
+  Form.form resultMessageDecoder "http://localhost/control/signup.php"
+  |> Form.textField "pseudo" Array.empty
+  |> Form.textField "lastname" Array.empty
+  |> Form.textField "firstname" Array.empty
+  |> Form.textField "email" Array.empty
+  |> Form.passwordField "password" Array.empty
+  |> Form.passwordField "confirm" Array.empty
 
 
 -- url
@@ -115,7 +134,7 @@ type Route
 
 routeParser : Parser (Route -> a) a
 routeParser =
-  oneOf
+  Parser.oneOf
     [ Parser.map Signin (Parser.s "signin")
     , Parser.map Signup (Parser.s "signup")
     , Parser.map Browse (Parser.s "browse")
@@ -129,28 +148,36 @@ type Msg
   | InternalLinkClicked Url
   | ExternalLinkClicked String
   | UrlChange Url
-  | SigninMsg Signin.Msg
-  | SignupMsg Signup.Msg
+  | SigninForm (Form.Msg (Result String String))
+  | SignupForm (Form.Msg (Result String String))
   | BrowseMsg Browse.Msg
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    SigninMsg signinMsg ->
+    SigninForm formMsg ->
       let
-        (signinModel, signinCmd) = Signin.update signinMsg model
+        (newForm, formCmd, response) = Form.update formMsg model.signin
       in
-        ( signinModel
-        , signinCmd |> Cmd.map SigninMsg
-        )
+        case response of
+          Just result ->
+            signinResultHandler result { model | signin = newForm } formCmd
+          Nothing ->
+            ( { model | signin = newForm }
+            , formCmd |> Cmd.map SigninForm
+            )
 
-    SignupMsg signupMsg ->
+    SignupForm formMsg ->
       let
-        (signupModel, signupCmd) = Signup.update signupMsg model
+        (newForm, formCmd, response) = Form.update formMsg model.signup
       in
-        ( signupModel
-        , signupCmd |> Cmd.map SignupMsg
-        )
+        case response of
+          Just result ->
+            signupResultHandler result { model | signup = newForm } formCmd
+          Nothing ->
+            ( { model | signup = newForm }
+            , formCmd |> Cmd.map SignupForm
+            )
 
     BrowseMsg browseMsg ->
       let
@@ -172,6 +199,67 @@ update msg model =
     _ ->
       (model, Cmd.none)
 
+signinResultHandler result model cmd =
+  case result of
+    Ok (Ok message) ->
+      ( model |> Alert.successAlert message
+      , Cmd.batch
+        [ Nav.pushUrl model.key "/browse"
+        , cmd |> Cmd.map SigninForm
+        ]
+      )
+    Ok (Err message) ->
+      ( model |> Alert.invalidImputAlert message
+      , cmd |> Cmd.map SigninForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map SigninForm
+      )
+
+signupResultHandler result model cmd =
+  case result of
+    Ok (Ok message) ->
+      ( model |> Alert.successAlert message
+      , Cmd.batch
+        [ Nav.pushUrl model.key "/signin"
+        , cmd |> Cmd.map SignupForm
+        ]
+      )
+    Ok (Err message) ->
+      ( model |> Alert.invalidImputAlert message
+      , cmd |> Cmd.map SignupForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map SignupForm
+      )
+
+
+-- decoders
+
+resultMessageDecoder : Decoder (Result String String)
+resultMessageDecoder =
+  Field.require "result" resultDecoder <| \result ->
+  Field.require "message" Decode.string <| \message ->
+
+  Decode.succeed (result message)
+
+resultDecoder : Decoder (String -> Result String String)
+resultDecoder =
+  Decode.string |> andThen
+    (\ str ->
+      case str of
+        "Success" ->
+          Decode.succeed Ok
+
+        "Failure" ->
+          Decode.succeed Err
+
+        _ ->
+          Decode.fail "statusDecoder failed : not a valid status"
+    )
+
 
 -- view
 
@@ -190,15 +278,31 @@ page model =
     (\route ->
       case route of
         Signin ->
-          Signin.view model |> Html.map SigninMsg
+          signinView model
 
         Signup ->
-          Signup.view model |> Html.map SignupMsg
+          signupView model
 
         Browse ->
           Browse.view model.browse |> Html.map BrowseMsg
     )
     (Parser.parse routeParser model.url)
+
+signinView : Model -> Html Msg
+signinView model =
+  Html.div []
+            [ Form.view model.signin |> Html.map SigninForm
+            , a [ href "/signup" ]
+                [ text "You don't have any account?" ]
+            ]
+
+signupView : Model -> Html Msg
+signupView model =
+  Html.div []
+            [ Form.view model.signup |> Html.map SignupForm
+            , a [ href "/signin" ]
+                [ text "You alredy have an account?" ]
+            ]
 
 
 -- subscriptions
