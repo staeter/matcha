@@ -71,7 +71,7 @@ type alias Model =
   , key : Nav.Key
   , alert : Maybe Alert
   , signin : Form (Result String String)
-  , signup : Signup.Data
+  , signup : Form (Result String String)
   , browse : Browse.Model
   }
 
@@ -81,7 +81,7 @@ init flags url key =
     , key = key
     , alert = Nothing
     , signin = signinForm
-    , signup = Signup.data
+    , signup = signupForm
     , browse = Browse.init
     }
   , Cmd.none

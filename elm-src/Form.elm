@@ -53,6 +53,14 @@ field label value conditions myForm =
     = Array.push (Field label value conditions) myForm.fields
   }
 
+textField : Label -> Array Condition -> Form a -> Form a
+textField label conditions myForm =
+  field label (Text "") conditions myForm
+
+passwordField : Label -> Array Condition -> Form a -> Form a
+passwordField label conditions myForm =
+  field label (Password "") conditions myForm
+
 condition : Label -> (Value -> Bool) -> Condition
 condition label validation =
   Condition label validation
@@ -119,14 +127,14 @@ view_field id myField =
   case myField.value of
     Text val ->
       input [ type_ "text"
-            , placeholder "pseudo"
+            , placeholder myField.label
             , onInput (Input id)
             , Html.Attributes.value val
             ] []
 
     Password val ->
       input [ type_ "password"
-            , placeholder "pseudo"
+            , placeholder myField.label
             , onInput (Input id)
             , Html.Attributes.value val
             ] []

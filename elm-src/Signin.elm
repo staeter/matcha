@@ -7,10 +7,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
-import Http exposing (..)
-
 import Url exposing (..)
-import Url.Parser as Parser exposing (..)
 import Browser.Navigation as Nav exposing (..)
 
 import Json.Decode as Decode exposing (..)
@@ -38,8 +35,8 @@ type alias Model a =
 signinForm : Form (Result String String)
 signinForm =
   Form.form answerDecoder "http://localhost/control/signin.php"
-  |> Form.field "pseudo" (Text "") Array.empty
-  |> Form.field "password" (Password "") Array.empty
+  |> Form.textField "pseudo" Array.empty
+  |> Form.passwordField "password" Array.empty
 
 
 -- update
