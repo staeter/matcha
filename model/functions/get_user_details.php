@@ -1,5 +1,5 @@
 <?php
-require_once $_SERVER["DOCUMENT_ROOT"] . '/Matcha/model/classes/Database.class.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/model/classes/Database.class.php';
 
 // j ai besoin de fonction pour recuper les infos
 //  genre toutes les infos dans un tableau on s'en charge apres d'afficher celle voulu

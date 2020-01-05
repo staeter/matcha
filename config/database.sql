@@ -3,6 +3,8 @@ CREATE TABLE IF NOT EXISTS `user` (
   `pseudo` VARCHAR(64) NOT NULL,
   `email` VARCHAR(254) UNIQUE NOT NULL,
   `password` CHAR(128) NOT NULL,
+  `firstname` VARCHAR(64) NOT NULL,
+  `lastname` VARCHAR(64) NOT NULL,
 
   `gender` INT UNSIGNED,
   `orientation` INT UNSIGNED,

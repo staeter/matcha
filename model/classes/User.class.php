@@ -1,7 +1,7 @@
 <?php
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/Matcha/model/exceptions/InvalidParamException.class.php';
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/Matcha/model/exceptions/DatabaseException.class.php';
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/Matcha/model/functions/send_mail.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/exceptions/InvalidParamException.class.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/exceptions/DatabaseException.class.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/functions/send_mail.php';
 
 	class User {
 		private $_id;
@@ -105,7 +105,7 @@
 			$this->_db = $db;
 		}
 
-		private function __construct4($pseudo, $email, $hashed_password, $db)
+		private function __construct6($pseudo, $firstname, $lastname, $email, $hashed_password, $db)
 		{
 			// test parameters validity
 			if (!User::is_valid_pseudo($pseudo)) {
@@ -125,8 +125,8 @@
 			}
 
 			// adding new user to database and pull the id_user
-			$query = 'INSERT INTO user (pseudo, email, password) VALUES (:ps, :em, :pw);';
-			$db->query($query, array(':ps' => $pseudo, ':em' => $email, ':pw' => $hashed_password));
+			$query = 'INSERT INTO user (pseudo, firstname, lastname, email, password) VALUES (:ps, :fn, :lm, :em, :pw);';
+			$db->query($query, array(':ps' => $pseudo, ':fn' => $firstname, ':lm' => $lastname, ':em' => $email, ':pw' => $hashed_password));
 			$query = 'SELECT LAST_INSERT_ID() AS `id_user`;';
 			$db->query($query, array());
 			$row = $db->fetch();
