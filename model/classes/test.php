@@ -7,15 +7,9 @@ require '../functions/hash_password.php';
 $x = 0;
 try {
   $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
-  $usr = new User('Ssss', 'r', 'sosa' ,'aaa@gmail.com', hash_password('password'), $db);
-    if ($usr->is_validated_account()) {
-  			$x = 1;
-  		}
-    else {
-  			$x = 0;
+  $usr = new User('red', 'r', 'sosa' ,'yexijo5830@seo-mailer.com', hash_password('r'), $db);
 
-  		}
-
+  $usr->send_account_verification_request("http://localhost:8080/control/confirm_account.php");
 } catch (Exception $e) {
 
   // echo "Le code de l'exception est : " . $e->getCode();

@@ -12,11 +12,19 @@ if (empty($_POST['password']) || empty($_POST['confirm']) || empty($_POST['first
     "message" : "Vous devez remplir tout les champs."
   }';
 }
+else if (strcmp($_POST['password'], $_POST['confirm']) !== 0)
+{
+  echo '{
+    "result" : "Failure",
+    "message" : "Passwords doesnt match."
+  }';
+}
 else {
 
   try {
     $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
     $usr = new User($_POST['pseudo'], $_POST['firstname'], $_POST['lastname'], $_POST['email'], hash_password($_POST['password']), $db);
+    $usr->send_account_verification_request("http://localhost:8080/control/confirm_account.php");
     $x = 1;
       }
   catch (Exception $e) {
@@ -46,7 +54,7 @@ if ($x == 1){
 else if ($x == 2){
   echo '{
     "result" : "Failure",
-    "message" : "Probleme de mail soit non valide soit deja pris check -->.'.$e->getMessage().'"
+    "message" : "Mail invalide ou déja pris"
   }';
 
 }

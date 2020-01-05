@@ -6,7 +6,11 @@ require '../model/functions/hash_password.php';
 try {
   $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
   $usr = new User($_POST['pseudo'], hash_password($_POST['password']), $db);
-  $x = 1;
+  if ($usr->is_validated_account()) {
+      $x = 1;
+      } else {
+			$x = 6;
+		}
 
 } catch (\Exception $e) {
 
@@ -18,10 +22,7 @@ try {
     $x = 4;
   else if ($e->getCode() == 33)
     $x = 5;
-
 }
-
-
 
 if ($x == 1){
       echo '{
@@ -57,6 +58,14 @@ else if ($x == 5)
   echo '{
     "result" : "Failure",
     "message" : "La connexion a la db a échoué ! .'.$e->getMessage().'"
+  }';
+
+}
+else if ($x == 6)
+{
+  echo '{
+    "result" : "Failure",
+    "message" : "Vous devez confirmer votre compte pour vous login"
   }';
 
 }
