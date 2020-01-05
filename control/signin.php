@@ -9,31 +9,65 @@ try {
   $x = 1;
 
 } catch (\Exception $e) {
-  	$x = 0;
+
+  if ($e->getCode() == 30)
+    $x = 2;
+  else if ($e->getCode() == 31)
+    $x = 3;
+  else if ($e->getCode() == 32)
+    $x = 4;
+  else if ($e->getCode() == 33)
+    $x = 5;
 
 }
+
 
 
 if ($x == 1){
-echo '{
-  "result" : "Success",
-  "message" : "Welcome!"
-}';
-
-}
+      echo '{
+        "result" : "Success",
+        "message" : "Welcome !"
+      }';
+    }
 else if ($x == 2){
-echo '{
-  "result" : "Failure",
-  "message" : "Pseudo is not valid !"
-}';
+  echo '{
+    "result" : "Failure",
+    "message" : "Mot de passe and/or password doesnt match !"
+  }';
 
 }
+else if ($x == 3)
+{
+  echo '{
+    "result" : "Failure",
+    "message" : "Your pseudo doesnt exist!"
+  }';
+
+}
+else if ($x == 4)
+{
+  echo '{
+    "result" : "Failure",
+    "message" : "Votre password est invalide ! .'.$e->getMessage().'"
+  }';
+
+}
+else if ($x == 5)
+{
+  echo '{
+    "result" : "Failure",
+    "message" : "La connexion a la db a échoué ! .'.$e->getMessage().'"
+  }';
+
+}
+
 else {
   echo '{
     "result" : "Failure",
-    "message" : "Password or Pseudo doesnt match in our Database !"
+    "message" : "probleme non determiné/gerer '.$e->getCode().'"
   }';
 }
+
 
 // pseudo password
 /*
