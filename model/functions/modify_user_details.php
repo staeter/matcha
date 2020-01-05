@@ -1,5 +1,5 @@
 <?php
-require_once $_SERVER["DOCUMENT_ROOT"] . '/Matcha/model/classes/Database.class.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/model/classes/Database.class.php';
 
 
 // ici on set les infos de l utilisateur

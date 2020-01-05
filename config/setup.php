@@ -1,12 +1,12 @@
 <?php
 
-	require $_SERVER["DOCUMENT_ROOT"] . '/Matcha/config/database.php';
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/Matcha/model/classes/Database.class.php';
+	require $_SERVER["DOCUMENT_ROOT"] . '/config/database.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/classes/Database.class.php';
 
 	// /!\ the present database will be deleted if set to true /!\
 	$reset_db = true;
 	$insert_dumb_data = true; // reset_db has to be true to apply
-	$dumb_data_file = $_SERVER["DOCUMENT_ROOT"] . '/Matcha/model/testing/dumb_data.sql';
+	$dumb_data_file = $_SERVER["DOCUMENT_ROOT"] . '/model/testing/dumb_data.sql';
 
 
 
