@@ -73,6 +73,7 @@ type alias Model =
   , alert : Maybe Alert
   , signin : Form (Result String String)
   , signup : Form (Result String String)
+  , filters : Form (Result String String)
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -82,6 +83,7 @@ init flags url key =
     , alert = Nothing
     , signin = signinForm
     , signup = signupForm
+    , filters = filtersForm
     }
   , Cmd.none
   )
@@ -89,18 +91,24 @@ init flags url key =
 signinForm : Form (Result String String)
 signinForm =
   Form.form resultMessageDecoder "http://localhost/control/signin.php"
-  |> Form.textField "pseudo" Array.empty
-  |> Form.passwordField "password" Array.empty
+  |> Form.textField "pseudo"
+  |> Form.passwordField "password"
 
 signupForm : Form (Result String String)
 signupForm =
   Form.form resultMessageDecoder "http://localhost/control/signup.php"
-  |> Form.textField "pseudo" Array.empty
-  |> Form.textField "lastname" Array.empty
-  |> Form.textField "firstname" Array.empty
-  |> Form.textField "email" Array.empty
-  |> Form.passwordField "password" Array.empty
-  |> Form.passwordField "confirm" Array.empty
+  |> Form.textField "pseudo"
+  |> Form.textField "lastname"
+  |> Form.textField "firstname"
+  |> Form.textField "email"
+  |> Form.passwordField "password"
+  |> Form.passwordField "confirm"
+
+filtersForm : Form (Result String String)
+filtersForm =
+  Form.form resultMessageDecoder "http://localhost/control/fileter.php"
+  |> Form.textField "research"
+  |> Form.doubleSliderField "age" (18.0, 90.0, 1)
 
 
 -- url
@@ -146,6 +154,7 @@ type Msg
   | UrlChange Url
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
+  | FiltersForm (Form.Msg (Result String String))
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -172,6 +181,18 @@ update msg model =
           Nothing ->
             ( { model | signup = newForm }
             , formCmd |> Cmd.map SignupForm
+            )
+
+    FiltersForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.filters
+      in
+        case response of
+          Just result -> -- //ni
+            signupResultHandler result { model | filters = newForm } formCmd
+          Nothing ->
+            ( { model | filters = newForm }
+            , formCmd |> Cmd.map FiltersForm
             )
 
     InternalLinkClicked url ->
@@ -271,7 +292,7 @@ page model =
           signupView model
 
         Browse ->
-          text "Hello World!"
+          browseView model
     )
     (Parser.parse routeParser model.url)
 
@@ -291,12 +312,24 @@ signupView model =
                 [ text "You alredy have an account?" ]
             ]
 
+browseView : Model -> Html Msg
+browseView model =
+  Html.div []
+            [ Form.view model.filters |> Html.map FiltersForm
+            , a [ href "/signin" ]
+                [ text "signout" ]
+            ]
+
 
 -- subscriptions
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.none
+  [ Form.subscriptions model.signin |> Sub.map SigninForm
+  , Form.subscriptions model.signup |> Sub.map SignupForm
+  , Form.subscriptions model.filters |> Sub.map FiltersForm
+  ] |> Sub.batch
+
 
 
 -- main
