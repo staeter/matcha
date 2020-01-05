@@ -7,7 +7,7 @@ require '../functions/hash_password.php';
 $x = 0;
 try {
   $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
-  $usr = new User('SOSALOCA', 'rrr', 'sosa' ,'emai@gmail.com', hash_password('password'), $db);
+  $usr = new User('Ssss', 'r', 'sosa' ,'aaa@gmail.com', hash_password('password'), $db);
     if ($usr->is_validated_account()) {
   			$x = 1;
   		}
@@ -16,10 +16,20 @@ try {
 
   		}
 
-} catch (\Exception $e) {
+} catch (Exception $e) {
 
-  echo $e;
+  // echo "Le code de l'exception est : " . $e->getCode();
+
+
+  echo $e->getMessage();
+  if ($e->getCode() == 42)
+  {
+    echo "string";
+  }
+
 }
+
+
 
 echo '<br>';
 echo $x;
