@@ -21,7 +21,7 @@
 			throw new InvalidParamException("Failed running " . __FUNCTION__ . ". Invalid user.", 1);
 		}
 
-		return mail($usr->get_email(), $subject , wordwrap($message,70), "From: mydumbwebsite@insto.com");
+		return mail($usr->get_email(), $subject , wordwrap($message,70), "From: mywebsite@matcha.com");
 	}
 
 	function send_mail4($id_user, $db, $subject , $message) {
@@ -39,7 +39,7 @@
 			throw new DatabaseException("Fail running" . __FUNCTION__ . ". `id_user` not found in database.", 41);
 		}
 
-		return mail($row['email'], $subject , wordwrap($message,70), "From: mydumbwebsite@insto.com");
+		return mail($row['email'], $subject , wordwrap($message,70), "From: mywebsite@matcha.com");
 	}
 
 ?>

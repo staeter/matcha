@@ -173,7 +173,7 @@
 
 			send_mail(
 				$this,
-				"INSTO: account confirmation link.",
+				"Matcha: account confirmation link.",
 				$server_url . '?a=' . $this->get_id() . '&b=' . $row['account_verification_key']
 			);
 		}
@@ -257,7 +257,7 @@
 			send_mail(
 				$id_user,
 				$db,
-				"INSTO: account retrieval link.",
+				"Matcha: account retrieval link.",
 				$server_url . '?a=' . $id_user . '&b=' . $account_retrieval_request_key
 			);
 		}
