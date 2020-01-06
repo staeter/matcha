@@ -8,16 +8,20 @@ try {
   $usr = new User($_POST['pseudo'], hash_password($_POST['password']), $db);
   if ($usr->is_validated_account())
   {
-      $_SESSION['id'] = $usr->get_id();
-      $_SESSION['pseudo'] = $usr->get_pseudo();
-      $_SESSION['mail'] = $usr->get_email();
-      $usr->set_log(true);
+
       $x = 1;
   }
   else
   {
 			$x = 6;
 	}
+  if ($x = 1)
+  {
+    $_SESSION['id'] = $usr->get_id();
+    $_SESSION['pseudo'] = $usr->get_pseudo();
+    $_SESSION['mail'] = $usr->get_email();
+    $usr->set_log(true);
+  }
 
 } catch (\Exception $e) {
 
@@ -32,6 +36,7 @@ try {
 }
 
 if ($x == 1){
+
       echo '{
         "result" : "Success",
         "message" : "Welcome !"

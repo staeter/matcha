@@ -28,13 +28,10 @@ else {
     $usr = new User($_SESSION['pseudo'], hash_password($POST['oldpw']), $db);
     $usr->set_password(hash_password($_POST['newpw']));
 
-
-
     /**/
-    //
     //      Le code fonctionne en mode test (variable determiner au lieu de session & post)
-    //      Check le retour du echo dans le try
-    //      ON NE SAIS PLUS SE CONNECTER APRES AVOIR CHANGER DE MDP PQ ????
+    //      Check le retour du echo dans le try (ca marche pas)
+    //
     /**/
 
     echo '{

@@ -25,15 +25,15 @@ else {
 
   try {
     $id = 41;
-    $pw = 'iphone';
-    $newpw = 'so';
+    $pw = 'so';
+    $newpw = 'sosa';
 
     $usr = new User('iphone', hash_password($pw), $db);
     $usr->set_password(hash_password($newpw));
 
     echo '{
       "result" : "Success",
-      "message" : "Your password have been updated."
+      "message" : "You are connected ! (object created)."
     }';
 
   } catch (\Exception $e) {
