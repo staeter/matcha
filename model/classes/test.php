@@ -25,16 +25,19 @@ $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot'
 
   try {
     $id = 41;
-    $pw = 'so';
-    $newpw = 'sosa';
+    $pw = 's';
+    $newpw = 'skssk12&skskksksoa';
 //User::send_account_retrieval
   //  $usr = new User('iphone', hash_password($pw), $db);
-    User::is_valid_hashed_password(hash_password($newpw));
+      if (User::is_valid_password($newpw) == true)
+      {
+        echo 'salut';
+      }
 
-    echo '{
-      "result" : "Success",
-      "message" : "You are connected ! (object created)."
-    }';
+    // echo '{
+    //   "result" : "Success",
+    //   "message" : "is valid hashed psw ! (object created)."
+    // }';
 
   } catch (\Exception $e) {
     echo '{
