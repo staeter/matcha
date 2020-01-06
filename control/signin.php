@@ -6,11 +6,18 @@ require '../model/functions/hash_password.php';
 try {
   $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
   $usr = new User($_POST['pseudo'], hash_password($_POST['password']), $db);
-  if ($usr->is_validated_account()) {
-      $x = 1;}
-  else {
+  if ($usr->is_validated_account())
+  {
+      $_SESSION['id'] = $usr->get_id();
+      $_SESSION['pseudo'] = $usr->get_pseudo();
+      $_SESSION['mail'] = $usr->get_email();
+      $usr->set_log(true);
+      $x = 1;
+  }
+  else
+  {
 			$x = 6;
-		}
+	}
 
 } catch (\Exception $e) {
 

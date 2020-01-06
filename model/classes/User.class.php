@@ -358,23 +358,27 @@
 		{
 		  //tester qu il capte bien la variable = a true or false
 		  $query = ('UPDATE user SET is_loged = :logged WHERE id_user = :id');
-		  $db->query($query, array(':logged' => $bool, ':id' => $id_user));
-		  $db->execute();
+		  $this->_db->query($query, array(':logged' => $bool, ':id' => $this->_id));
+		  //$this->_db->execute();
+			$modified_row_count = $this->_db->rowCount();
+			if ($modified_row_count !== 1) {
+				throw new DatabaseException("Fail setting logged. " . $modified_row_count . " rows have been modified in the database.");
+			}
 		}
 
 		public function set_sexuality_orientation($datatoinsert)
 		{
 		  $query = ('UPDATE user SET orientation = :orientation WHERE id_user = :id');
-		  $db->query($query, array(':orientation' => $datatoinsert, ':id' => $this->_id));
-		  $db->execute();
+		  $this->_db->query($query, array(':orientation' => $datatoinsert, ':id' => $this->_id));
+		  $this->_db->execute();
 
 		}
 
 		public function set_biography($datatoinsert)
 		{
 		  $query = ('UPDATE user SET biography = :bio WHERE id_user = :id');
-		  $db->query($query, array(':bio' => $datatoinsert, ':id' => $this->_id));
-		  $db->execute();
+		  $this->_db->query($query, array(':bio' => $datatoinsert, ':id' => $this->_id));
+		  $this->_db->execute();
 		}
 
 		public function set_last_log()
@@ -382,22 +386,22 @@
 			date_default_timezone_set('Europe/Paris');
 		  $timenow = date("Y-m-d H:i:s");
 			$query = ('UPDATE user SET last_log = :lastlog WHERE id_user = :id');
-		  $db->query($query, array(':lastlog' => $timenow, ':id' => $this->_id));
-		  $db->execute();
+		  $this->_db->query($query, array(':lastlog' => $timenow, ':id' => $this->_id));
+		  $this->_db->execute();
 		}
 
 		public function set_birthdate($data)
 		{
 			$query = ('UPDATE user SET birth = :data WHERE id_user = :id');
-		 	$db->query($query, array(':data' => $data, ':id' => $this->_id));
-		 	$db->execute();
+		 	$this->_db->query($query, array(':data' => $data, ':id' => $this->_id));
+		 	$this->_db->execute();
 		}
 
 		public function set_popularity_score($value)
 		{
 			$query = ('UPDATE user SET popularity_score = :value WHERE id_user = :id');
-		 	$db->query($query, array(':value' => $value, ':id' => $this->_id));
-		 	$db->execute();
+		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
+		 	$this->_db->execute();
 		}
 
 
