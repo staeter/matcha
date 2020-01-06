@@ -14,22 +14,22 @@ $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot'
 //     }';
 // }
 
-if (strcmp($_POST['oldpw'], $_POST['newpw']) !== 0)
-{
-  echo '{
-    "result" : "Failure",
-    "message" : "Passwords doesnt match."
-  }';
-}
-else {
+// if (strcmp($_POST['oldpw'], $_POST['newpw']) !== 0)
+// {
+//   echo '{
+//     "result" : "Failure",
+//     "message" : "Passwords doesnt match."
+//   }';
+// }
+// else {
 
   try {
     $id = 41;
     $pw = 'so';
     $newpw = 'sosa';
-
-    $usr = new User('iphone', hash_password($pw), $db);
-    $usr->set_password(hash_password($newpw));
+//User::send_account_retrieval
+  //  $usr = new User('iphone', hash_password($pw), $db);
+    User::is_valid_hashed_password(hash_password($newpw));
 
     echo '{
       "result" : "Success",
@@ -39,12 +39,12 @@ else {
   } catch (\Exception $e) {
     echo '{
       "result" : "Failure",
-      "message" : "'.$e->getMessage().'"
+      "message" : "rooo'.$e->getMessage().'"
     }';
 
   }
-
-}
+//
+// }
 
 //oldpw newpw
 /*
