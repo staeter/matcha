@@ -1,34 +1,57 @@
 <?php
-
 session_start();
-require 'User.class.php';
-require '../functions/hash_password.php';
 
-$x = 0;
-try {
-  $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
-  $usr = new User('red', 'r', 'sosa' ,'sos@d.com', hash_password('r'), $db);
+require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 
-  $usr->set_log(true);
+$db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
 
-  $usr->send_account_verification_request("http://localhost:8080/control/confirm_account.php");
-} catch (Exception $e) {
+// if (empty($_POST['password']) || empty($_POST['confirm']))
+// {
+//     echo '{
+//       "result" : "Failure",
+//       "message" : "Vous devez remplir tout les champs."
+//     }';
+// }
 
-   echo "Le code de l'exception est : " . $e->getCode();
+if (strcmp($_POST['oldpw'], $_POST['newpw']) !== 0)
+{
+  echo '{
+    "result" : "Failure",
+    "message" : "Passwords doesnt match."
+  }';
+}
+else {
 
+  try {
+    $id = 41;
+    $pw = 'iphone';
+    $newpw = 'so';
 
-  echo $e->getMessage();
-  if ($e->getCode() == 42)
-  {
-    echo "string";
+    $usr = new User('iphone', hash_password($pw), $db);
+    $usr->set_password(hash_password($newpw));
+
+    echo '{
+      "result" : "Success",
+      "message" : "Your password have been updated."
+    }';
+
+  } catch (\Exception $e) {
+    echo '{
+      "result" : "Failure",
+      "message" : "'.$e->getMessage().'"
+    }';
+
   }
 
 }
 
-
-
-echo '<br>';
-echo $x;
-
+//oldpw newpw
+/*
+{
+  "result" : "Success" or "Failure",
+  "message" : "This is a message I want the user to see"
+}
+*/
 
 ?>
