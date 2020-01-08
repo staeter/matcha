@@ -159,8 +159,8 @@ httpPostFieldBodyPart myField =
     Text str -> stringPart myField.label str |> List.singleton
     Password str -> stringPart myField.label str |> List.singleton
     DoubleSlider doubleSlider ->
-      stringPart (myField.label ++ "-min") (String.fromFloat doubleSlider.lowValue)
-      :: stringPart (myField.label ++ "-max") (String.fromFloat doubleSlider.highValue)
+      stringPart (myField.label ++ "Min") (String.fromFloat doubleSlider.lowValue)
+      :: stringPart (myField.label ++ "Max") (String.fromFloat doubleSlider.highValue)
       :: []
 
 -- inputHandler : Int -> InputMsg -> Form a -> (Form a, Cmd (Msg a), Maybe (Result Http.Error a))
