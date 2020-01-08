@@ -9,7 +9,11 @@ import Http exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+
+import SingleSlider as SSlider exposing (..)
 import DoubleSlider as DSlider exposing (..)
+import Dropdown as Dropd exposing (..)
+
 
 
 -- types
@@ -31,6 +35,8 @@ type Value
   = Text String
   | Password String
   | DoubleSlider DSlider.Model
+  | SingleSlider SSlider.Model
+  | Dropdown (Dropd.Options InputMsg) (Maybe String)
 
 -- type alias Condition =
 --   { label : Label
@@ -81,6 +87,47 @@ doubleSliderField label (min, max, step) myForm =
     )
     myForm
 
+singleSliderField : Label -> (Float, Float, Float) -> Form a -> Form a
+singleSliderField label (min, max, step) myForm =
+  field
+    label
+    ( SingleSlider
+        ( let
+            mySingleSlider = SSlider.defaultModel
+          in
+            { mySingleSlider
+                | min = min
+                , max = max
+                , step = step
+                , value = min
+            }
+        )
+    )
+    myForm
+
+dropdownField : Label -> List String -> Form a -> Form a
+dropdownField label options myForm =
+    let
+      myDropdownTmp =
+        Dropd.defaultOptions DropdownMsg
+
+      myDropdown =
+        { myDropdownTmp
+          | items = options |> List.map
+              (\str ->
+                  { value = str
+                  , text = str
+                  , enabled = True
+                  }
+              )
+        }
+
+      selectedVal =
+        List.head options
+    in
+      field label (Dropdown myDropdown selectedVal) myForm
+
+
 -- condition : Label -> (Value -> Bool) -> Condition
 -- condition label validation =
 --   Condition label validation
@@ -95,6 +142,8 @@ type InputMsg
   = TextMsg String
   | PasswordMsg String
   | DoubleSliderMsg DSlider.Msg
+  | SingleSliderMsg SSlider.Msg
+  | DropdownMsg (Maybe String)
 
 update :  Msg a -> Form a -> (Form a, Cmd (Msg a), Maybe (Result Http.Error a))
 update msg myForm =
@@ -139,10 +188,12 @@ updateField msg myField =
       case msg of
         TextMsg val -> { myField | value = Text val }
         _ -> myField
+
     Password _ ->
       case msg of
         PasswordMsg val -> { myField | value = Password val }
         _ -> myField
+
     DoubleSlider myDoubleSlider ->
       case msg of
         DoubleSliderMsg doubleSliderMsg ->
@@ -151,6 +202,22 @@ updateField msg myField =
               DSlider.update doubleSliderMsg myDoubleSlider
           in
             { myField | value = DoubleSlider newDoubleSlider }
+        _ -> myField
+
+    SingleSlider mySingleSlider ->
+      case msg of
+        SingleSliderMsg singleSliderMsg ->
+          let
+            (newSingleSlider, _, _) =
+              SSlider.update singleSliderMsg mySingleSlider
+          in
+            { myField | value = SingleSlider newSingleSlider }
+        _ -> myField
+
+    Dropdown myDropdown _ ->
+      case msg of
+        DropdownMsg selectedVal ->
+          { myField | value = Dropdown myDropdown selectedVal }
         _ -> myField
 
 httpPostFieldBodyPart : Field -> List Http.Part
@@ -162,6 +229,15 @@ httpPostFieldBodyPart myField =
       stringPart (myField.label ++ "Min") (String.fromFloat doubleSlider.lowValue)
       :: stringPart (myField.label ++ "Max") (String.fromFloat doubleSlider.highValue)
       :: []
+    SingleSlider singleSlider ->
+      stringPart myField.label (String.fromFloat singleSlider.value)
+      |> List.singleton
+    Dropdown _ maybeVal ->
+      maybeVal
+      |> Maybe.map
+        (\val -> stringPart myField.label val |> List.singleton)
+      |> Maybe.withDefault
+        (stringPart myField.label "Invalid" |> List.singleton)
 
 -- inputHandler : Int -> InputMsg -> Form a -> (Form a, Cmd (Msg a), Maybe (Result Http.Error a))
 -- inputHandler id inputMsg =
@@ -260,3 +336,10 @@ view_field id myField =
 
     DoubleSlider val ->
       DSlider.view val |> Html.map (Input id << DoubleSliderMsg)
+
+    SingleSlider val ->
+      SSlider.view val |> Html.map (Input id << SingleSliderMsg)
+
+    Dropdown myDropdown selectedVal ->
+      Dropd.dropdown myDropdown [] selectedVal
+      |> Html.map (Input id)

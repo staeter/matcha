@@ -109,6 +109,9 @@ filtersForm =
   Form.form resultMessageDecoder "http://localhost/control/fileter.php"
   |> Form.textField "research"
   |> Form.doubleSliderField "age" (18.0, 90.0, 1)
+  |> Form.singleSliderField "test" (0, 100, 1)
+  |> Form.dropdownField "orientation"
+        ["Bisexual", "Heterosexual", "Homosexual"]
 
 
 -- url
