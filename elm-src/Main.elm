@@ -90,13 +90,13 @@ init flags url key =
 
 signinForm : Form (Result String String)
 signinForm =
-  Form.form resultMessageDecoder "http://localhost/control/signin.php"
+  Form.form resultMessageDecoder (OnSubmit "Signin") "http://localhost/control/signin.php"
   |> Form.textField "pseudo"
   |> Form.passwordField "password"
 
 signupForm : Form (Result String String)
 signupForm =
-  Form.form resultMessageDecoder "http://localhost/control/signup.php"
+  Form.form resultMessageDecoder (OnSubmit "Signup") "http://localhost/control/signup.php"
   |> Form.textField "pseudo"
   |> Form.textField "lastname"
   |> Form.textField "firstname"
@@ -106,13 +106,12 @@ signupForm =
 
 filtersForm : Form (Result String String)
 filtersForm =
-  Form.form resultMessageDecoder "http://localhost/control/fileter.php"
-  |> Form.textField "research"
-  |> Form.doubleSliderField "age" (18.0, 90.0, 1)
-  |> Form.singleSliderField "test" (0, 100, 1)
-  |> Form.dropdownField "orientation"
-        ["Bisexual", "Heterosexual", "Homosexual"]
-  |> Form.checkboxField "dumb" True
+  Form.form resultMessageDecoder LiveUpdate "http://localhost/control/fileter.php"
+  |> Form.doubleSliderField "age" (18, 90, 1)
+  |> Form.doubleSliderField "popularity" (0, 100, 1)
+  |> Form.singleSliderField "distanceMax" (0, 100, 1)
+  |> Form.checkboxField "viewed" False
+  |> Form.checkboxField "liked" False
 
 
 -- url

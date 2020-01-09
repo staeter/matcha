@@ -3,15 +3,15 @@
 /*
 {
   -- mamybe "data" : {
-    "startElem" : 12,
-    "endElem" : 12,
-    "totalElem" : 12,
-    "users" : [ // NB: only fully completed users accounts
+    "pageNumber" : 5,
+    "pageAmount" : 12,
+    "users" : [// NB: only fully completed users accounts
       {
         "id" : 12,
         "pseudo" : "myPseudo",
         "picture" : "/data/name.png",
-        "tags" : ["#tag", ...]
+        "tags" : ["#tag", ...],
+        "liked" : "True" or "False"
       },
       ...
     ]

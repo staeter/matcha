@@ -22,6 +22,7 @@ type alias Form a =
   { url : String
   , fields : Array Field
   , decoder : Decoder a
+  , submition : Submition
   }
 
 type alias Field =
@@ -44,15 +45,16 @@ type Value
 --   , validation : Value -> Bool
 --   }
 
--- type Submit -- //ni
---  = OnSubmit String
---  | LiveUpdate
+type Submition
+ = OnSubmit String
+ | LiveUpdate
 
-form : Decoder a -> String -> Form a
-form decoder url =
+form : Decoder a -> Submition -> String -> Form a
+form decoder submitionType url =
   { url = url
   , fields = Array.empty
   , decoder = decoder
+  , submition = submitionType
   }
 
 field : Label -> Value -> Form a -> Form a
@@ -163,23 +165,19 @@ update msg myForm =
             let
               myNewField = updateField inputMsg myField
               myNewForm = { myForm | fields = myForm.fields |> Array.set id myNewField }
+
+              cmd =
+                case myForm.submition of
+                  LiveUpdate -> submit myForm
+                  OnSubmit _ -> Cmd.none
             in
-              ( myNewForm, Cmd.none, Nothing)
+              ( myNewForm, cmd, Nothing)
 
           Nothing -> (myForm, Cmd.none, Nothing)
 
     Submit ->
       ( myForm
-      , Http.post
-          { url = myForm.url
-          , body =
-            multipartBody
-              (List.concat (List.map
-                httpPostFieldBodyPart
-                (Array.toList myForm.fields)
-              ))
-          , expect = Http.expectJson Response myForm.decoder
-          }
+      , submit myForm
       , Nothing
       )
 
@@ -231,6 +229,20 @@ updateField msg myField =
           { myField | value = Checkbox val }
         _ -> myField
 
+
+submit : Form a -> Cmd (Msg a)
+submit myForm =
+  Http.post
+      { url = myForm.url
+      , body =
+        multipartBody
+          (List.concat (List.map
+            httpPostFieldBodyPart
+            (Array.toList myForm.fields)
+          ))
+      , expect = Http.expectJson Response myForm.decoder
+      }
+
 httpPostFieldBodyPart : Field -> List Http.Part
 httpPostFieldBodyPart myField =
   case myField.value of
@@ -276,8 +288,14 @@ view myForm =
   Html.form [ onSubmit Submit ]
             (List.append
               (Array.toList (Array.indexedMap view_field myForm.fields))
-              (List.singleton (button [ type_ "submit" ] [ text "Submit" ])) -- //ni
+              (List.singleton (submitButton myForm.submition))
             )
+
+submitButton : Submition -> Html (Msg a)
+submitButton submitionType =
+  case submitionType of
+    LiveUpdate -> div [] []
+    OnSubmit buttonText -> button [ type_ "submit" ] [ text buttonText ]
 
 view_field : Int -> Field -> Html (Msg a)
 view_field id myField =
@@ -311,7 +329,7 @@ view_field id myField =
           [ input [ type_ "checkbox"
                   , Html.Attributes.id myField.label
                   , onCheck (Input id << CheckboxMsg)
-                  , Html.Attributes.checked checked 
+                  , Html.Attributes.checked checked
                   ] []
           , label [ for myField.label ]
                   [ text myField.label ]
