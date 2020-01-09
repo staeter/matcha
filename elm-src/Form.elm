@@ -37,6 +37,7 @@ type Value
   | DoubleSlider DSlider.Model
   | SingleSlider SSlider.Model
   | Dropdown (Dropd.Options InputMsg) (Maybe String)
+  | Checkbox Bool
 
 -- type alias Condition =
 --   { label : Label
@@ -127,6 +128,9 @@ dropdownField label options myForm =
     in
       field label (Dropdown myDropdown selectedVal) myForm
 
+checkboxField : Label -> Bool -> Form a -> Form a
+checkboxField label checked myForm =
+  field label (Checkbox checked) myForm
 
 -- condition : Label -> (Value -> Bool) -> Condition
 -- condition label validation =
@@ -144,6 +148,7 @@ type InputMsg
   | DoubleSliderMsg DSlider.Msg
   | SingleSliderMsg SSlider.Msg
   | DropdownMsg (Maybe String)
+  | CheckboxMsg Bool
 
 update :  Msg a -> Form a -> (Form a, Cmd (Msg a), Maybe (Result Http.Error a))
 update msg myForm =
@@ -220,6 +225,12 @@ updateField msg myField =
           { myField | value = Dropdown myDropdown selectedVal }
         _ -> myField
 
+    Checkbox _ ->
+      case msg of
+        CheckboxMsg val ->
+          { myField | value = Checkbox val }
+        _ -> myField
+
 httpPostFieldBodyPart : Field -> List Http.Part
 httpPostFieldBodyPart myField =
   case myField.value of
@@ -238,59 +249,10 @@ httpPostFieldBodyPart myField =
         (\val -> stringPart myField.label val |> List.singleton)
       |> Maybe.withDefault
         (stringPart myField.label "Invalid" |> List.singleton)
-
--- inputHandler : Int -> InputMsg -> Form a -> (Form a, Cmd (Msg a), Maybe (Result Http.Error a))
--- inputHandler id inputMsg =
---
---       case updatedValue of
---         TextMsg newValue ->
---           case myField.value of
---             Text val ->
---               let
---                 myNewField = { myField | value = Text updatedValue }
---                 myNewForm = { myForm | fields = myForm.fields |> Array.set id myNewField }
---               in
---                 (myNewForm, Cmd.none, Nothing)
---
---             _ -> (myForm, Cmd.none, Nothing)
---
---         PasswordMsg newValue ->
---           case myField.value of
---             Password val ->
---               let
---                 myNewField = { myField | value = Password updatedValue }
---                 myNewForm = { myForm | fields = myForm.fields |> Array.set id myNewField }
---               in
---                 (myNewForm, Cmd.none, Nothing)
---
---             _ -> (myForm, Cmd.none, Nothing)
---
---         DoubleSliderMsg doubleSliderMsg ->
---           case myField.value of
---             DoubleSlider myDoubleSlider ->
---               let
---                 {-
---                 I took a look at DSlider package implementation and it seems
---                 that the cmd returned by DSlider.update is always = Cmd.none
---                 which makes the use of the if else they propose in the doc
---                 completely useless.
---                 https://package.elm-lang.org/packages/carwow/elm-slider/10.0.0/
---                 -- //ni: They are building a new vertion! Update on release
---                 -}
---                 (newDoubleSlider, doubleSliderCmd, updateResults) =
---                   DSlider.update doubleSliderMsg myDoubleSlider
---
---                 myNewField = { myField | value = DoubleSlider newDoubleSlider }
---                 myNewForm = { myForm | fields = Array.set id myNewField myForm.fields }
---                 cmd = Cmd.none
---                   -- if updateResults
---                   -- then doubleSliderCmd |> Cmd.map (Input id << DoubleSliderMsg)
---                   -- else Cmd.none
---               in
---                 ( myNewForm, cmd, Nothing )
---
---             _ ->
---               (myForm, Cmd.none, Nothing)
+    Checkbox checked ->
+      if checked
+      then stringPart myField.label "True" |> List.singleton
+      else stringPart myField.label "False" |> List.singleton
 
 
 -- subscriptions
@@ -343,3 +305,14 @@ view_field id myField =
     Dropdown myDropdown selectedVal ->
       Dropd.dropdown myDropdown [] selectedVal
       |> Html.map (Input id)
+
+    Checkbox checked ->
+      div []
+          [ input [ type_ "checkbox"
+                  , Html.Attributes.id myField.label
+                  , onCheck (Input id << CheckboxMsg)
+                  , Html.Attributes.checked checked 
+                  ] []
+          , label [ for myField.label ]
+                  [ text myField.label ]
+          ]

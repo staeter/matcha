@@ -112,6 +112,7 @@ filtersForm =
   |> Form.singleSliderField "test" (0, 100, 1)
   |> Form.dropdownField "orientation"
         ["Bisexual", "Heterosexual", "Homosexual"]
+  |> Form.checkboxField "dumb" True
 
 
 -- url
