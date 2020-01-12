@@ -56,7 +56,10 @@ import Browser.Navigation as Nav exposing (..)
 import Json.Decode as Decode exposing (..)
 import Json.Decode.Field as Field exposing (..)
 
+import Http exposing (..)
+
 import Array exposing (..)
+import Time exposing (..)
 
 
 -- modules
@@ -74,6 +77,9 @@ type alias Model =
   , signin : Form (Result String String)
   , signup : Form (Result String String)
   , filters : Form (Result String String)
+  , userInfo : Maybe
+    { unreadNotifsAmount : Int
+    }
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -84,6 +90,7 @@ init flags url key =
     , signin = signinForm
     , signup = signupForm
     , filters = filtersForm
+    , userInfo = Nothing
     }
   , Cmd.none
   )
@@ -155,13 +162,18 @@ type Msg
   | InternalLinkClicked Url
   | ExternalLinkClicked String
   | UrlChange Url
+  | Tick Time.Posix
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
   | FiltersForm (Form.Msg (Result String String))
+  | Receive_UnreadNotifsAmount (Result Http.Error Int)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
+    Tick _ ->
+      (model, requestUnreadNotifsAmount)
+
     SigninForm formMsg ->
       let
         (newForm, formCmd, response) = Form.update formMsg model.signin
@@ -207,6 +219,19 @@ update msg model =
     UrlChange url ->
       ({ model | url = url }, Cmd.none)
 
+    Receive_UnreadNotifsAmount resultAmount ->
+      ( case resultAmount of
+          Ok amount ->
+            { model
+              | userInfo = Maybe.map
+                  (\userInfo -> { userInfo | unreadNotifsAmount = amount})
+                  model.userInfo
+            }
+          Err _ ->
+            model
+      , Cmd.none
+      )
+
     _ ->
       (model, Cmd.none)
 
@@ -247,6 +272,22 @@ signupResultHandler result model cmd =
       )
 
 
+-- notifications
+
+requestUnreadNotifsAmount : Cmd Msg
+requestUnreadNotifsAmount =
+  Http.post
+      { url = "http://localhost/control/unread_notifications.php"
+      , body = emptyBody
+      , expect = Http.expectJson Receive_UnreadNotifsAmount unreadNotifsAmountDecoder
+      }
+
+unreadNotifsAmountDecoder : Decoder Int
+unreadNotifsAmountDecoder =
+  Field.require "amount" Decode.int <| \amount ->
+  Decode.succeed amount
+
+
 -- decoders
 
 resultMessageDecoder : Decoder (Result String String)
@@ -270,6 +311,13 @@ resultDecoder =
         _ ->
           Decode.fail "statusDecoder failed : not a valid status"
     )
+
+dataAlertDecoder : Decoder a -> Decoder { data: Maybe a, alert: Maybe Alert }
+dataAlertDecoder dataDecoder =
+  Field.attempt "data" dataDecoder <| \data ->
+  Field.attempt "alert" alertDecoder <| \alert ->
+
+  Decode.succeed ({ data = data, alert = alert })
 
 
 -- view
@@ -331,8 +379,8 @@ subscriptions model =
   [ Form.subscriptions model.signin |> Sub.map SigninForm
   , Form.subscriptions model.signup |> Sub.map SignupForm
   , Form.subscriptions model.filters |> Sub.map FiltersForm
+  , Time.every 1000 Tick
   ] |> Sub.batch
-
 
 
 -- main
