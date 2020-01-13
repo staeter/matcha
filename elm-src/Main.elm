@@ -88,6 +88,8 @@ type alias Model =
     , confirmAccount : Form (Result String String) -- confirm_account.php
     , receivedAccountConfirmation : Result String String
     , receivedFilters : Maybe { pageAmount : Int, elemAmount : Int, users : List User} -- feed_filter.php
+    , feedPage : Form (DataAlert (List User)) -- feed_page.php
+    , receivedFeedPage : Maybe (List User)
     }
   }
 
@@ -108,6 +110,8 @@ init flags url key =
       , confirmAccount = requestAccountConfirmationForm
       , receivedAccountConfirmation = Err "Nothing received yet!"
       , receivedFilters = Nothing
+      , feedPage = requestPageForm
+      , receivedFeedPage = Nothing
       }
     }
   , Cmd.none
@@ -177,6 +181,7 @@ type Msg
   | ChatForm (Form.Msg (DataAlert Chat))
   | DiscutionForm (Form.Msg (DataAlert Discution))
   | ConfirmAccountForm (Form.Msg (Result String String))
+  | FeedPageForm (Form.Msg (DataAlert (List User)))
   | Receive_UnreadNotifsAmount (Result Http.Error Int)
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -222,6 +227,19 @@ update msg model =
           Nothing ->
             ( { model | test = { mt | confirmAccount = newForm } }
             , formCmd |> Cmd.map ConfirmAccountForm
+            )
+
+    FeedPageForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.test.feedPage
+      in
+        let mt = model.test in
+        case response of
+          Just result ->
+            feedPageResultHandler result { model | test = { mt | feedPage = newForm } } formCmd
+          Nothing ->
+            ( { model | test = { mt | feedPage = newForm  }}
+            , formCmd |> Cmd.map FeedPageForm
             )
 
     SigninForm formMsg ->
@@ -284,6 +302,19 @@ update msg model =
 
     _ ->
       (model, Cmd.none)
+
+feedPageResultHandler : Result Http.Error (DataAlert (List User)) -> Model -> Cmd (Form.Msg (DataAlert (List User))) -> (Model, Cmd Msg)
+feedPageResultHandler result model cmd =
+  case result of
+    Ok { alert, data } ->
+      let mt = model.test in
+      ( { model | alert = alert, test = { mt | receivedFeedPage = data }}
+      , cmd |> Cmd.map FeedPageForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map FeedPageForm
+      )
 
 discutionResultHandler : Result Http.Error (DataAlert Discution) -> Model -> Cmd (Form.Msg (DataAlert Discution)) -> (Model, Cmd Msg)
 discutionResultHandler result model cmd =
@@ -373,6 +404,7 @@ signupResultHandler result model cmd =
       , cmd |> Cmd.map SignupForm
       )
 
+
 -- feed
 
 type alias User =
@@ -391,6 +423,11 @@ filtersForm =
   |> Form.singleSliderField "distanceMax" (0, 100, 1)
   |> Form.checkboxField "viewed" False
   |> Form.checkboxField "liked" False
+
+requestPageForm : Form (DataAlert (List User))
+requestPageForm =
+  Form.form (Decode.list userDecoder |> dataAlertDecoder) (OnSubmit "Request page") "http://localhost/control/feed_page.php"
+  |> Form.numberField "page" 0
 
 userDecoder : Decoder User
 userDecoder =
@@ -575,10 +612,17 @@ view model =
   { title = "matcha"
   , body =
     [ Alert.view model
-    , Maybe.withDefault (a [ href "/signin" ] [ text "Go to sign in" ]) (page model)
+    -- , Maybe.withDefault (a [ href "/signin" ] [ text "Go to sign in" ]) (page model)
+    , text "chats.php"
     , Form.view model.test.chat |> Html.map ChatForm
+    , text "discution.php"
     , Form.view model.test.discution |> Html.map DiscutionForm
+    , text "confirm_account.php"
     , Form.view model.test.confirmAccount |> Html.map ConfirmAccountForm
+    , text "feed_filter.php"
+    , Form.view model.filters |> Html.map FiltersForm
+    , text "feed_page.php"
+    , Form.view model.test.feedPage |> Html.map FeedPageForm
     , text (Debug.toString model)
     ]
   }
