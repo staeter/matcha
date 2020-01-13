@@ -1,5 +1,5 @@
 <?php
-// ageMin[int] ageMax[int] distanceMax[int] popularityMin[int] popularityMax[int] tags[json array of strings] viewed[True/False] liked[True/False]
+//
 /*
 {
   -- mamybe "data" : {

@@ -56,7 +56,10 @@ import Browser.Navigation as Nav exposing (..)
 import Json.Decode as Decode exposing (..)
 import Json.Decode.Field as Field exposing (..)
 
+import Http exposing (..)
+
 import Array exposing (..)
+import Time exposing (..)
 
 
 -- modules
@@ -73,6 +76,14 @@ type alias Model =
   , alert : Maybe Alert
   , signin : Form (Result String String)
   , signup : Form (Result String String)
+  , filters : Form (Result String String)
+  , userInfo : Maybe
+    { unreadNotifsAmount : Int
+    }
+  , test :
+    { chat : Form { alert : Maybe Alert, data : Maybe Chat }
+    , receivedChat : Maybe Chat
+    }
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -82,25 +93,40 @@ init flags url key =
     , alert = Nothing
     , signin = signinForm
     , signup = signupForm
+    , filters = filtersForm
+    , userInfo = Nothing
+    , test =
+      { chat = requestChatsForm
+      , receivedChat = Nothing
+      }
     }
   , Cmd.none
   )
 
 signinForm : Form (Result String String)
 signinForm =
-  Form.form resultMessageDecoder "http://localhost/control/signin.php"
-  |> Form.textField "pseudo" Array.empty
-  |> Form.passwordField "password" Array.empty
+  Form.form resultMessageDecoder (OnSubmit "Signin") "http://localhost/control/signin.php"
+  |> Form.textField "pseudo"
+  |> Form.passwordField "password"
 
 signupForm : Form (Result String String)
 signupForm =
-  Form.form resultMessageDecoder "http://localhost/control/signup.php"
-  |> Form.textField "pseudo" Array.empty
-  |> Form.textField "lastname" Array.empty
-  |> Form.textField "firstname" Array.empty
-  |> Form.textField "email" Array.empty
-  |> Form.passwordField "password" Array.empty
-  |> Form.passwordField "confirm" Array.empty
+  Form.form resultMessageDecoder (OnSubmit "Signup") "http://localhost/control/signup.php"
+  |> Form.textField "pseudo"
+  |> Form.textField "lastname"
+  |> Form.textField "firstname"
+  |> Form.textField "email"
+  |> Form.passwordField "password"
+  |> Form.passwordField "confirm"
+
+filtersForm : Form (Result String String)
+filtersForm =
+  Form.form resultMessageDecoder LiveUpdate "http://localhost/control/fileter.php"
+  |> Form.doubleSliderField "age" (18, 90, 1)
+  |> Form.doubleSliderField "popularity" (0, 100, 1)
+  |> Form.singleSliderField "distanceMax" (0, 100, 1)
+  |> Form.checkboxField "viewed" False
+  |> Form.checkboxField "liked" False
 
 
 -- url
@@ -144,12 +170,33 @@ type Msg
   | InternalLinkClicked Url
   | ExternalLinkClicked String
   | UrlChange Url
+  | Tick Time.Posix
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
+  | FiltersForm (Form.Msg (Result String String))
+  | ChatForm (Form.Msg { alert : Maybe Alert, data : Maybe Chat })
+  | Receive_UnreadNotifsAmount (Result Http.Error Int)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
+    Tick _ ->
+      (model, requestUnreadNotifsAmount)
+
+    ChatForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.test.chat
+      in
+        case response of
+          Just result ->
+            let mt = model.test in
+            chatResultHandler result { model | test = { mt | chat = newForm } } formCmd
+          Nothing ->
+            let mt = model.test in
+            ( { model | test = { mt | chat = newForm  }}
+            , formCmd |> Cmd.map ChatForm
+            )
+
     SigninForm formMsg ->
       let
         (newForm, formCmd, response) = Form.update formMsg model.signin
@@ -174,6 +221,18 @@ update msg model =
             , formCmd |> Cmd.map SignupForm
             )
 
+    FiltersForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.filters
+      in
+        case response of
+          Just result -> -- //ni
+            signupResultHandler result { model | filters = newForm } formCmd
+          Nothing ->
+            ( { model | filters = newForm }
+            , formCmd |> Cmd.map FiltersForm
+            )
+
     InternalLinkClicked url ->
       (model, Nav.pushUrl model.key (Url.toString url) )
 
@@ -183,8 +242,33 @@ update msg model =
     UrlChange url ->
       ({ model | url = url }, Cmd.none)
 
+    Receive_UnreadNotifsAmount resultAmount ->
+      ( case resultAmount of
+          Ok amount ->
+            { model
+              | userInfo = Maybe.map
+                  (\userInfo -> { userInfo | unreadNotifsAmount = amount})
+                  model.userInfo
+            }
+          Err _ ->
+            model
+      , Cmd.none
+      )
+
     _ ->
       (model, Cmd.none)
+
+chatResultHandler result model cmd =
+  case result of
+    Ok { alert, data } ->
+      let mt = model.test in
+      ( { model | alert = alert, test = { mt | receivedChat = data }}
+      , cmd |> Cmd.map ChatForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map ChatForm
+      )
 
 signinResultHandler result model cmd =
   case result of
@@ -223,7 +307,103 @@ signupResultHandler result model cmd =
       )
 
 
--- decoders
+-- notifications
+
+requestUnreadNotifsAmount : Cmd Msg
+requestUnreadNotifsAmount =
+  Http.post
+      { url = "http://localhost/control/unread_notifications.php"
+      , body = emptyBody
+      , expect = Http.expectJson Receive_UnreadNotifsAmount unreadNotifsAmountDecoder
+      }
+
+unreadNotifsAmountDecoder : Decoder Int
+unreadNotifsAmountDecoder =
+  Field.require "amount" Decode.int <| \amount ->
+  Decode.succeed amount
+
+
+-- chat
+
+type alias Chat =
+  { id : Int
+  , pseudo : String
+  , picture : String
+  , last_log : LastLog
+  , discution : Discution
+  , unread : Bool
+  }
+
+type Discution
+  = AllMessages (List
+    { sent : Bool
+    , date : String
+    , content : String
+    })
+  | OnlyLastMessage String
+
+type LastLog
+  = Now
+  | AWhileAgo String
+
+requestChatsForm : Form { alert : Maybe Alert, data : Maybe Chat }
+requestChatsForm =
+  Form.form (dataAlertDecoder chatDecoder) (OnSubmit "Request chats") "http://localhost/control/chats.php"
+
+chatListDecoder : Decoder (List Chat)
+chatListDecoder =
+  Field.require "chats" (Decode.list chatDecoder) <| \chats ->
+  Decode.succeed chats
+
+chatDecoder : Decoder Chat
+chatDecoder =
+  Field.require "id" Decode.int <| \id ->
+  Field.require "pseudo" Decode.string <| \pseudo ->
+  Field.require "picture" Decode.string <| \picture ->
+  Field.require "last_log" lastLogDecoder <| \last_log ->
+  Field.require "last_message" Decode.string <| \last_message ->
+  Field.require "unread" Decode.bool <| \unread ->
+
+  Decode.succeed
+    { id = id
+    , pseudo = pseudo
+    , picture = picture
+    , last_log = last_log
+    , discution = OnlyLastMessage last_message
+    , unread = unread
+    }
+
+allMessagesDecoder : Decoder Discution
+allMessagesDecoder =
+  Field.require "messages" (Decode.list messageDecoder) <| \messages ->
+  Decode.succeed (AllMessages messages)
+
+messageDecoder : Decoder { sent : Bool, date : String, content : String }
+messageDecoder =
+  Field.require "sent" Decode.bool <| \sent ->
+  Field.require "date" Decode.string <| \date ->
+  Field.require "content" Decode.string <| \content ->
+
+  Decode.succeed
+    { sent = sent
+    , date = date
+    , content = content
+    }
+
+lastLogDecoder : Decoder LastLog
+lastLogDecoder =
+  Decode.string |> andThen
+    (\ str ->
+      case str of
+        "Now" ->
+          Decode.succeed Now
+
+        date ->
+          Decode.succeed (AWhileAgo date)
+    )
+
+
+-- general decoders
 
 resultMessageDecoder : Decoder (Result String String)
 resultMessageDecoder =
@@ -247,6 +427,13 @@ resultDecoder =
           Decode.fail "statusDecoder failed : not a valid status"
     )
 
+dataAlertDecoder : Decoder a -> Decoder { data: Maybe a, alert: Maybe Alert }
+dataAlertDecoder dataDecoder =
+  Field.attempt "data" dataDecoder <| \data ->
+  Field.attempt "alert" alertDecoder <| \alert ->
+
+  Decode.succeed ({ data = data, alert = alert })
+
 
 -- view
 
@@ -256,6 +443,8 @@ view model =
   , body =
     [ Alert.view model
     , Maybe.withDefault (a [ href "/signin" ] [ text "Go to sign in" ]) (page model)
+    , Form.view model.test.chat |> Html.map ChatForm
+    , text (Debug.toString model)
     ]
   }
 
@@ -271,7 +460,7 @@ page model =
           signupView model
 
         Browse ->
-          text "Hello World!"
+          browseView model
     )
     (Parser.parse routeParser model.url)
 
@@ -291,12 +480,24 @@ signupView model =
                 [ text "You alredy have an account?" ]
             ]
 
+browseView : Model -> Html Msg
+browseView model =
+  Html.div []
+            [ Form.view model.filters |> Html.map FiltersForm
+            , a [ href "/signin" ]
+                [ text "signout" ]
+            ]
+
 
 -- subscriptions
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.none
+  [ Form.subscriptions model.signin |> Sub.map SigninForm
+  , Form.subscriptions model.signup |> Sub.map SignupForm
+  , Form.subscriptions model.filters |> Sub.map FiltersForm
+  , Time.every 1000 Tick
+  ] |> Sub.batch
 
 
 -- main

@@ -1,16 +1,9 @@
 <?php
-// ageMin[int] ageMax[int] distanceMax[int] popularityMin[int] popularityMax[int] tags[json array of strings] viewed[True/False] liked[True/False]
+// page[int]
 /*
 {
   -- mamybe "data" : {
-    "ageMin" : 12,
-    "ageMax" : 12,
-    "distanceMax" : 12,
-    "popularityMin" : 12,
-    "popularityMax" : 12,
-    "pageAmount" : 12,
-    "elemAmount" : 12,
-    "users" : [ // NB: only fully completed users accounts
+    "users" : [// NB: only fully completed users accounts
       {
         "id" : 12,
         "pseudo" : "myPseudo",
