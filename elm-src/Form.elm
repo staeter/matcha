@@ -39,6 +39,7 @@ type Value
   | SingleSlider SSlider.Model
   | Dropdown (Dropd.Options InputMsg) (Maybe String)
   | Checkbox Bool
+  | Number Int
 
 -- type alias Condition =
 --   { label : Label
@@ -134,6 +135,10 @@ checkboxField : Label -> Bool -> Form a -> Form a
 checkboxField label checked myForm =
   field label (Checkbox checked) myForm
 
+numberField : Label -> Int -> Form a -> Form a
+numberField label defaultVal myForm =
+  field label (Number defaultVal) myForm
+
 -- condition : Label -> (Value -> Bool) -> Condition
 -- condition label validation =
 --   Condition label validation
@@ -151,6 +156,7 @@ type InputMsg
   | SingleSliderMsg SSlider.Msg
   | DropdownMsg (Maybe String)
   | CheckboxMsg Bool
+  | NumberMsg Int
 
 update :  Msg a -> Form a -> (Form a, Cmd (Msg a), Maybe (Result Http.Error a))
 update msg myForm =
@@ -229,6 +235,11 @@ updateField msg myField =
           { myField | value = Checkbox val }
         _ -> myField
 
+    Number _ ->
+      case msg of
+        NumberMsg val -> { myField | value = Number val }
+        _ -> myField
+
 
 submit : Form a -> Cmd (Msg a)
 submit myForm =
@@ -265,6 +276,7 @@ httpPostFieldBodyPart myField =
       if checked
       then stringPart myField.label "True" |> List.singleton
       else stringPart myField.label "False" |> List.singleton
+    Number val -> stringPart myField.label (String.fromInt val) |> List.singleton
 
 
 -- subscriptions
@@ -334,3 +346,10 @@ view_field id myField =
           , label [ for myField.label ]
                   [ text myField.label ]
           ]
+
+    Number val ->
+      input [ type_ "number"
+            , placeholder myField.label
+            , onInput (Input id << NumberMsg << Maybe.withDefault 0 << String.toInt)
+            , Html.Attributes.value (String.fromInt val)
+            ] []
