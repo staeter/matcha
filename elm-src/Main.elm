@@ -21,7 +21,7 @@
 
 -- Chat
 {- get list of chats and the amout of unread messages -} -- chats.php
-{- get list of messages exchanged with a user -} -- chat.php
+{- get list of messages exchanged with a user -} -- discution.php
 {- send a new message -} -- message.php
 
 -- Retreive
@@ -81,8 +81,10 @@ type alias Model =
     { unreadNotifsAmount : Int
     }
   , test :
-    { chat : Form { alert : Maybe Alert, data : Maybe Chat }
+    { chat : Form (AlertData Chat) -- chats.php
     , receivedChat : Maybe Chat
+    , discution : Form (AlertData Discution) -- discution.php
+    , receivedDiscution  : Maybe Discution
     }
   }
 
@@ -98,6 +100,8 @@ init flags url key =
     , test =
       { chat = requestChatsForm
       , receivedChat = Nothing
+      , discution = requestDiscutionForm
+      , receivedDiscution  = Nothing
       }
     }
   , Cmd.none
@@ -174,7 +178,8 @@ type Msg
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
   | FiltersForm (Form.Msg (Result String String))
-  | ChatForm (Form.Msg { alert : Maybe Alert, data : Maybe Chat })
+  | ChatForm (Form.Msg (AlertData Chat))
+  | DiscutionForm (Form.Msg (AlertData Discution))
   | Receive_UnreadNotifsAmount (Result Http.Error Int)
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -187,14 +192,26 @@ update msg model =
       let
         (newForm, formCmd, response) = Form.update formMsg model.test.chat
       in
+        let mt = model.test in
         case response of
           Just result ->
-            let mt = model.test in
             chatResultHandler result { model | test = { mt | chat = newForm } } formCmd
           Nothing ->
-            let mt = model.test in
             ( { model | test = { mt | chat = newForm  }}
             , formCmd |> Cmd.map ChatForm
+            )
+
+    DiscutionForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.test.discution
+      in
+        let mt = model.test in
+        case response of
+          Just result ->
+            discutionResultHandler result { model | test = { mt | discution = newForm } } formCmd
+          Nothing ->
+            ( { model | test = { mt | discution = newForm  }}
+            , formCmd |> Cmd.map DiscutionForm
             )
 
     SigninForm formMsg ->
@@ -257,6 +274,19 @@ update msg model =
 
     _ ->
       (model, Cmd.none)
+
+discutionResultHandler : Result Http.Error (AlertData Discution) -> Model -> Cmd (Form.Msg (AlertData Discution)) -> (Model, Cmd Msg)
+discutionResultHandler result model cmd =
+  case result of
+    Ok { alert, data } ->
+      let mt = model.test in
+      ( { model | alert = alert, test = { mt | receivedDiscution = data }}
+      , cmd |> Cmd.map DiscutionForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map DiscutionForm
+      )
 
 chatResultHandler result model cmd =
   case result of
@@ -334,8 +364,14 @@ type alias Chat =
   , unread : Bool
   }
 
+type alias Message =
+  { sent : Bool
+  , date : String
+  , content : String
+  }
+
 type Discution
-  = AllMessages (List
+  = Discution  (List
     { sent : Bool
     , date : String
     , content : String
@@ -346,7 +382,10 @@ type LastLog
   = Now
   | AWhileAgo String
 
-requestChatsForm : Form { alert : Maybe Alert, data : Maybe Chat }
+type alias AlertData a =
+  { alert : Maybe Alert, data : Maybe a }
+
+requestChatsForm : Form (AlertData Chat)
 requestChatsForm =
   Form.form (dataAlertDecoder chatDecoder) (OnSubmit "Request chats") "http://localhost/control/chats.php"
 
@@ -373,12 +412,17 @@ chatDecoder =
     , unread = unread
     }
 
-allMessagesDecoder : Decoder Discution
-allMessagesDecoder =
-  Field.require "messages" (Decode.list messageDecoder) <| \messages ->
-  Decode.succeed (AllMessages messages)
+requestDiscutionForm : Form (AlertData Discution)
+requestDiscutionForm =
+  Form.form (dataAlertDecoder discutionDecoder) (OnSubmit "Request discution") "http://localhost/control/discution.php"
+  |> Form.numberField "id" 0
 
-messageDecoder : Decoder { sent : Bool, date : String, content : String }
+discutionDecoder : Decoder Discution
+discutionDecoder =
+  Field.require "messages" (Decode.list messageDecoder) <| \messages ->
+  Decode.succeed (Discution  messages)
+
+messageDecoder : Decoder Message
 messageDecoder =
   Field.require "sent" Decode.bool <| \sent ->
   Field.require "date" Decode.string <| \date ->
@@ -444,6 +488,7 @@ view model =
     [ Alert.view model
     , Maybe.withDefault (a [ href "/signin" ] [ text "Go to sign in" ]) (page model)
     , Form.view model.test.chat |> Html.map ChatForm
+    , Form.view model.test.discution |> Html.map DiscutionForm
     , text (Debug.toString model)
     ]
   }
