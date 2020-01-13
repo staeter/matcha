@@ -84,7 +84,9 @@ type alias Model =
     { chat : Form (AlertData Chat) -- chats.php
     , receivedChat : Maybe Chat
     , discution : Form (AlertData Discution) -- discution.php
-    , receivedDiscution  : Maybe Discution
+    , receivedDiscution : Maybe Discution
+    , confirmAccount : Form (Result String String) -- confirm_account.php
+    , receivedAccountConfirmation : Result String String
     }
   }
 
@@ -101,7 +103,9 @@ init flags url key =
       { chat = requestChatsForm
       , receivedChat = Nothing
       , discution = requestDiscutionForm
-      , receivedDiscution  = Nothing
+      , receivedDiscution = Nothing
+      , confirmAccount = requestAccountConfirmationForm
+      , receivedAccountConfirmation = Err "Nothing received yet!"
       }
     }
   , Cmd.none
@@ -125,7 +129,7 @@ signupForm =
 
 filtersForm : Form (Result String String)
 filtersForm =
-  Form.form resultMessageDecoder LiveUpdate "http://localhost/control/fileter.php"
+  Form.form resultMessageDecoder LiveUpdate "http://localhost/control/feed_fileter.php"
   |> Form.doubleSliderField "age" (18, 90, 1)
   |> Form.doubleSliderField "popularity" (0, 100, 1)
   |> Form.singleSliderField "distanceMax" (0, 100, 1)
@@ -180,6 +184,7 @@ type Msg
   | FiltersForm (Form.Msg (Result String String))
   | ChatForm (Form.Msg (AlertData Chat))
   | DiscutionForm (Form.Msg (AlertData Discution))
+  | ConfirmAccountForm (Form.Msg (Result String String))
   | Receive_UnreadNotifsAmount (Result Http.Error Int)
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -214,6 +219,19 @@ update msg model =
             , formCmd |> Cmd.map DiscutionForm
             )
 
+    ConfirmAccountForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.test.confirmAccount
+      in
+        let mt = model.test in
+        case response of
+          Just result ->
+            simpleResultHandler result { model | filters = newForm } formCmd
+          Nothing ->
+            ( { model | test = { mt | confirmAccount = newForm } }
+            , formCmd |> Cmd.map ConfirmAccountForm
+            )
+
     SigninForm formMsg ->
       let
         (newForm, formCmd, response) = Form.update formMsg model.signin
@@ -243,8 +261,8 @@ update msg model =
         (newForm, formCmd, response) = Form.update formMsg model.filters
       in
         case response of
-          Just result -> -- //ni
-            signupResultHandler result { model | filters = newForm } formCmd
+          Just result ->
+            simpleResultHandler result { model | filters = newForm } formCmd
           Nothing ->
             ( { model | filters = newForm }
             , formCmd |> Cmd.map FiltersForm
@@ -300,6 +318,21 @@ chatResultHandler result model cmd =
       , cmd |> Cmd.map ChatForm
       )
 
+simpleResultHandler result model cmd =
+  case result of
+    Ok (Ok message) ->
+      ( model |> Alert.successAlert message
+      , cmd |> Cmd.map ConfirmAccountForm
+      )
+    Ok (Err message) ->
+      ( model |> Alert.invalidImputAlert message
+      , cmd |> Cmd.map ConfirmAccountForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map ConfirmAccountForm
+      )
+
 signinResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
@@ -337,6 +370,15 @@ signupResultHandler result model cmd =
       )
 
 
+-- confirm account
+
+requestAccountConfirmationForm : Form (Result String String)
+requestAccountConfirmationForm =
+  Form.form resultMessageDecoder (OnSubmit "confirm account") "http://localhost/control/confirm_account.php"
+  |> Form.textField "a"
+  |> Form.textField "b"
+
+
 -- notifications
 
 requestUnreadNotifsAmount : Cmd Msg
@@ -371,11 +413,7 @@ type alias Message =
   }
 
 type Discution
-  = Discution  (List
-    { sent : Bool
-    , date : String
-    , content : String
-    })
+  = Discution (List Message)
   | OnlyLastMessage String
 
 type LastLog
@@ -420,7 +458,7 @@ requestDiscutionForm =
 discutionDecoder : Decoder Discution
 discutionDecoder =
   Field.require "messages" (Decode.list messageDecoder) <| \messages ->
-  Decode.succeed (Discution  messages)
+  Decode.succeed (Discution messages)
 
 messageDecoder : Decoder Message
 messageDecoder =
@@ -489,6 +527,7 @@ view model =
     , Maybe.withDefault (a [ href "/signin" ] [ text "Go to sign in" ]) (page model)
     , Form.view model.test.chat |> Html.map ChatForm
     , Form.view model.test.discution |> Html.map DiscutionForm
+    , Form.view model.test.confirmAccount |> Html.map ConfirmAccountForm
     , text (Debug.toString model)
     ]
   }
