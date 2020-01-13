@@ -152,6 +152,7 @@ type Route
   = Signin
   | Signup
   | Browse
+  | Test
   -- | User
   -- | Account
   -- | Chat
@@ -164,6 +165,7 @@ routeParser =
     [ Parser.map Signin (Parser.s "signin")
     , Parser.map Signup (Parser.s "signup")
     , Parser.map Browse (Parser.s "browse")
+    , Parser.map Test (Parser.s "test")
     ]
 
 
@@ -612,18 +614,7 @@ view model =
   { title = "matcha"
   , body =
     [ Alert.view model
-    -- , Maybe.withDefault (a [ href "/signin" ] [ text "Go to sign in" ]) (page model)
-    , text "chats.php"
-    , Form.view model.test.chat |> Html.map ChatForm
-    , text "discution.php"
-    , Form.view model.test.discution |> Html.map DiscutionForm
-    , text "confirm_account.php"
-    , Form.view model.test.confirmAccount |> Html.map ConfirmAccountForm
-    , text "feed_filter.php"
-    , Form.view model.filters |> Html.map FiltersForm
-    , text "feed_page.php"
-    , Form.view model.test.feedPage |> Html.map FeedPageForm
-    , text (Debug.toString model)
+    , Maybe.withDefault (a [ href "/test" ] [ text "Go to testing" ]) (page model)
     ]
   }
 
@@ -640,6 +631,9 @@ page model =
 
         Browse ->
           browseView model
+
+        Test ->
+          testView model
     )
     (Parser.parse routeParser model.url)
 
@@ -665,6 +659,22 @@ browseView model =
             [ Form.view model.filters |> Html.map FiltersForm
             , a [ href "/signin" ]
                 [ text "signout" ]
+            ]
+
+testView : Model -> Html Msg
+testView model =
+  Html.div []
+            [ text "chats.php"
+            , Form.view model.test.chat |> Html.map ChatForm
+            , br [] [], text "discution.php"
+            , Form.view model.test.discution |> Html.map DiscutionForm
+            , br [] [], text "confirm_account.php"
+            , Form.view model.test.confirmAccount |> Html.map ConfirmAccountForm
+            , br [] [], text "feed_filter.php"
+            , Form.view model.filters |> Html.map FiltersForm
+            , br [] [], text "feed_page.php"
+            , Form.view model.test.feedPage |> Html.map FeedPageForm
+            , br [] [], text (Debug.toString model)
             ]
 
 
