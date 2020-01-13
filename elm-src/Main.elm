@@ -76,17 +76,18 @@ type alias Model =
   , alert : Maybe Alert
   , signin : Form (Result String String)
   , signup : Form (Result String String)
-  , filters : Form (Result String String)
+  , filters : Form (DataAlert { pageAmount : Int, elemAmount : Int, users : List User})
   , userInfo : Maybe
     { unreadNotifsAmount : Int
     }
   , test :
-    { chat : Form (AlertData Chat) -- chats.php
+    { chat : Form (DataAlert Chat) -- chats.php
     , receivedChat : Maybe Chat
-    , discution : Form (AlertData Discution) -- discution.php
+    , discution : Form (DataAlert Discution) -- discution.php
     , receivedDiscution : Maybe Discution
     , confirmAccount : Form (Result String String) -- confirm_account.php
     , receivedAccountConfirmation : Result String String
+    , receivedFilters : Maybe { pageAmount : Int, elemAmount : Int, users : List User} -- feed_filter.php
     }
   }
 
@@ -106,6 +107,7 @@ init flags url key =
       , receivedDiscution = Nothing
       , confirmAccount = requestAccountConfirmationForm
       , receivedAccountConfirmation = Err "Nothing received yet!"
+      , receivedFilters = Nothing
       }
     }
   , Cmd.none
@@ -126,16 +128,6 @@ signupForm =
   |> Form.textField "email"
   |> Form.passwordField "password"
   |> Form.passwordField "confirm"
-
-filtersForm : Form (Result String String)
-filtersForm =
-  Form.form resultMessageDecoder LiveUpdate "http://localhost/control/feed_fileter.php"
-  |> Form.doubleSliderField "age" (18, 90, 1)
-  |> Form.doubleSliderField "popularity" (0, 100, 1)
-  |> Form.singleSliderField "distanceMax" (0, 100, 1)
-  |> Form.checkboxField "viewed" False
-  |> Form.checkboxField "liked" False
-
 
 -- url
 
@@ -181,9 +173,9 @@ type Msg
   | Tick Time.Posix
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
-  | FiltersForm (Form.Msg (Result String String))
-  | ChatForm (Form.Msg (AlertData Chat))
-  | DiscutionForm (Form.Msg (AlertData Discution))
+  | FiltersForm (Form.Msg (DataAlert { pageAmount : Int, elemAmount : Int, users : List User}))
+  | ChatForm (Form.Msg (DataAlert Chat))
+  | DiscutionForm (Form.Msg (DataAlert Discution))
   | ConfirmAccountForm (Form.Msg (Result String String))
   | Receive_UnreadNotifsAmount (Result Http.Error Int)
 
@@ -226,7 +218,7 @@ update msg model =
         let mt = model.test in
         case response of
           Just result ->
-            simpleResultHandler result { model | filters = newForm } formCmd
+            simpleResultHandler result { model | test = { mt | confirmAccount = newForm } } formCmd
           Nothing ->
             ( { model | test = { mt | confirmAccount = newForm } }
             , formCmd |> Cmd.map ConfirmAccountForm
@@ -262,7 +254,7 @@ update msg model =
       in
         case response of
           Just result ->
-            simpleResultHandler result { model | filters = newForm } formCmd
+            filtersResultHandler result { model | filters = newForm } formCmd
           Nothing ->
             ( { model | filters = newForm }
             , formCmd |> Cmd.map FiltersForm
@@ -293,7 +285,7 @@ update msg model =
     _ ->
       (model, Cmd.none)
 
-discutionResultHandler : Result Http.Error (AlertData Discution) -> Model -> Cmd (Form.Msg (AlertData Discution)) -> (Model, Cmd Msg)
+discutionResultHandler : Result Http.Error (DataAlert Discution) -> Model -> Cmd (Form.Msg (DataAlert Discution)) -> (Model, Cmd Msg)
 discutionResultHandler result model cmd =
   case result of
     Ok { alert, data } ->
@@ -316,6 +308,18 @@ chatResultHandler result model cmd =
     Err _ ->
       ( model |> Alert.serverNotReachedAlert
       , cmd |> Cmd.map ChatForm
+      )
+
+filtersResultHandler result model cmd =
+  case result of
+    Ok { alert, data } ->
+      let mt = model.test in
+      ( { model | alert = alert, test = { mt | receivedFilters = data }}
+      , cmd |> Cmd.map FiltersForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map FiltersForm
       )
 
 simpleResultHandler result model cmd =
@@ -369,6 +373,53 @@ signupResultHandler result model cmd =
       , cmd |> Cmd.map SignupForm
       )
 
+-- feed
+
+type alias User =
+  { id : Int
+  , pseudo : String
+  , picture : String
+  , tags : List String
+  , liked : Bool
+  }
+
+filtersForm : Form (DataAlert { pageAmount : Int, elemAmount : Int, users : List User})
+filtersForm =
+  Form.form (dataAlertDecoder filterDecoder) LiveUpdate "http://localhost/control/feed_filter.php"
+  |> Form.doubleSliderField "age" (18, 90, 1)
+  |> Form.doubleSliderField "popularity" (0, 100, 1)
+  |> Form.singleSliderField "distanceMax" (0, 100, 1)
+  |> Form.checkboxField "viewed" False
+  |> Form.checkboxField "liked" False
+
+userDecoder : Decoder User
+userDecoder =
+  Field.require "id" Decode.int <| \id ->
+  Field.require "pseudo" Decode.string <| \pseudo ->
+  Field.require "picture" Decode.string <| \picture ->
+  Field.require "tags" (Decode.list Decode.string) <| \tags ->
+  Field.require "liked" Decode.bool <| \liked ->
+
+  Decode.succeed
+    { id = id
+    , pseudo = pseudo
+    , picture = picture
+    , tags = tags
+    , liked = liked
+    }
+
+filterDecoder : Decoder { pageAmount : Int, elemAmount : Int, users : List User}
+filterDecoder =
+  Field.require "pageAmount" Decode.int <| \pageAmount ->
+  Field.require "elemAmount" Decode.int <| \elemAmount ->
+  Field.require "users" (Decode.list userDecoder) <| \users ->
+
+  Decode.succeed
+    { pageAmount = pageAmount
+    , elemAmount = elemAmount
+    , users = users
+    }
+
 
 -- confirm account
 
@@ -420,10 +471,10 @@ type LastLog
   = Now
   | AWhileAgo String
 
-type alias AlertData a =
+type alias DataAlert a =
   { alert : Maybe Alert, data : Maybe a }
 
-requestChatsForm : Form (AlertData Chat)
+requestChatsForm : Form (DataAlert Chat)
 requestChatsForm =
   Form.form (dataAlertDecoder chatDecoder) (OnSubmit "Request chats") "http://localhost/control/chats.php"
 
@@ -450,7 +501,7 @@ chatDecoder =
     , unread = unread
     }
 
-requestDiscutionForm : Form (AlertData Discution)
+requestDiscutionForm : Form (DataAlert Discution)
 requestDiscutionForm =
   Form.form (dataAlertDecoder discutionDecoder) (OnSubmit "Request discution") "http://localhost/control/discution.php"
   |> Form.numberField "id" 0
