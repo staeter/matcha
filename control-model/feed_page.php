@@ -1,10 +1,8 @@
 <?php
-//
+// page[int]
 /*
 {
   -- mamybe "data" : {
-    "pageNumber" : 5,
-    "pageAmount" : 12,
     "users" : [// NB: only fully completed users accounts
       {
         "id" : 12,

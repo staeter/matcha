@@ -8,12 +8,8 @@
     "distanceMax" : 12,
     "popularityMin" : 12,
     "popularityMax" : 12,
-    "tags" : ["#tag", ...],
-    "viewed" : "True" or "False",
-    "liked" : "True" or "False",
-    "startElem" : 12,
-    "endElem" : 12,
-    "totalElem" : 12,
+    "pageAmount" : 12,
+    "elemAmount" : 12,
     "users" : [ // NB: only fully completed users accounts
       {
         "id" : 12,

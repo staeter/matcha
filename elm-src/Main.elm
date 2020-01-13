@@ -80,6 +80,10 @@ type alias Model =
   , userInfo : Maybe
     { unreadNotifsAmount : Int
     }
+  , test :
+    { chat : Form { alert : Maybe Alert, data : Maybe Chat }
+    , receivedChat : Maybe Chat
+    }
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -91,6 +95,10 @@ init flags url key =
     , signup = signupForm
     , filters = filtersForm
     , userInfo = Nothing
+    , test =
+      { chat = requestChatsForm
+      , receivedChat = Nothing
+      }
     }
   , Cmd.none
   )
@@ -166,6 +174,7 @@ type Msg
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
   | FiltersForm (Form.Msg (Result String String))
+  | ChatForm (Form.Msg { alert : Maybe Alert, data : Maybe Chat })
   | Receive_UnreadNotifsAmount (Result Http.Error Int)
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -173,6 +182,20 @@ update msg model =
   case msg of
     Tick _ ->
       (model, requestUnreadNotifsAmount)
+
+    ChatForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.test.chat
+      in
+        case response of
+          Just result ->
+            let mt = model.test in
+            chatResultHandler result { model | test = { mt | chat = newForm } } formCmd
+          Nothing ->
+            let mt = model.test in
+            ( { model | test = { mt | chat = newForm  }}
+            , formCmd |> Cmd.map ChatForm
+            )
 
     SigninForm formMsg ->
       let
@@ -235,6 +258,18 @@ update msg model =
     _ ->
       (model, Cmd.none)
 
+chatResultHandler result model cmd =
+  case result of
+    Ok { alert, data } ->
+      let mt = model.test in
+      ( { model | alert = alert, test = { mt | receivedChat = data }}
+      , cmd |> Cmd.map ChatForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map ChatForm
+      )
+
 signinResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
@@ -288,7 +323,87 @@ unreadNotifsAmountDecoder =
   Decode.succeed amount
 
 
--- decoders
+-- chat
+
+type alias Chat =
+  { id : Int
+  , pseudo : String
+  , picture : String
+  , last_log : LastLog
+  , discution : Discution
+  , unread : Bool
+  }
+
+type Discution
+  = AllMessages (List
+    { sent : Bool
+    , date : String
+    , content : String
+    })
+  | OnlyLastMessage String
+
+type LastLog
+  = Now
+  | AWhileAgo String
+
+requestChatsForm : Form { alert : Maybe Alert, data : Maybe Chat }
+requestChatsForm =
+  Form.form (dataAlertDecoder chatDecoder) (OnSubmit "Request chats") "http://localhost/control/chats.php"
+
+chatListDecoder : Decoder (List Chat)
+chatListDecoder =
+  Field.require "chats" (Decode.list chatDecoder) <| \chats ->
+  Decode.succeed chats
+
+chatDecoder : Decoder Chat
+chatDecoder =
+  Field.require "id" Decode.int <| \id ->
+  Field.require "pseudo" Decode.string <| \pseudo ->
+  Field.require "picture" Decode.string <| \picture ->
+  Field.require "last_log" lastLogDecoder <| \last_log ->
+  Field.require "last_message" Decode.string <| \last_message ->
+  Field.require "unread" Decode.bool <| \unread ->
+
+  Decode.succeed
+    { id = id
+    , pseudo = pseudo
+    , picture = picture
+    , last_log = last_log
+    , discution = OnlyLastMessage last_message
+    , unread = unread
+    }
+
+allMessagesDecoder : Decoder Discution
+allMessagesDecoder =
+  Field.require "messages" (Decode.list messageDecoder) <| \messages ->
+  Decode.succeed (AllMessages messages)
+
+messageDecoder : Decoder { sent : Bool, date : String, content : String }
+messageDecoder =
+  Field.require "sent" Decode.bool <| \sent ->
+  Field.require "date" Decode.string <| \date ->
+  Field.require "content" Decode.string <| \content ->
+
+  Decode.succeed
+    { sent = sent
+    , date = date
+    , content = content
+    }
+
+lastLogDecoder : Decoder LastLog
+lastLogDecoder =
+  Decode.string |> andThen
+    (\ str ->
+      case str of
+        "Now" ->
+          Decode.succeed Now
+
+        date ->
+          Decode.succeed (AWhileAgo date)
+    )
+
+
+-- general decoders
 
 resultMessageDecoder : Decoder (Result String String)
 resultMessageDecoder =
@@ -328,6 +443,8 @@ view model =
   , body =
     [ Alert.view model
     , Maybe.withDefault (a [ href "/signin" ] [ text "Go to sign in" ]) (page model)
+    , Form.view model.test.chat |> Html.map ChatForm
+    , text (Debug.toString model)
     ]
   }
 

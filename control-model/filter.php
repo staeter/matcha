@@ -3,9 +3,14 @@
 /*
 {
   -- mamybe "data" : {
-    "pageNumber" : 5,
+    "ageMin" : 12,
+    "ageMax" : 12,
+    "distanceMax" : 12,
+    "popularityMin" : 12,
+    "popularityMax" : 12,
     "pageAmount" : 12,
-    "users" : [// NB: only fully completed users accounts
+    "elemAmount" : 12,
+    "users" : [ // NB: only fully completed users accounts
       {
         "id" : 12,
         "pseudo" : "myPseudo",
