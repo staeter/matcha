@@ -76,7 +76,6 @@ type alias Model =
   , alert : Maybe Alert
   , signin : Form (Result String String)
   , signup : Form (Result String String)
-  , filters : Form (DataAlert { pageAmount : Int, elemAmount : Int, users : List User})
   , userInfo : Maybe
     { unreadNotifsAmount : Int
     }
@@ -87,9 +86,17 @@ type alias Model =
     , receivedDiscution : Maybe Discution
     , confirmAccount : Form (Result String String) -- confirm_account.php
     , receivedAccountConfirmation : Result String String
-    , receivedFilters : Maybe { pageAmount : Int, elemAmount : Int, users : List User} -- feed_filter.php
+    , receivedPageContent : Maybe PageContent -- feed_filter.php
     , feedPage : Form (DataAlert (List User)) -- feed_page.php
     , receivedFeedPage : Maybe (List User)
+    , openFeed : -- feed_open.php
+        Form
+          ( DataAlert
+            ( Form (DataAlert PageContent)
+            , PageContent
+            )
+          )
+    , receivedFiltersForm : Maybe (Form (DataAlert PageContent))
     }
   }
 
@@ -100,7 +107,6 @@ init flags url key =
     , alert = Nothing
     , signin = signinForm
     , signup = signupForm
-    , filters = filtersForm
     , userInfo = Nothing
     , test =
       { chat = requestChatsForm
@@ -109,9 +115,11 @@ init flags url key =
       , receivedDiscution = Nothing
       , confirmAccount = requestAccountConfirmationForm
       , receivedAccountConfirmation = Err "Nothing received yet!"
-      , receivedFilters = Nothing
+      , receivedPageContent = Nothing
       , feedPage = requestPageForm
       , receivedFeedPage = Nothing
+      , openFeed = openFeedForm
+      , receivedFiltersForm = Nothing
       }
     }
   , Cmd.none
@@ -179,12 +187,13 @@ type Msg
   | Tick Time.Posix
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
-  | FiltersForm (Form.Msg (DataAlert { pageAmount : Int, elemAmount : Int, users : List User}))
+  | FiltersForm (Form.Msg (DataAlert PageContent))
   | ChatForm (Form.Msg (DataAlert Chat))
   | DiscutionForm (Form.Msg (DataAlert Discution))
   | ConfirmAccountForm (Form.Msg (Result String String))
   | FeedPageForm (Form.Msg (DataAlert (List User)))
-  | Receive_UnreadNotifsAmount (Result Http.Error Int)
+  | OpenFeedForm (Form.Msg (DataAlert (Form (DataAlert PageContent), PageContent)))
+  | ReceiveUnreadNotifsAmount (Result Http.Error Int)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -244,6 +253,19 @@ update msg model =
             , formCmd |> Cmd.map FeedPageForm
             )
 
+    OpenFeedForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.test.openFeed
+      in
+        let mt = model.test in
+        case response of
+          Just result ->
+            openFeedResultHandler result { model | test = { mt | openFeed = newForm } } formCmd
+          Nothing ->
+            ( { model | test = { mt | openFeed = newForm  }}
+            , formCmd |> Cmd.map OpenFeedForm
+            )
+
     SigninForm formMsg ->
       let
         (newForm, formCmd, response) = Form.update formMsg model.signin
@@ -269,16 +291,23 @@ update msg model =
             )
 
     FiltersForm formMsg ->
-      let
-        (newForm, formCmd, response) = Form.update formMsg model.filters
-      in
-        case response of
-          Just result ->
-            filtersResultHandler result { model | filters = newForm } formCmd
-          Nothing ->
-            ( { model | filters = newForm }
-            , formCmd |> Cmd.map FiltersForm
-            )
+      case model.test.receivedFiltersForm of
+        Just receivedFF ->
+          let
+            (newForm, formCmd, response) = Form.update formMsg receivedFF
+          in
+            let mt = model.test in
+            case response of
+              Just result ->
+                filtersResultHandler result { model |  test = { mt | receivedFiltersForm = Just newForm } } formCmd
+              Nothing ->
+                ( { model | test = { mt | receivedFiltersForm = Just newForm } }
+                , formCmd |> Cmd.map FiltersForm
+                )
+        Nothing ->
+          ( model |> Alert.customAlert "DarkPurple" "Impossible call to inexistant filtersForm"
+          , Cmd.none
+          )
 
     InternalLinkClicked url ->
       (model, Nav.pushUrl model.key (Url.toString url) )
@@ -289,7 +318,7 @@ update msg model =
     UrlChange url ->
       ({ model | url = url }, Cmd.none)
 
-    Receive_UnreadNotifsAmount resultAmount ->
+    ReceiveUnreadNotifsAmount resultAmount ->
       ( case resultAmount of
           Ok amount ->
             { model
@@ -304,6 +333,25 @@ update msg model =
 
     _ ->
       (model, Cmd.none)
+
+
+openFeedResultHandler result model cmd =
+  case result of
+    Ok { alert, data } ->
+      let mt = model.test in
+      case data of
+        Just (pageContent, myFiltersForm) ->
+          ( { model | alert = alert, test = { mt | receivedFiltersForm = Just pageContent, receivedPageContent = Just myFiltersForm }}
+          , cmd |> Cmd.map OpenFeedForm
+          )
+        Nothing ->
+          ( { model | alert = alert }
+          , cmd |> Cmd.map OpenFeedForm
+          )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map OpenFeedForm
+      )
 
 feedPageResultHandler : Result Http.Error (DataAlert (List User)) -> Model -> Cmd (Form.Msg (DataAlert (List User))) -> (Model, Cmd Msg)
 feedPageResultHandler result model cmd =
@@ -347,7 +395,7 @@ filtersResultHandler result model cmd =
   case result of
     Ok { alert, data } ->
       let mt = model.test in
-      ( { model | alert = alert, test = { mt | receivedFilters = data }}
+      ( { model | alert = alert, test = { mt | receivedPageContent = data }}
       , cmd |> Cmd.map FiltersForm
       )
     Err _ ->
@@ -417,12 +465,35 @@ type alias User =
   , liked : Bool
   }
 
-filtersForm : Form (DataAlert { pageAmount : Int, elemAmount : Int, users : List User})
-filtersForm =
+type alias FiltersEdgeValues =
+  { ageMin : Float
+  , ageMax : Float
+  , distanceMax : Float
+  , popularityMin : Float
+  , popularityMax : Float
+  }
+
+type alias PageContent =
+  { pageAmount : Int
+  , elemAmount : Int
+  , users : List User
+  }
+
+defaultFiltersEdgeValues : FiltersEdgeValues
+defaultFiltersEdgeValues =
+  { ageMin = 13
+  , ageMax = 90
+  , distanceMax = 8
+  , popularityMin = 0
+  , popularityMax = 200
+  }
+
+filtersForm : FiltersEdgeValues -> Form (DataAlert PageContent)
+filtersForm {ageMin, ageMax, distanceMax, popularityMin, popularityMax} =
   Form.form (dataAlertDecoder filterDecoder) LiveUpdate "http://localhost/control/feed_filter.php"
-  |> Form.doubleSliderField "age" (18, 90, 1)
-  |> Form.doubleSliderField "popularity" (0, 100, 1)
-  |> Form.singleSliderField "distanceMax" (0, 100, 1)
+  |> Form.doubleSliderField "age" (ageMin, ageMax, 1)
+  |> Form.doubleSliderField "popularity" (popularityMin, popularityMax, 1)
+  |> Form.singleSliderField "distanceMax" (3, distanceMax, 1)
   |> Form.checkboxField "viewed" False
   |> Form.checkboxField "liked" False
 
@@ -447,7 +518,7 @@ userDecoder =
     , liked = liked
     }
 
-filterDecoder : Decoder { pageAmount : Int, elemAmount : Int, users : List User}
+filterDecoder : Decoder PageContent
 filterDecoder =
   Field.require "pageAmount" Decode.int <| \pageAmount ->
   Field.require "elemAmount" Decode.int <| \elemAmount ->
@@ -457,6 +528,46 @@ filterDecoder =
     { pageAmount = pageAmount
     , elemAmount = elemAmount
     , users = users
+    }
+
+openFeedForm :
+  Form
+    ( DataAlert
+      ( Form (DataAlert PageContent)
+      , PageContent
+      )
+    )
+openFeedForm =
+  Form.form (dataAlertDecoder openFeedDecoder) (OnSubmit "Open feed") "http://localhost/control/feed_open.php"
+
+openFeedDecoder :
+  Decoder
+    ( Form (DataAlert PageContent)
+    , PageContent
+    )
+openFeedDecoder =
+  Field.require "filtersEdgeValues" filtersEdgeValuesDecoder <| \filtersEdgeValues ->
+  Field.require "pageContent" filterDecoder <| \pageContent ->
+
+  Decode.succeed
+    ( filtersForm filtersEdgeValues
+    , pageContent
+    )
+
+filtersEdgeValuesDecoder : Decoder FiltersEdgeValues
+filtersEdgeValuesDecoder =
+  Field.require "ageMin" Decode.float <| \ageMin ->
+  Field.require "ageMax" Decode.float <| \ageMax ->
+  Field.require "distanceMax" Decode.float <| \distanceMax ->
+  Field.require "popularityMin" Decode.float <| \popularityMin ->
+  Field.require "popularityMax" Decode.float <| \popularityMax ->
+
+  Decode.succeed
+    { ageMin = ageMin
+    , ageMax = ageMax
+    , distanceMax = distanceMax
+    , popularityMin = popularityMin
+    , popularityMax = popularityMax
     }
 
 
@@ -476,7 +587,7 @@ requestUnreadNotifsAmount =
   Http.post
       { url = "http://localhost/control/unread_notifications.php"
       , body = emptyBody
-      , expect = Http.expectJson Receive_UnreadNotifsAmount unreadNotifsAmountDecoder
+      , expect = Http.expectJson ReceiveUnreadNotifsAmount unreadNotifsAmountDecoder
       }
 
 unreadNotifsAmountDecoder : Decoder Int
@@ -656,8 +767,7 @@ signupView model =
 browseView : Model -> Html Msg
 browseView model =
   Html.div []
-            [ Form.view model.filters |> Html.map FiltersForm
-            , a [ href "/signin" ]
+            [ a [ href "/signin" ]
                 [ text "signout" ]
             ]
 
@@ -670,11 +780,19 @@ testView model =
             , Form.view model.test.discution |> Html.map DiscutionForm
             , br [] [], text "confirm_account.php"
             , Form.view model.test.confirmAccount |> Html.map ConfirmAccountForm
-            , br [] [], text "feed_filter.php"
-            , Form.view model.filters |> Html.map FiltersForm
             , br [] [], text "feed_page.php"
             , Form.view model.test.feedPage |> Html.map FeedPageForm
-            , br [] [], text (Debug.toString model)
+            , br [] [], text "feed_open.php"
+            , Form.view model.test.openFeed |> Html.map OpenFeedForm
+            , br [] [], text "feed_filter.php"
+            , Form.view model.test.openFeed |> Html.map OpenFeedForm
+            , Maybe.withDefault (text "...")
+                ( Maybe.map
+                    (\opf -> Form.view opf |> Html.map FiltersForm)
+                    model.test.receivedFiltersForm
+                )
+            , br [] [], br [] [], br [] []
+            , text (Debug.toString model)
             ]
 
 
@@ -684,7 +802,9 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   [ Form.subscriptions model.signin |> Sub.map SigninForm
   , Form.subscriptions model.signup |> Sub.map SignupForm
-  , Form.subscriptions model.filters |> Sub.map FiltersForm
+  , model.test.receivedFiltersForm
+    |> Maybe.map (\rFF -> Form.subscriptions rFF |> Sub.map FiltersForm)
+    |> Maybe.withDefault Sub.none
   , Time.every 1000 Tick
   ] |> Sub.batch
 
