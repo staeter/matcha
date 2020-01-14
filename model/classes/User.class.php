@@ -325,6 +325,7 @@
 		}
 		public function set_password($hashed_new)
 		{
+
 			if (!User::is_valid_hashed_password($hashed_new)) {
 				throw new InvalidParamException("Fail setting password. Invalid new password.", 2);
 			}
