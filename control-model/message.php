@@ -2,7 +2,7 @@
 // content id
 /*
 {
-  "result" : "Success" or "Failure",
+  "confirm" : "True" or "False",
   -- mamybe "alert" : {
     "color" : "DarkRed",
     "message" : "message for the user"

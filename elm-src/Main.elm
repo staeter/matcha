@@ -98,6 +98,8 @@ type alias Model =
   , receivedFilters : Maybe (Form (DataAlert PageContent))
   , newLikeStatusForm : Form (DataAlert Bool)
   , receivedNewLikeStatus : Maybe Bool
+  , sendMessageForm : Form ConfirmAlert
+  , receivedMessageSent : Maybe Bool
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -122,6 +124,8 @@ init flags url key =
     , receivedFilters = Nothing
     , newLikeStatusForm = requestLikeForm
     , receivedNewLikeStatus = Nothing
+    , sendMessageForm = requestSendMessageForm
+    , receivedMessageSent = Nothing
     }
   , Cmd.none
   )
@@ -196,6 +200,7 @@ type Msg
   | OpenFeedForm (Form.Msg (DataAlert (Form (DataAlert PageContent), PageContent)))
   | ReceiveUnreadNotifsAmount (Result Http.Error Int)
   | LikeForm (Form.Msg (DataAlert Bool))
+  | SendMessageForm (Form.Msg ConfirmAlert)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -213,6 +218,18 @@ update msg model =
           Nothing ->
             ( { model | newLikeStatusForm = newForm }
             , formCmd |> Cmd.map LikeForm
+            )
+
+    SendMessageForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.sendMessageForm
+      in
+        case response of
+          Just result ->
+            sendMessageResultHandler result { model | sendMessageForm = newForm } formCmd
+          Nothing ->
+            ( { model | sendMessageForm = newForm }
+            , formCmd |> Cmd.map SendMessageForm
             )
 
     ChatForm formMsg ->
@@ -341,6 +358,18 @@ update msg model =
 
     _ ->
       (model, Cmd.none)
+
+sendMessageResultHandler : Result Http.Error ConfirmAlert -> Model -> Cmd (Form.Msg ConfirmAlert) -> (Model, Cmd Msg)
+sendMessageResultHandler result model cmd =
+  case result of
+    Ok { confirm, alert } ->
+      ( { model | alert = alert, receivedMessageSent = Just confirm }
+      , cmd |> Cmd.map SendMessageForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map SendMessageForm
+      )
 
 newLikeStatusResultHandler result model cmd =
   case result of
@@ -606,6 +635,22 @@ likeStatusDecoder =
   Decode.succeed newLikeStatus
 
 
+-- send message
+
+requestSendMessageForm : Form ConfirmAlert
+requestSendMessageForm =
+  Form.form confirmAlertDecoder (OnSubmit "Send message to that id") "http://localhost/control/message.php"
+  |> Form.numberField "id" 0
+  |> Form.textField "content"
+
+confirmAlertDecoder : Decoder { confirm: Bool, alert: Maybe Alert }
+confirmAlertDecoder =
+  Field.require "confirm" Decode.bool <| \confirm ->
+  Field.attempt "alert" alertDecoder <| \alert ->
+
+  Decode.succeed ({ confirm = confirm, alert = alert })
+
+
 -- notifications
 
 requestUnreadNotifsAmount : Cmd Msg
@@ -649,6 +694,9 @@ type LastLog
 
 type alias DataAlert a =
   { alert : Maybe Alert, data : Maybe a }
+
+type alias ConfirmAlert =
+  { alert : Maybe Alert, confirm : Bool }
 
 requestChatsForm : Form (DataAlert Chat)
 requestChatsForm =
@@ -817,6 +865,8 @@ testView model =
             , Form.view model.feedPageForm |> Html.map FeedPageForm
             , br [] [], text "like.php"
             , Form.view model.newLikeStatusForm |> Html.map LikeForm
+            , br [] [], text "message.php"
+            , Form.view model.sendMessageForm |> Html.map SendMessageForm
             , br [] [], br [] [], br [] []
             , text (Debug.toString model)
             ]
