@@ -79,27 +79,25 @@ type alias Model =
   , userInfo : Maybe
     { unreadNotifsAmount : Int
     }
-  , test :
-    { chatForm : Form (DataAlert Chat) -- chats.php
-    , receivedChat : Maybe Chat
-    , discutionForm : Form (DataAlert Discution) -- discution.php
-    , receivedDiscution : Maybe Discution
-    , confirmAccountForm : Form (Result String String) -- confirm_account.php
-    , receivedAccountConfirmation : Result String String
-    , receivedPageContent : Maybe PageContent -- feed_filter.php
-    , feedPageForm : Form (DataAlert (List User)) -- feed_page.php
-    , receivedFeedPage : Maybe (List User)
-    , openFeedForm : -- feed_open.php
-        Form
-          ( DataAlert
-            ( Form (DataAlert PageContent)
-            , PageContent
-            )
+  , chatForm : Form (DataAlert Chat) -- chats.php
+  , receivedChat : Maybe Chat
+  , discutionForm : Form (DataAlert Discution) -- discution.php
+  , receivedDiscution : Maybe Discution
+  , confirmAccountForm : Form (Result String String) -- confirm_account.php
+  , receivedAccountConfirmation : Result String String
+  , receivedPageContent : Maybe PageContent -- feed_filter.php
+  , feedPageForm : Form (DataAlert (List User)) -- feed_page.php
+  , receivedFeedPage : Maybe (List User)
+  , openFeedForm : -- feed_open.php
+      Form
+        ( DataAlert
+          ( Form (DataAlert PageContent)
+          , PageContent
           )
-    , receivedFilters : Maybe (Form (DataAlert PageContent))
-    , newLikeStatusForm : Form (DataAlert Bool)
-    , receivedNewLikeStatus : Maybe Bool
-    }
+        )
+  , receivedFilters : Maybe (Form (DataAlert PageContent))
+  , newLikeStatusForm : Form (DataAlert Bool)
+  , receivedNewLikeStatus : Maybe Bool
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -110,21 +108,20 @@ init flags url key =
     , signin = signinForm
     , signup = signupForm
     , userInfo = Nothing
-    , test =
-      { chatForm = requestChatsForm
-      , receivedChat = Nothing
-      , discutionForm = requestDiscutionForm
-      , receivedDiscution = Nothing
-      , confirmAccountForm = requestAccountConfirmationForm
-      , receivedAccountConfirmation = Err "Nothing received yet!"
-      , receivedPageContent = Nothing
-      , feedPageForm = requestPageForm
-      , receivedFeedPage = Nothing
-      , openFeedForm = requestOpenFeedForm
-      , receivedFilters = Nothing
-      , newLikeStatusForm = requestLikeForm
-      , receivedNewLikeStatus = Nothing
-      }
+
+    , chatForm = requestChatsForm
+    , receivedChat = Nothing
+    , discutionForm = requestDiscutionForm
+    , receivedDiscution = Nothing
+    , confirmAccountForm = requestAccountConfirmationForm
+    , receivedAccountConfirmation = Err "Nothing received yet!"
+    , receivedPageContent = Nothing
+    , feedPageForm = requestPageForm
+    , receivedFeedPage = Nothing
+    , openFeedForm = requestOpenFeedForm
+    , receivedFilters = Nothing
+    , newLikeStatusForm = requestLikeForm
+    , receivedNewLikeStatus = Nothing
     }
   , Cmd.none
   )
@@ -207,66 +204,61 @@ update msg model =
 
     ChatForm formMsg ->
       let
-        (newForm, formCmd, response) = Form.update formMsg model.test.chatForm
+        (newForm, formCmd, response) = Form.update formMsg model.chatForm
       in
-        let mt = model.test in
         case response of
           Just result ->
-            chatResultHandler result { model | test = { mt | chatForm = newForm } } formCmd
+            chatResultHandler result { model | chatForm = newForm } formCmd
           Nothing ->
-            ( { model | test = { mt | chatForm = newForm  }}
+            ( { model | chatForm = newForm }
             , formCmd |> Cmd.map ChatForm
             )
 
     DiscutionForm formMsg ->
       let
-        (newForm, formCmd, response) = Form.update formMsg model.test.discutionForm
+        (newForm, formCmd, response) = Form.update formMsg model.discutionForm
       in
-        let mt = model.test in
         case response of
           Just result ->
-            discutionResultHandler result { model | test = { mt | discutionForm = newForm } } formCmd
+            discutionResultHandler result { model | discutionForm = newForm } formCmd
           Nothing ->
-            ( { model | test = { mt | discutionForm = newForm  }}
+            ( { model | discutionForm = newForm }
             , formCmd |> Cmd.map DiscutionForm
             )
 
     ConfirmAccountForm formMsg ->
       let
-        (newForm, formCmd, response) = Form.update formMsg model.test.confirmAccountForm
+        (newForm, formCmd, response) = Form.update formMsg model.confirmAccountForm
       in
-        let mt = model.test in
         case response of
           Just result ->
-            simpleResultHandler result { model | test = { mt | confirmAccountForm = newForm } } formCmd
+            simpleResultHandler result { model | confirmAccountForm = newForm } formCmd
           Nothing ->
-            ( { model | test = { mt | confirmAccountForm = newForm } }
+            ( { model | confirmAccountForm = newForm }
             , formCmd |> Cmd.map ConfirmAccountForm
             )
 
     FeedPageForm formMsg ->
       let
-        (newForm, formCmd, response) = Form.update formMsg model.test.feedPageForm
+        (newForm, formCmd, response) = Form.update formMsg model.feedPageForm
       in
-        let mt = model.test in
         case response of
           Just result ->
-            feedPageResultHandler result { model | test = { mt | feedPageForm = newForm } } formCmd
+            feedPageResultHandler result { model | feedPageForm = newForm } formCmd
           Nothing ->
-            ( { model | test = { mt | feedPageForm = newForm  }}
+            ( { model | feedPageForm = newForm }
             , formCmd |> Cmd.map FeedPageForm
             )
 
     OpenFeedForm formMsg ->
       let
-        (newForm, formCmd, response) = Form.update formMsg model.test.openFeedForm
+        (newForm, formCmd, response) = Form.update formMsg model.openFeedForm
       in
-        let mt = model.test in
         case response of
           Just result ->
-            openFeedResultHandler result { model | test = { mt | openFeedForm = newForm } } formCmd
+            openFeedResultHandler result { model | openFeedForm = newForm } formCmd
           Nothing ->
-            ( { model | test = { mt | openFeedForm = newForm  }}
+            ( { model | openFeedForm = newForm }
             , formCmd |> Cmd.map OpenFeedForm
             )
 
@@ -295,17 +287,16 @@ update msg model =
             )
 
     FiltersForm formMsg ->
-      case model.test.receivedFilters of
+      case model.receivedFilters of
         Just receivedFF ->
           let
             (newForm, formCmd, response) = Form.update formMsg receivedFF
           in
-            let mt = model.test in
             case response of
               Just result ->
-                filtersResultHandler result { model |  test = { mt | receivedFilters = Just newForm } } formCmd
+                filtersResultHandler result { model | receivedFilters = Just newForm } formCmd
               Nothing ->
-                ( { model | test = { mt | receivedFilters = Just newForm } }
+                ( { model | receivedFilters = Just newForm }
                 , formCmd |> Cmd.map FiltersForm
                 )
         Nothing ->
@@ -342,10 +333,9 @@ update msg model =
 openFeedResultHandler result model cmd =
   case result of
     Ok { alert, data } ->
-      let mt = model.test in
       case data of
         Just (pageContent, myFiltersForm) ->
-          ( { model | alert = alert, test = { mt | receivedFilters = Just pageContent, receivedPageContent = Just myFiltersForm }}
+          ( { model | alert = alert, receivedFilters = Just pageContent, receivedPageContent = Just myFiltersForm }
           , cmd |> Cmd.map OpenFeedForm
           )
         Nothing ->
@@ -361,8 +351,7 @@ feedPageResultHandler : Result Http.Error (DataAlert (List User)) -> Model -> Cm
 feedPageResultHandler result model cmd =
   case result of
     Ok { alert, data } ->
-      let mt = model.test in
-      ( { model | alert = alert, test = { mt | receivedFeedPage = data }}
+      ( { model | alert = alert, receivedFeedPage = data }
       , cmd |> Cmd.map FeedPageForm
       )
     Err _ ->
@@ -374,8 +363,7 @@ discutionResultHandler : Result Http.Error (DataAlert Discution) -> Model -> Cmd
 discutionResultHandler result model cmd =
   case result of
     Ok { alert, data } ->
-      let mt = model.test in
-      ( { model | alert = alert, test = { mt | receivedDiscution = data }}
+      ( { model | alert = alert, receivedDiscution = data }
       , cmd |> Cmd.map DiscutionForm
       )
     Err _ ->
@@ -386,8 +374,7 @@ discutionResultHandler result model cmd =
 chatResultHandler result model cmd =
   case result of
     Ok { alert, data } ->
-      let mt = model.test in
-      ( { model | alert = alert, test = { mt | receivedChat = data }}
+      ( { model | alert = alert, receivedChat = data }
       , cmd |> Cmd.map ChatForm
       )
     Err _ ->
@@ -398,8 +385,7 @@ chatResultHandler result model cmd =
 filtersResultHandler result model cmd =
   case result of
     Ok { alert, data } ->
-      let mt = model.test in
-      ( { model | alert = alert, test = { mt | receivedPageContent = data }}
+      ( { model | alert = alert, receivedPageContent = data }
       , cmd |> Cmd.map FiltersForm
       )
     Err _ ->
@@ -792,20 +778,20 @@ testView : Model -> Html Msg
 testView model =
   Html.div []
             [ text "chats.php"
-            , Form.view model.test.chatForm |> Html.map ChatForm
+            , Form.view model.chatForm |> Html.map ChatForm
             , br [] [], text "discution.php"
-            , Form.view model.test.discutionForm |> Html.map DiscutionForm
+            , Form.view model.discutionForm |> Html.map DiscutionForm
             , br [] [], text "confirm_account.php"
-            , Form.view model.test.confirmAccountForm |> Html.map ConfirmAccountForm
+            , Form.view model.confirmAccountForm |> Html.map ConfirmAccountForm
             , br [] [], text "feed_open.php"
-            , Form.view model.test.openFeedForm |> Html.map OpenFeedForm
+            , Form.view model.openFeedForm |> Html.map OpenFeedForm
             , Maybe.withDefault (text "...")
                 ( Maybe.map
                     (\opf -> Form.view opf |> Html.map FiltersForm)
-                    model.test.receivedFilters
+                    model.receivedFilters
                 )
             , br [] [], br [] [], text "feed_page.php"
-            , Form.view model.test.feedPageForm |> Html.map FeedPageForm
+            , Form.view model.feedPageForm |> Html.map FeedPageForm
             , br [] [], br [] [], br [] []
             , text (Debug.toString model)
             ]
@@ -817,7 +803,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   [ Form.subscriptions model.signin |> Sub.map SigninForm
   , Form.subscriptions model.signup |> Sub.map SignupForm
-  , model.test.receivedFilters
+  , model.receivedFilters
     |> Maybe.map (\rFF -> Form.subscriptions rFF |> Sub.map FiltersForm)
     |> Maybe.withDefault Sub.none
   , Time.every 1000 Tick
