@@ -102,6 +102,7 @@ type alias Model =
   , notifsForm : Form (DataAlert (List Notif))
   , receivedNotifs : Maybe (List Notif)
   , retreiveAccountForm : Form (Result String String)
+  , updatePasswordForm : Form (Result String String)
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -129,7 +130,8 @@ init flags url key =
     , receivedMessageSent = Nothing
     , notifsForm = requestNotifsForm
     , receivedNotifs = Nothing
-    , retreiveAccountForm = requestAccountRetreivalForm
+    , retreiveAccountForm = requestAccountRetrievalForm
+    , updatePasswordForm = requestUpdatePasswordForm
     }
   , Cmd.none
   )
@@ -201,6 +203,7 @@ type Msg
   | DiscutionForm (Form.Msg (DataAlert Discution))
   | ConfirmAccountForm (Form.Msg (Result String String))
   | RetreiveAccountForm (Form.Msg (Result String String))
+  | UpdatePasswordForm (Form.Msg (Result String String))
   | FeedPageForm (Form.Msg (DataAlert (List User)))
   | OpenFeedForm (Form.Msg (DataAlert (Form (DataAlert PageContent), PageContent)))
   | ReceiveUnreadNotifsAmount (Result Http.Error Int)
@@ -296,6 +299,18 @@ update msg model =
           Nothing ->
             ( { model | retreiveAccountForm = newForm }
             , formCmd |> Cmd.map RetreiveAccountForm
+            )
+
+    UpdatePasswordForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.updatePasswordForm
+      in
+        case response of
+          Just result ->
+            updatePasswordResultHandler result { model | updatePasswordForm = newForm } formCmd
+          Nothing ->
+            ( { model | updatePasswordForm = newForm }
+            , formCmd |> Cmd.map UpdatePasswordForm
             )
 
     FeedPageForm formMsg ->
@@ -516,6 +531,21 @@ retreiveAccountResultHandler result model cmd =
       , cmd |> Cmd.map RetreiveAccountForm
       )
 
+updatePasswordResultHandler result model cmd =
+  case result of
+    Ok (Ok message) ->
+      ( model |> Alert.successAlert message
+      , cmd |> Cmd.map UpdatePasswordForm
+      )
+    Ok (Err message) ->
+      ( model |> Alert.invalidImputAlert message
+      , cmd |> Cmd.map UpdatePasswordForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map UpdatePasswordForm
+      )
+
 signinResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
@@ -680,11 +710,20 @@ requestAccountConfirmationForm =
 
 -- retreive password
 
-requestAccountRetreivalForm : Form (Result String String)
-requestAccountRetreivalForm =
-  Form.form resultMessageDecoder (OnSubmit "update password") "http://localhost/control/confirm_account.php"
+requestAccountRetrievalForm : Form (Result String String)
+requestAccountRetrievalForm =
+  Form.form resultMessageDecoder (OnSubmit "Retrieve password") "http://localhost/control/password_retrieval.php"
   |> Form.textField "a"
   |> Form.textField "b"
+  |> Form.passwordField "newpw"
+  |> Form.passwordField "confirmNewPw"
+
+
+-- update password
+
+requestUpdatePasswordForm : Form (Result String String)
+requestUpdatePasswordForm =
+  Form.form resultMessageDecoder (OnSubmit "update password") "http://localhost/control/password_update.php"
   |> Form.passwordField "newpw"
   |> Form.passwordField "confirmNewPw"
 
@@ -946,8 +985,10 @@ testView model =
             , Form.view model.discutionForm |> Html.map DiscutionForm
             , br [] [], text "confirm_account.php"
             , Form.view model.confirmAccountForm |> Html.map ConfirmAccountForm
-            , br [] [], text "retreive_account.php"
+            , br [] [], text "password_retrieval.php"
             , Form.view model.retreiveAccountForm |> Html.map RetreiveAccountForm
+            , br [] [], text "password_update.php"
+            , Form.view model.updatePasswordForm |> Html.map UpdatePasswordForm
             , br [] [], text "feed_open.php"
             , Form.view model.openFeedForm |> Html.map OpenFeedForm
             , Maybe.withDefault (text "...")
