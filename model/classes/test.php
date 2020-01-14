@@ -37,7 +37,7 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 
 
    $usr = new User('sosa', hash_password($pw), $db);
-    $row1 = $usr->get_all_details();
+  $row1 = $usr->get_all_details();
     $row2 = $usr->get_pref_mail_notifications();
   print_r($row1);
   echo '<br> <br>';
@@ -63,22 +63,22 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
   // reucp de modif de user
 
 
-  session_start();
-  require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
-  require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
-
-  $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
-
-  try {
-    $usr = new User('sosa', hash_password($pw), $db);
-    $row = $usr->get_all_details();
-
-  } catch (\Exception $e) {
-    echo '{
-      "result" : "Failure",
-      "message" : "'.$e->getMessage().'"
-    }';
-  }
+  // session_start();
+  // require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
+  // require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
+  //
+  // $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
+  //
+  // try {
+  //   $usr = new User('sosa', hash_password($pw), $db);
+  //   $row = $usr->get_all_details();
+  //
+  // } catch (\Exception $e) {
+  //   echo '{
+  //     "result" : "Failure",
+  //     "message" : "'.$e->getMessage().'"
+  //   }';
+  // }
 
 
 

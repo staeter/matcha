@@ -139,6 +139,7 @@
 			$this->_pseudo = $pseudo;
 			$this->_email = $email;
 			$this->_db = $db;
+
 		}
 
 
@@ -434,6 +435,18 @@
 			//echo 'get_pref_mail_notifications: "' . (($row['pref_mail_notifications'] == '1' ? true : false) ? 't'  . '"' : 'f' . '"');
 			return $row['pref_mail_notifications'] == '1' ? true : false;
 		}
+
+		public function get_all_details()
+		{
+				$query = 'SELECT * FROM user WHERE id_user = :id';
+			$this->_db->query($query, array(':id' => $this->get_id()));
+			$row = $this->_db->fetch();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+		}
+
 
 		/*
 		** -------------------- Is valid --------------------
