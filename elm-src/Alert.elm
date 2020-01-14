@@ -6,6 +6,9 @@ module Alert exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
+import Json.Decode as Decode exposing (..)
+import Json.Decode.Field as Field exposing (..)
+
 
 -- modules
 
@@ -25,39 +28,47 @@ type alias Alert =
 
 -- functions
 
-alert : { color : String, message : String } -> Model a -> Model a
-alert newMessage model =
-  let
-    newAlert =
-      { color = newMessage.color
-      , message = newMessage.message
-      }
-  in
-    { model | alert = Just newAlert }
+alert : String -> String -> Alert
+alert color message =
+  { color = color
+  , message = message
+  }
+
+customAlert : String -> String -> Model a -> Model a
+customAlert color message model =
+  { model | alert = Just (alert color message) }
 
 serverNotReachedAlert : Model a -> Model a
 serverNotReachedAlert model =
-  alert
-    { color = "DarkOrange"
-    , message = "Sory we got truble connecting to our server. Please make sure your internet connection is working."
-    }
+  customAlert
+    "DarkOrange"
+    "Sory we got truble connecting to our server. Please make sure your internet connection is working."
     model
 
 invalidImputAlert : String -> Model a -> Model a
 invalidImputAlert serverMessage model =
-  alert
-    { color = "DarkRed"
-    , message = serverMessage
-    }
+  customAlert
+    "DarkRed"
+    serverMessage
     model
 
 successAlert : String -> Model a -> Model a
 successAlert serverMessage model =
-  alert
-    { color = "DarkGreen"
-    , message = serverMessage
-    }
+  customAlert
+    "DarkGreen"
+    serverMessage
     model
+
+
+-- decoder
+
+alertDecoder : Decoder Alert
+alertDecoder =
+  Field.require "color" Decode.string <| \color ->
+  Field.require "message" Decode.string <| \message ->
+
+  Decode.succeed
+    (alert color message)
 
 
 -- view
@@ -71,7 +82,4 @@ view model =
           ]
           [ text myAlert.message ]
     Nothing ->
-      div [ style "background-color" "DarkBlue"
-          , style "color" "White"
-          ]
-          [ text "header" ]
+      div [] []

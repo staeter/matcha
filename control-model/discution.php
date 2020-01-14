@@ -3,11 +3,13 @@
 /*
 {
   -- mamybe "data" : {
-    "notifs" : [
+    "chats" : [
       {
         "id" : 12,
-        "content" : "somebody did something",
-        "date" : "some date",
+        "pseudo" : "myPseudo",
+        "picture" : "/data/name.png",
+        "last_log" : "Now" or "some date",
+        "last_message" : "blabla!",
         "unread" : "True" or "False"
       },
       ...
@@ -19,6 +21,4 @@
   }
 }
 */
-
-//ni: other notifs than message received?
 ?>
