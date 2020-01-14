@@ -195,12 +195,25 @@ type Msg
   | FeedPageForm (Form.Msg (DataAlert (List User)))
   | OpenFeedForm (Form.Msg (DataAlert (Form (DataAlert PageContent), PageContent)))
   | ReceiveUnreadNotifsAmount (Result Http.Error Int)
+  | LikeForm (Form.Msg (DataAlert Bool))
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Tick _ ->
       (model, requestUnreadNotifsAmount)
+
+    LikeForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.newLikeStatusForm
+      in
+        case response of
+          Just result ->
+            newLikeStatusResultHandler result { model | newLikeStatusForm = newForm } formCmd
+          Nothing ->
+            ( { model | newLikeStatusForm = newForm }
+            , formCmd |> Cmd.map LikeForm
+            )
 
     ChatForm formMsg ->
       let
@@ -329,6 +342,16 @@ update msg model =
     _ ->
       (model, Cmd.none)
 
+newLikeStatusResultHandler result model cmd =
+  case result of
+    Ok { alert, data } ->
+      ( { model | alert = alert, receivedNewLikeStatus = data }
+      , cmd |> Cmd.map LikeForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map LikeForm
+      )
 
 openFeedResultHandler result model cmd =
   case result of
@@ -574,7 +597,7 @@ requestAccountConfirmationForm =
 
 requestLikeForm : Form (DataAlert Bool)
 requestLikeForm =
-  Form.form (dataAlertDecoder likeStatusDecoder) (OnSubmit "Request discution") "http://localhost/control/like.php"
+  Form.form (dataAlertDecoder likeStatusDecoder) (OnSubmit "Request like") "http://localhost/control/like.php"
   |> Form.numberField "id" 0
 
 likeStatusDecoder : Decoder Bool
@@ -792,6 +815,8 @@ testView model =
                 )
             , br [] [], br [] [], text "feed_page.php"
             , Form.view model.feedPageForm |> Html.map FeedPageForm
+            , br [] [], text "like.php"
+            , Form.view model.newLikeStatusForm |> Html.map LikeForm
             , br [] [], br [] [], br [] []
             , text (Debug.toString model)
             ]
