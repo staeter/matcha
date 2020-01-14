@@ -787,7 +787,7 @@ testView model =
                     (\opf -> Form.view opf |> Html.map FiltersForm)
                     model.test.receivedFiltersForm
                 )
-            , br [] [], br [] [] text "feed_page.php"
+            , br [] [], br [] [], text "feed_page.php"
             , Form.view model.test.feedPage |> Html.map FeedPageForm
             , br [] [], br [] [], br [] []
             , text (Debug.toString model)
