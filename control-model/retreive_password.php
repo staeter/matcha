@@ -1,5 +1,5 @@
 <?php
-// a b newpw
+// a b newpw confirmNewPw
 /*
 {
   "result" : "Success" or "Failure",

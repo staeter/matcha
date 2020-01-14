@@ -84,7 +84,6 @@ type alias Model =
   , discutionForm : Form (DataAlert Discution) -- discution.php
   , receivedDiscution : Maybe Discution
   , confirmAccountForm : Form (Result String String) -- confirm_account.php
-  , receivedAccountConfirmation : Result String String
   , receivedPageContent : Maybe PageContent -- feed_filter.php
   , feedPageForm : Form (DataAlert (List User)) -- feed_page.php
   , receivedFeedPage : Maybe (List User)
@@ -102,6 +101,7 @@ type alias Model =
   , receivedMessageSent : Maybe Bool
   , notifsForm : Form (DataAlert (List Notif))
   , receivedNotifs : Maybe (List Notif)
+  , retreiveAccountForm : Form (Result String String)
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -118,7 +118,6 @@ init flags url key =
     , discutionForm = requestDiscutionForm
     , receivedDiscution = Nothing
     , confirmAccountForm = requestAccountConfirmationForm
-    , receivedAccountConfirmation = Err "Nothing received yet!"
     , receivedPageContent = Nothing
     , feedPageForm = requestPageForm
     , receivedFeedPage = Nothing
@@ -130,6 +129,7 @@ init flags url key =
     , receivedMessageSent = Nothing
     , notifsForm = requestNotifsForm
     , receivedNotifs = Nothing
+    , retreiveAccountForm = requestAccountRetreivalForm
     }
   , Cmd.none
   )
@@ -200,6 +200,7 @@ type Msg
   | ChatForm (Form.Msg (DataAlert Chat))
   | DiscutionForm (Form.Msg (DataAlert Discution))
   | ConfirmAccountForm (Form.Msg (Result String String))
+  | RetreiveAccountForm (Form.Msg (Result String String))
   | FeedPageForm (Form.Msg (DataAlert (List User)))
   | OpenFeedForm (Form.Msg (DataAlert (Form (DataAlert PageContent), PageContent)))
   | ReceiveUnreadNotifsAmount (Result Http.Error Int)
@@ -279,10 +280,22 @@ update msg model =
       in
         case response of
           Just result ->
-            simpleResultHandler result { model | confirmAccountForm = newForm } formCmd
+            confirmAccountResultHandler result { model | confirmAccountForm = newForm } formCmd
           Nothing ->
             ( { model | confirmAccountForm = newForm }
             , formCmd |> Cmd.map ConfirmAccountForm
+            )
+
+    RetreiveAccountForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.confirmAccountForm
+      in
+        case response of
+          Just result ->
+            retreiveAccountResultHandler result { model | retreiveAccountForm = newForm } formCmd
+          Nothing ->
+            ( { model | retreiveAccountForm = newForm }
+            , formCmd |> Cmd.map RetreiveAccountForm
             )
 
     FeedPageForm formMsg ->
@@ -473,7 +486,7 @@ filtersResultHandler result model cmd =
       , cmd |> Cmd.map FiltersForm
       )
 
-simpleResultHandler result model cmd =
+confirmAccountResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
       ( model |> Alert.successAlert message
@@ -486,6 +499,21 @@ simpleResultHandler result model cmd =
     Err _ ->
       ( model |> Alert.serverNotReachedAlert
       , cmd |> Cmd.map ConfirmAccountForm
+      )
+
+retreiveAccountResultHandler result model cmd =
+  case result of
+    Ok (Ok message) ->
+      ( model |> Alert.successAlert message
+      , cmd |> Cmd.map RetreiveAccountForm
+      )
+    Ok (Err message) ->
+      ( model |> Alert.invalidImputAlert message
+      , cmd |> Cmd.map RetreiveAccountForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map RetreiveAccountForm
       )
 
 signinResultHandler result model cmd =
@@ -648,6 +676,17 @@ requestAccountConfirmationForm =
   Form.form resultMessageDecoder (OnSubmit "confirm account") "http://localhost/control/confirm_account.php"
   |> Form.textField "a"
   |> Form.textField "b"
+
+
+-- retreive password
+
+requestAccountRetreivalForm : Form (Result String String)
+requestAccountRetreivalForm =
+  Form.form resultMessageDecoder (OnSubmit "update password") "http://localhost/control/confirm_account.php"
+  |> Form.textField "a"
+  |> Form.textField "b"
+  |> Form.passwordField "newpw"
+  |> Form.passwordField "confirmNewPw"
 
 
 -- like
@@ -907,6 +946,8 @@ testView model =
             , Form.view model.discutionForm |> Html.map DiscutionForm
             , br [] [], text "confirm_account.php"
             , Form.view model.confirmAccountForm |> Html.map ConfirmAccountForm
+            , br [] [], text "retreive_account.php"
+            , Form.view model.retreiveAccountForm |> Html.map RetreiveAccountForm
             , br [] [], text "feed_open.php"
             , Form.view model.openFeedForm |> Html.map OpenFeedForm
             , Maybe.withDefault (text "...")
