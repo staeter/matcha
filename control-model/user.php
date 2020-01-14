@@ -12,7 +12,6 @@
     "biography" : "blablabla",
     "birth" : "some date",
     "last_log" : "Now" or "some date",
-    "is_loged" : "True" or "False",
     "pictures" : ["/data/name.png", ...],
     "popularity_score" : 12,
     "tags" : ["#tag", ...],

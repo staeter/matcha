@@ -101,8 +101,10 @@ type alias Model =
   , receivedMessageSent : Maybe Bool
   , notifsForm : Form (DataAlert (List Notif))
   , receivedNotifs : Maybe (List Notif)
-  , retreiveAccountForm : Form (Result String String)
+  , receivedAccountForm : Form (Result String String)
   , updatePasswordForm : Form (Result String String)
+  , userDetailsForm : Form (DataAlert UserDetails)
+  , receivedUserDetails : Maybe UserDetails
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -130,8 +132,10 @@ init flags url key =
     , receivedMessageSent = Nothing
     , notifsForm = requestNotifsForm
     , receivedNotifs = Nothing
-    , retreiveAccountForm = requestAccountRetrievalForm
+    , receivedAccountForm = requestAccountRetrievalForm
     , updatePasswordForm = requestUpdatePasswordForm
+    , userDetailsForm = requestUserDetails
+    , receivedUserDetails = Nothing
     }
   , Cmd.none
   )
@@ -210,6 +214,7 @@ type Msg
   | LikeForm (Form.Msg (DataAlert Bool))
   | NotifsForm (Form.Msg (DataAlert (List Notif)))
   | SendMessageForm (Form.Msg ConfirmAlert)
+  | UserDetailsForm (Form.Msg (DataAlert UserDetails))
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -239,6 +244,18 @@ update msg model =
           Nothing ->
             ( { model | newLikeStatusForm = newForm }
             , formCmd |> Cmd.map LikeForm
+            )
+
+    UserDetailsForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.userDetailsForm
+      in
+        case response of
+          Just result ->
+            userDetailsResultHandler result { model | userDetailsForm = newForm } formCmd
+          Nothing ->
+            ( { model | userDetailsForm = newForm }
+            , formCmd |> Cmd.map UserDetailsForm
             )
 
     SendMessageForm formMsg ->
@@ -295,9 +312,9 @@ update msg model =
       in
         case response of
           Just result ->
-            retreiveAccountResultHandler result { model | retreiveAccountForm = newForm } formCmd
+            retreiveAccountResultHandler result { model | receivedAccountForm = newForm } formCmd
           Nothing ->
-            ( { model | retreiveAccountForm = newForm }
+            ( { model | receivedAccountForm = newForm }
             , formCmd |> Cmd.map RetreiveAccountForm
             )
 
@@ -425,6 +442,18 @@ sendMessageResultHandler result model cmd =
     Err _ ->
       ( model |> Alert.serverNotReachedAlert
       , cmd |> Cmd.map SendMessageForm
+      )
+
+userDetailsResultHandler : Result Http.Error (DataAlert UserDetails) -> Model -> Cmd (Form.Msg (DataAlert UserDetails)) -> (Model, Cmd Msg)
+userDetailsResultHandler result model cmd =
+  case result of
+    Ok { alert, data } ->
+      ( { model | alert = alert, receivedUserDetails = data }
+      , cmd |> Cmd.map UserDetailsForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map UserDetailsForm
       )
 
 newLikeStatusResultHandler result model cmd =
@@ -582,6 +611,103 @@ signupResultHandler result model cmd =
       , cmd |> Cmd.map SignupForm
       )
 
+
+-- user details
+
+type alias UserDetails =
+  { id : Int
+  , pseudo : String
+  , first_name : String
+  , last_name : String
+  , gender : Gender
+  , orientation : Orientation
+  , biography : String
+  , birth : String
+  , last_log : LastLog
+  , pictures : List String
+  , popularity_score : Int
+  , tags : List String
+  , liked : Bool
+  }
+
+type Gender
+  = Man
+  | Woman
+
+type Orientation
+  = Homosexual
+  | Bisexual
+  | Heterosexual
+
+userDetailsDecoder : Decoder UserDetails
+userDetailsDecoder =
+  Field.require "id" Decode.int <| \id ->
+  Field.require "pseudo" Decode.string <| \pseudo ->
+  Field.require "first_name" Decode.string <| \first_name ->
+  Field.require "last_name" Decode.string <| \last_name ->
+  Field.require "gender" genderDecoder <| \gender ->
+  Field.require "orientation" orientationDecoder <| \orientation ->
+  Field.require "biography" Decode.string <| \biography ->
+  Field.require "birth" Decode.string <| \birth ->
+  Field.require "last_log" lastLogDecoder <| \last_log ->
+  Field.require "pictures" (Decode.list Decode.string) <| \pictures ->
+  Field.require "popularity_score" Decode.int <| \popularity_score ->
+  Field.require "tags" (Decode.list Decode.string) <| \tags ->
+  Field.require "liked" Decode.bool <| \liked ->
+
+  Decode.succeed
+    { id = id
+    , pseudo = pseudo
+    , first_name = first_name
+    , last_name = last_name
+    , gender = gender
+    , orientation = orientation
+    , biography = biography
+    , birth = birth
+    , last_log = last_log
+    , pictures = pictures
+    , popularity_score = popularity_score
+    , tags = tags
+    , liked = liked
+    }
+
+genderDecoder : Decoder Gender
+genderDecoder =
+  Decode.string |> andThen
+    (\ str ->
+      case str of
+        "Man" ->
+          Decode.succeed Man
+
+        "Woman" ->
+          Decode.succeed Woman
+
+        _ ->
+          Decode.fail "genderDecoder failed : not valid gender"
+    )
+
+orientationDecoder : Decoder Orientation
+orientationDecoder =
+  Decode.string |> andThen
+    (\ str ->
+      case str of
+        "Homosexual" ->
+          Decode.succeed Homosexual
+
+        "Bisexual" ->
+          Decode.succeed Bisexual
+
+        "Heterosexual" ->
+          Decode.succeed Heterosexual
+
+        _ ->
+          Decode.fail "orientationDecoder failed : not valid orientation"
+    )
+
+requestUserDetails : Form (DataAlert UserDetails)
+requestUserDetails =
+  Form.form (dataAlertDecoder userDetailsDecoder) (OnSubmit "Request user details") "http://localhost/control/user.php"
+  |> Form.numberField "id" 0
 
 -- feed
 
@@ -986,7 +1112,7 @@ testView model =
             , br [] [], text "confirm_account.php"
             , Form.view model.confirmAccountForm |> Html.map ConfirmAccountForm
             , br [] [], text "password_retrieval.php"
-            , Form.view model.retreiveAccountForm |> Html.map RetreiveAccountForm
+            , Form.view model.receivedAccountForm |> Html.map RetreiveAccountForm
             , br [] [], text "password_update.php"
             , Form.view model.updatePasswordForm |> Html.map UpdatePasswordForm
             , br [] [], text "feed_open.php"
@@ -1004,6 +1130,8 @@ testView model =
             , Form.view model.sendMessageForm |> Html.map SendMessageForm
             , br [] [], text "notifs.php"
             , Form.view model.notifsForm |> Html.map NotifsForm
+            , br [] [], text "user.php"
+            , Form.view model.userDetailsForm |> Html.map UserDetailsForm
             , br [] [], br [] [], br [] []
             , text (Debug.toString model)
             ]
