@@ -100,6 +100,8 @@ type alias Model =
   , receivedNewLikeStatus : Maybe Bool
   , sendMessageForm : Form ConfirmAlert
   , receivedMessageSent : Maybe Bool
+  , notifsForm : Form (DataAlert (List Notif))
+  , receivedNotifs : Maybe (List Notif)
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -126,6 +128,8 @@ init flags url key =
     , receivedNewLikeStatus = Nothing
     , sendMessageForm = requestSendMessageForm
     , receivedMessageSent = Nothing
+    , notifsForm = requestNotifsForm
+    , receivedNotifs = Nothing
     }
   , Cmd.none
   )
@@ -200,6 +204,7 @@ type Msg
   | OpenFeedForm (Form.Msg (DataAlert (Form (DataAlert PageContent), PageContent)))
   | ReceiveUnreadNotifsAmount (Result Http.Error Int)
   | LikeForm (Form.Msg (DataAlert Bool))
+  | NotifsForm (Form.Msg (DataAlert (List Notif)))
   | SendMessageForm (Form.Msg ConfirmAlert)
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -207,6 +212,18 @@ update msg model =
   case msg of
     Tick _ ->
       (model, requestUnreadNotifsAmount)
+
+    NotifsForm formMsg ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg model.notifsForm
+      in
+        case response of
+          Just result ->
+            notifsFormResultHandler result { model | notifsForm = newForm } formCmd
+          Nothing ->
+            ( { model | notifsForm = newForm }
+            , formCmd |> Cmd.map NotifsForm
+            )
 
     LikeForm formMsg ->
       let
@@ -358,6 +375,17 @@ update msg model =
 
     _ ->
       (model, Cmd.none)
+
+notifsFormResultHandler result model cmd =
+  case result of
+    Ok { alert, data } ->
+      ( { model | alert = alert, receivedNotifs = data }
+      , cmd |> Cmd.map NotifsForm
+      )
+    Err _ ->
+      ( model |> Alert.serverNotReachedAlert
+      , cmd |> Cmd.map NotifsForm
+      )
 
 sendMessageResultHandler : Result Http.Error ConfirmAlert -> Model -> Cmd (Form.Msg ConfirmAlert) -> (Model, Cmd Msg)
 sendMessageResultHandler result model cmd =
@@ -666,6 +694,31 @@ unreadNotifsAmountDecoder =
   Field.require "amount" Decode.int <| \amount ->
   Decode.succeed amount
 
+type alias Notif =
+  { id : Int
+  , content : String
+  , date : String
+  , unread : Bool
+  }
+
+requestNotifsForm : Form (DataAlert (List Notif))
+requestNotifsForm =
+  Form.form (Decode.list notifDecoder |> dataAlertDecoder) (OnSubmit "Request notifs") "http://localhost/control/notifs.php"
+
+notifDecoder : Decoder Notif
+notifDecoder =
+  Field.require "id" Decode.int <| \id ->
+  Field.require "content" Decode.string <| \content ->
+  Field.require "date" Decode.string <| \date ->
+  Field.require "unread" Decode.bool <| \unread ->
+
+  Decode.succeed
+    { id = id
+    , content = content
+    , date = date
+    , unread = unread
+    }
+
 
 -- chat
 
@@ -867,6 +920,8 @@ testView model =
             , Form.view model.newLikeStatusForm |> Html.map LikeForm
             , br [] [], text "message.php"
             , Form.view model.sendMessageForm |> Html.map SendMessageForm
+            , br [] [], text "notifs.php"
+            , Form.view model.notifsForm |> Html.map NotifsForm
             , br [] [], br [] [], br [] []
             , text (Debug.toString model)
             ]
