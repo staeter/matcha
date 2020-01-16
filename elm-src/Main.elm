@@ -209,7 +209,7 @@ type Msg
   | UpdatePasswordForm (Form.Msg (Result String String))
   | FeedPageForm (Form.Msg (DataAlert (List User)))
   | OpenFeedForm (Form.Msg (DataAlert (Form (DataAlert PageContent), PageContent)))
-  | ReceiveUnreadNotifsAmount (Result Http.Error Int)
+  | ReceiveUnreadNotifsAmount (Result Http.Error (DataAlert Int))
   | LikeForm (Form.Msg (DataAlert Bool))
   | NotifsForm (Form.Msg (DataAlert (List Notif)))
   | SendMessageForm (Form.Msg ConfirmAlert)
@@ -404,21 +404,32 @@ update msg model =
     UrlChange url ->
       ({ model | url = url }, Cmd.none)
 
-    ReceiveUnreadNotifsAmount resultAmount ->
-      ( case resultAmount of
-          Ok amount ->
-            { model
-              | userInfo = Maybe.map
-                  (\userInfo -> { userInfo | unreadNotifsAmount = amount})
-                  model.userInfo
-            }
-          Err error ->
-            model |> Alert.serverNotReachedAlert error
-      , Cmd.none
-      )
+    ReceiveUnreadNotifsAmount result ->
+      (unreadNotifsAmountResultHandler result model, Cmd.none)
 
     _ ->
       (model, Cmd.none)
+
+unreadNotifsAmountResultHandler : Result Http.Error (DataAlert Int) -> Model -> Model
+unreadNotifsAmountResultHandler result model =
+  case result of
+    Ok { alert, data } ->
+      let newAlert = if alert == Nothing then model.alert else alert in
+        Maybe.withDefault
+          (model |> Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount"))
+          (Maybe.map
+            (\amount ->
+              { model
+                | alert = newAlert
+                , userInfo = Maybe.map
+                  (\ui -> { ui | unreadNotifsAmount = amount })
+                  model.userInfo
+              }
+            )
+            data
+          )
+    Err error ->
+      model |> Alert.serverNotReachedAlert error
 
 notifsFormResultHandler result model cmd =
   case result of
@@ -889,7 +900,7 @@ requestUnreadNotifsAmount =
   Http.post
       { url = "http://localhost/control/account_notifs_amount.php"
       , body = emptyBody
-      , expect = Http.expectJson ReceiveUnreadNotifsAmount unreadNotifsAmountDecoder
+      , expect = Http.expectJson ReceiveUnreadNotifsAmount (dataAlertDecoder unreadNotifsAmountDecoder)
       }
 
 unreadNotifsAmountDecoder : Decoder Int
