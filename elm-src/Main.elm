@@ -1110,16 +1110,16 @@ browseView model =
 testView : Model -> Html Msg
 testView model =
   Html.div []
-            [ text "chat_list.php"
-            , Form.view model.chatForm |> Html.map ChatForm
+            [ br [] [], text "account_confirmation.php"
+            , Form.view model.confirmAccountForm |> Html.map ConfirmAccountForm
+            , br [] [], text "account_notifs.php"
+            , Form.view model.notifsForm |> Html.map NotifsForm
             , br [] [], text "chat_discution.php"
             , Form.view model.discutionForm |> Html.map DiscutionForm
-            , br [] [], text "account_confirmation.php"
-            , Form.view model.confirmAccountForm |> Html.map ConfirmAccountForm
-            , br [] [], text "password_retrieval.php"
-            , Form.view model.receivedAccountForm |> Html.map RetreiveAccountForm
-            , br [] [], text "password_update.php"
-            , Form.view model.updatePasswordForm |> Html.map UpdatePasswordForm
+            , br [] [], text "chat_list.php"
+            , Form.view model.chatForm |> Html.map ChatForm
+            , br [] [], text "chat_message.php"
+            , Form.view model.sendMessageForm |> Html.map SendMessageForm
             , br [] [], text "feed_open.php"
             , Form.view model.openFeedForm |> Html.map OpenFeedForm
             , Maybe.withDefault (text "...")
@@ -1129,14 +1129,14 @@ testView model =
                 )
             , br [] [], br [] [], text "feed_page.php"
             , Form.view model.feedPageForm |> Html.map FeedPageForm
-            , br [] [], text "user_like.php"
-            , Form.view model.newLikeStatusForm |> Html.map LikeForm
-            , br [] [], text "chat_message.php"
-            , Form.view model.sendMessageForm |> Html.map SendMessageForm
-            , br [] [], text "account_notifs.php"
-            , Form.view model.notifsForm |> Html.map NotifsForm
+            , br [] [], text "password_retrieval.php"
+            , Form.view model.receivedAccountForm |> Html.map RetreiveAccountForm
+            , br [] [], text "password_update.php"
+            , Form.view model.updatePasswordForm |> Html.map UpdatePasswordForm
             , br [] [], text "user_info.php"
             , Form.view model.userDetailsForm |> Html.map UserDetailsForm
+            , br [] [], text "user_like.php"
+            , Form.view model.newLikeStatusForm |> Html.map LikeForm
             , br [] [], br [] [], br [] []
             , text (Debug.toString model)
             ]
@@ -1151,7 +1151,7 @@ subscriptions model =
   , model.receivedFilters
     |> Maybe.map (\rFF -> Form.subscriptions rFF |> Sub.map FiltersForm)
     |> Maybe.withDefault Sub.none
-  , Time.every 1000 Tick
+  -- , Time.every 1000 Tick
   ] |> Sub.batch
 
 
