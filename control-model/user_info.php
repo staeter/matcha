@@ -13,7 +13,7 @@ echo '{
     "pictures" : ["/data/name.png", "/data/pic2.png"],
     "popularity_score" : 0,
     "tags" : ["joy", "stuff"],
-    "liked" : "False"
+    "liked" : false
   },
   "alert" : {
     "color" : "DarkBlue",
@@ -36,7 +36,7 @@ echo '{
     "pictures" : ["/data/name.png", ...],
     "popularity_score" : 12,
     "tags" : ["#tag", ...],
-    "liked" : "True" or "False"
+    "liked" : true or false
   },
   -- mamybe "alert" : {
     "color" : "DarkRed",

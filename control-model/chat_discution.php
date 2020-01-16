@@ -3,22 +3,22 @@ echo '{
   "data" : {
     "messages" : [
       {
-        "sent" : "True",
+        "sent" : true,
         "date" : "12-01-2020",
         "content" : "blablabla"
       },
       {
-        "sent" : "false",
+        "sent" : false,
         "date" : "12-01-2020",
         "content" : "hahaha"
       },
       {
-        "sent" : "True",
+        "sent" : true,
         "date" : "12-01-2020",
         "content" : "hohoho"
       },
       {
-        "sent" : "False",
+        "sent" : false,
         "date" : "12-01-2020",
         "content" : "hell yeah"
       }
@@ -35,7 +35,7 @@ echo '{
   -- mamybe "data" : {
     "messages" : [
       {
-        "sent" : "True" or "False",
+        "sent" : true or false,
         "date" : "some date",
         "content" : "blablabla"
       },

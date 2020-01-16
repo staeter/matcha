@@ -77,8 +77,8 @@ type alias Model =
   , userInfo : Maybe
     { unreadNotifsAmount : Int
     }
-  , chatForm : Form (DataAlert Chat) -- chat_list.php
-  , receivedChat : Maybe Chat
+  , chatForm : Form (DataAlert (List Chat)) -- chat_list.php
+  , receivedChat : Maybe (List Chat)
   , discutionForm : Form (DataAlert Discution) -- chat_discution.php
   , receivedDiscution : Maybe Discution
   , confirmAccountForm : Form (Result String String) -- account_confirmation.php
@@ -202,7 +202,7 @@ type Msg
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
   | FiltersForm (Form.Msg (DataAlert PageContent))
-  | ChatForm (Form.Msg (DataAlert Chat))
+  | ChatForm (Form.Msg (DataAlert (List Chat)))
   | DiscutionForm (Form.Msg (DataAlert Discution))
   | ConfirmAccountForm (Form.Msg (Result String String))
   | RetreiveAccountForm (Form.Msg (Result String String))
@@ -965,14 +965,9 @@ type alias DataAlert a =
 type alias ConfirmAlert =
   { alert : Maybe Alert, confirm : Bool }
 
-requestChatsForm : Form (DataAlert Chat)
+requestChatsForm : Form (DataAlert (List Chat))
 requestChatsForm =
-  Form.form (dataAlertDecoder chatDecoder) (OnSubmit "Request chats") "http://localhost/control/chat_list.php"
-
-chatListDecoder : Decoder (List Chat)
-chatListDecoder =
-  Field.require "chats" (Decode.list chatDecoder) <| \chats ->
-  Decode.succeed chats
+  Form.form (dataAlertDecoder (Decode.list chatDecoder)) (OnSubmit "Request chats") "http://localhost/control/chat_list.php"
 
 chatDecoder : Decoder Chat
 chatDecoder =

@@ -1,7 +1,7 @@
 <?php
 echo '{
   "data" : {
-    "newLikeStatus" : "True"
+    "newLikeStatus" : true
   },
   "alert" : {
     "color" : "DarkBlue",
@@ -12,7 +12,7 @@ echo '{
 /*
 {
   -- mamybe "data" : {
-    "newLikeStatus" : "True" or "False"
+    "newLikeStatus" : true or false
   },
   -- mamybe "alert" : {
     "color" : "DarkRed",

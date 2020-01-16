@@ -5,25 +5,25 @@ echo '{
       "id" : 12,
       "content" : "somebody did something v1",
       "date" : "01-01-2020",
-      "unread" : "True"
+      "unread" : true
     },
     {
       "id" : 13,
       "content" : "somebody did something v4",
       "date" : "12-08-2017",
-      "unread" : "True"
+      "unread" : true
     },
     {
       "id" : 20,
       "content" : "somebody did something v14",
       "date" : "12-05-2016",
-      "unread" : "False"
+      "unread" : false
     },
     {
       "id" : 1,
       "content" : "somebody did something v23",
       "date" : "12-05-2013",
-      "unread" : "False"
+      "unread" : false
     }
   ],
   "alert" : {
@@ -39,7 +39,7 @@ echo '{
       "id" : 12,
       "content" : "somebody did something",
       "date" : "some date",
-      "unread" : "True" or "False"
+      "unread" : true or false
     },
     ...
   ],

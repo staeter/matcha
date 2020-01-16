@@ -1,6 +1,6 @@
 <?php
 echo '{
-  "confirm" : "False",
+  "confirm" : false,
   "alert" : {
     "color" : "DarkBlue",
     "message" : "message sent"
@@ -9,7 +9,7 @@ echo '{
 // content id
 /*
 {
-  "confirm" : "True" or "False",
+  "confirm" : true or false,
   -- mamybe "alert" : {
     "color" : "DarkRed",
     "message" : "message for the user"
