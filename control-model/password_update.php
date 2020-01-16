@@ -1,4 +1,8 @@
 <?php
+echo '{
+  "result" : "Success",
+  "message" : "pw updated"
+}'
 //oldpw newpw
 /*
 {

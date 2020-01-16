@@ -1,4 +1,25 @@
 <?php
+echo '{
+  "data" : {
+    "id" : 12,
+    "pseudo" : "hisPseudo",
+    "first_name" : "John",
+    "last_name" : "Doe",
+    "gender" : "Woman",
+    "orientation" : "Homosexual",
+    "biography" : "hohoho",
+    "birth" : "11-11-2011",
+    "last_log" : "Now",
+    "pictures" : ["/data/name.png", "/data/pic2.png"],
+    "popularity_score" : 0,
+    "tags" : ["joy", "stuff"],
+    "liked" : "False"
+  },
+  "alert" : {
+    "color" : "DarkBlue",
+    "message" : "usr info received"
+  }
+}';
 // id[int]
 /*
 {

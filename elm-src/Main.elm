@@ -306,7 +306,7 @@ update msg model =
 
     RetreiveAccountForm formMsg ->
       let
-        (newForm, formCmd, response) = Form.update formMsg model.confirmAccountForm
+        (newForm, formCmd, response) = Form.update formMsg model.receivedAccountForm
       in
         case response of
           Just result ->

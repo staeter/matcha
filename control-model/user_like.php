@@ -1,4 +1,13 @@
 <?php
+echo '{
+  "data" : {
+    "newLikeStatus" : "True"
+  },
+  "alert" : {
+    "color" : "DarkBlue",
+    "message" : "liked status updated"
+  }
+}';
 // id[int]
 /*
 {

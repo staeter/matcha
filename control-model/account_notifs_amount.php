@@ -1,4 +1,13 @@
 <?php
+echo '{
+  "data" : {
+    "amount" : 234
+  },
+  "alert" : {
+    "color" : "DarkBlue",
+    "message" : "notifs amount alert"
+  }
+}';
 //
 /*
 {

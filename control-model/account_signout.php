@@ -1,4 +1,8 @@
 <?php
+echo '{
+  "result" : "Success",
+  "message" : "Bye!"
+}'
 /*
 {
   "result" : "Success" or "Failure",

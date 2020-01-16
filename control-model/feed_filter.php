@@ -1,4 +1,44 @@
 <?php
+echo '{
+  "data" : {
+    "pageAmount" : 5,
+    "elemAmount" : 18,
+    "users" : [
+      {
+        "id" : 1,
+        "pseudo" : "John",
+        "picture" : "/data/doe.png",
+        "tags" : ["geek", "foot"],
+        "liked" : "False"
+      },
+      {
+        "id" : 3,
+        "pseudo" : "Lise",
+        "picture" : "/data/liypick.png",
+        "tags" : ["boty", "makup"],
+        "liked" : "False"
+      },
+      {
+        "id" : 12,
+        "pseudo" : "Marcel",
+        "picture" : "/data/marcel.png",
+        "tags" : ["tatoo", "beer"],
+        "liked" : "False"
+      },
+      {
+        "id" : 13,
+        "pseudo" : "clara",
+        "picture" : "/data/gotaga.png",
+        "tags" : ["geek", "fun"],
+        "liked" : "True"
+      }
+    ]
+  },
+  "alert" : {
+    "color" : "DarkBlue",
+    "message" : "feed filter call"
+  }
+}';
 // ageMin[int] ageMax[int] distanceMax[int] popularityMin[int] popularityMax[int] tags[json array of strings] viewed[True/False] liked[True/False]
 /*
 {

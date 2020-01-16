@@ -1,4 +1,8 @@
 <?php
+echo '{
+  "result" : "Success",
+  "message" : "password retrieval success!"
+}'
 // a b newpw confirmNewPw
 /*
 {

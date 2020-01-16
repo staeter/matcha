@@ -1,4 +1,8 @@
 <?php
+echo '{
+  "result" : "Success",
+  "message" : "settings update success!"
+}'
 //pseudo first_name last_name email gender orientation biography birth pictures tags
 /*
 {
