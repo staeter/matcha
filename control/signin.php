@@ -20,7 +20,9 @@ try {
     $_SESSION['id'] = $usr->get_id();
     $_SESSION['pseudo'] = $usr->get_pseudo();
     $_SESSION['mail'] = $usr->get_email();
+    $_SESSION['user'] = serialize($usr);
     $usr->set_log(true);
+
   }
 
 } catch (\Exception $e) {

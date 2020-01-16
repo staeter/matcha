@@ -3,6 +3,9 @@ session_start();
 require '../model/classes/User.class.php';
 require '../model/functions/hash_password.php';
 
+$db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
+
+
 $x = 0;
 
 if (empty($_POST['password']) || empty($_POST['confirm']) || empty($_POST['firstname']) || empty($_POST['lastname']) || empty($_POST['email']) || empty($_POST['pseudo']))
@@ -19,10 +22,16 @@ else if (strcmp($_POST['password'], $_POST['confirm']) !== 0)
     "message" : "Passwords doesnt match."
   }';
 }
+else if (User::is_valid_password($_POST['confirm']) == false)
+{
+  echo '{
+    "result" : "Failure",
+    "message" : "Passwords insecure."
+  }';
+}
 else {
 
   try {
-    $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
     $usr = new User($_POST['pseudo'], $_POST['firstname'], $_POST['lastname'], $_POST['email'], hash_password($_POST['password']), $db);
     $usr->send_account_verification_request("http://localhost:8080/control/confirm_account.php");
     $x = 1;

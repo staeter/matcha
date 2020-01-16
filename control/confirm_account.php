@@ -8,7 +8,7 @@
   $x = 0;
 
 	try {
-		$usr = User::receive_account_verification_request($_GET['a'], $_GET['b'], $db);
+		$usr = User::receive_account_verification_request($_POST['a'], $_POST['b'], $db);
     $x = 1;
 
 	} catch (Exception $e) {

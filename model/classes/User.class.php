@@ -139,6 +139,7 @@
 			$this->_pseudo = $pseudo;
 			$this->_email = $email;
 			$this->_db = $db;
+
 		}
 
 
@@ -324,6 +325,7 @@
 		}
 		public function set_password($hashed_new)
 		{
+
 			if (!User::is_valid_hashed_password($hashed_new)) {
 				throw new InvalidParamException("Fail setting password. Invalid new password.", 2);
 			}
@@ -404,6 +406,21 @@
 		 	$this->_db->execute();
 		}
 
+		public function set_first_name($value)
+		{
+			$query = ('UPDATE user SET firstname = :value WHERE id_user = :id');
+		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
+		 	$this->_db->execute();
+		}
+
+		public function set_last_name($value)
+		{
+			$query = ('UPDATE user SET lastname = :value WHERE id_user = :id');
+		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
+		 	$this->_db->execute();
+		}
+
+		
 
 
 		/*
@@ -434,6 +451,18 @@
 			//echo 'get_pref_mail_notifications: "' . (($row['pref_mail_notifications'] == '1' ? true : false) ? 't'  . '"' : 'f' . '"');
 			return $row['pref_mail_notifications'] == '1' ? true : false;
 		}
+
+		public function get_all_details()
+		{
+				$query = 'SELECT * FROM user WHERE id_user = :id';
+			$this->_db->query($query, array(':id' => $this->get_id()));
+			$row = $this->_db->fetch();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+		}
+
 
 		/*
 		** -------------------- Is valid --------------------
