@@ -1,44 +1,42 @@
 -- Signin
-{- authentify user -} -- signin.php
+{- authentify user -} -- account_signin.php
 
 -- Signup
-{- create  an user and send an email -} -- signup.php
+{- create  an user and send an email -} -- account_signup.php
 
 -- Browse
-{- get users list and default filters -} -- default_filters.php
-{- send filters and get users list back -} -- fileter.php
-{- get next page of users -} -- next_page.php
-{- get last page of users -} -- last_page.php
-{- like a user -} -- like.php
+{- get users list and default filters -} -- feed_open.php
+{- send filters and get users list back -} -- feed_filter.php
+{- get an other page of users -} -- feed_page.php
+{- like a user -} -- user_like.php
 
 -- User
-{- get all infos of an user -} -- user.php
+{- get all infos of an user -} -- user_info.php
 
 -- Account
-{- get current settings -}  -- current_settings.php
-{- update settings -} -- update_settings.php
-{- update password -} -- update_password.php
+{- get current settings -}  -- settings_current.php
+{- update settings -} -- settings_update.php
+{- update password -} -- password_update.php
 
 -- Chat
-{- get list of chats and the amout of unread messages -} -- chats.php
-{- get list of messages exchanged with a user -} -- discution.php
-{- send a new message -} -- message.php
+{- get list of chats and the amout of unread messages -} -- chat_list.php
+{- get list of messages exchanged with a user -} -- chat_discution.php
+{- send a new message -} -- chat_message.php
 
 -- Retreive
-{- update password -} -- retreive_password.php
+{- update password -} -- password_retrieval.php
 
 -- Confirm
-{- confirm new account -} -- confirm_account.php
+{- confirm new account -} -- account_confirmation.php
 
 -- Header
-{- get amount of unread messages -} -- unread_messages.php
-{- get amount of unread notifications -} -- unread_notifications.php
+{- get amount of unread notifications -} -- account_notifs_amount.php
 
 -- Notif
-{- get notif list -} -- notifs.php
+{- get notif list -} -- account_notifs.php
 
 -- Other
-{- sign out -} -- signout.php
+{- sign out -} -- account_signout.php
 
 module Main exposing (..)
 
@@ -79,11 +77,11 @@ type alias Model =
   , userInfo : Maybe
     { unreadNotifsAmount : Int
     }
-  , chatForm : Form (DataAlert Chat) -- chats.php
+  , chatForm : Form (DataAlert Chat) -- chat_list.php
   , receivedChat : Maybe Chat
-  , discutionForm : Form (DataAlert Discution) -- discution.php
+  , discutionForm : Form (DataAlert Discution) -- chat_discution.php
   , receivedDiscution : Maybe Discution
-  , confirmAccountForm : Form (Result String String) -- confirm_account.php
+  , confirmAccountForm : Form (Result String String) -- account_confirmation.php
   , receivedPageContent : Maybe PageContent -- feed_filter.php
   , feedPageForm : Form (DataAlert (List User)) -- feed_page.php
   , receivedFeedPage : Maybe (List User)
@@ -142,13 +140,13 @@ init flags url key =
 
 signinForm : Form (Result String String)
 signinForm =
-  Form.form resultMessageDecoder (OnSubmit "Signin") "http://localhost/control/signin.php"
+  Form.form resultMessageDecoder (OnSubmit "Signin") "http://localhost/control/account_signin.php"
   |> Form.textField "pseudo"
   |> Form.passwordField "password"
 
 signupForm : Form (Result String String)
 signupForm =
-  Form.form resultMessageDecoder (OnSubmit "Signup") "http://localhost/control/signup.php"
+  Form.form resultMessageDecoder (OnSubmit "Signup") "http://localhost/control/account_signup.php"
   |> Form.textField "pseudo"
   |> Form.textField "lastname"
   |> Form.textField "firstname"
@@ -706,7 +704,7 @@ orientationDecoder =
 
 requestUserDetails : Form (DataAlert UserDetails)
 requestUserDetails =
-  Form.form (dataAlertDecoder userDetailsDecoder) (OnSubmit "Request user details") "http://localhost/control/user.php"
+  Form.form (dataAlertDecoder userDetailsDecoder) (OnSubmit "Request user details") "http://localhost/control/user_info.php"
   |> Form.numberField "id" 0
 
 -- feed
@@ -829,7 +827,7 @@ filtersEdgeValuesDecoder =
 
 requestAccountConfirmationForm : Form (Result String String)
 requestAccountConfirmationForm =
-  Form.form resultMessageDecoder (OnSubmit "confirm account") "http://localhost/control/confirm_account.php"
+  Form.form resultMessageDecoder (OnSubmit "confirm account") "http://localhost/control/account_confirmation.php"
   |> Form.textField "a"
   |> Form.textField "b"
 
@@ -858,7 +856,7 @@ requestUpdatePasswordForm =
 
 requestLikeForm : Form (DataAlert Bool)
 requestLikeForm =
-  Form.form (dataAlertDecoder likeStatusDecoder) (OnSubmit "Request like") "http://localhost/control/like.php"
+  Form.form (dataAlertDecoder likeStatusDecoder) (OnSubmit "Request like") "http://localhost/control/user_like.php"
   |> Form.numberField "id" 0
 
 likeStatusDecoder : Decoder Bool
@@ -871,7 +869,7 @@ likeStatusDecoder =
 
 requestSendMessageForm : Form ConfirmAlert
 requestSendMessageForm =
-  Form.form confirmAlertDecoder (OnSubmit "Send message to that id") "http://localhost/control/message.php"
+  Form.form confirmAlertDecoder (OnSubmit "Send message to that id") "http://localhost/control/chat_message.php"
   |> Form.numberField "id" 0
   |> Form.textField "content"
 
@@ -888,7 +886,7 @@ confirmAlertDecoder =
 requestUnreadNotifsAmount : Cmd Msg
 requestUnreadNotifsAmount =
   Http.post
-      { url = "http://localhost/control/unread_notifications.php"
+      { url = "http://localhost/control/account_notifs_amount.php"
       , body = emptyBody
       , expect = Http.expectJson ReceiveUnreadNotifsAmount unreadNotifsAmountDecoder
       }
@@ -907,7 +905,7 @@ type alias Notif =
 
 requestNotifsForm : Form (DataAlert (List Notif))
 requestNotifsForm =
-  Form.form (Decode.list notifDecoder |> dataAlertDecoder) (OnSubmit "Request notifs") "http://localhost/control/notifs.php"
+  Form.form (Decode.list notifDecoder |> dataAlertDecoder) (OnSubmit "Request notifs") "http://localhost/control/account_notifs.php"
 
 notifDecoder : Decoder Notif
 notifDecoder =
@@ -957,7 +955,7 @@ type alias ConfirmAlert =
 
 requestChatsForm : Form (DataAlert Chat)
 requestChatsForm =
-  Form.form (dataAlertDecoder chatDecoder) (OnSubmit "Request chats") "http://localhost/control/chats.php"
+  Form.form (dataAlertDecoder chatDecoder) (OnSubmit "Request chats") "http://localhost/control/chat_list.php"
 
 chatListDecoder : Decoder (List Chat)
 chatListDecoder =
@@ -984,7 +982,7 @@ chatDecoder =
 
 requestDiscutionForm : Form (DataAlert Discution)
 requestDiscutionForm =
-  Form.form (dataAlertDecoder discutionDecoder) (OnSubmit "Request discution") "http://localhost/control/discution.php"
+  Form.form (dataAlertDecoder discutionDecoder) (OnSubmit "Request discution") "http://localhost/control/chat_discution.php"
   |> Form.numberField "id" 0
 
 discutionDecoder : Decoder Discution
@@ -1105,11 +1103,11 @@ browseView model =
 testView : Model -> Html Msg
 testView model =
   Html.div []
-            [ text "chats.php"
+            [ text "chat_list.php"
             , Form.view model.chatForm |> Html.map ChatForm
-            , br [] [], text "discution.php"
+            , br [] [], text "chat_discution.php"
             , Form.view model.discutionForm |> Html.map DiscutionForm
-            , br [] [], text "confirm_account.php"
+            , br [] [], text "account_confirmation.php"
             , Form.view model.confirmAccountForm |> Html.map ConfirmAccountForm
             , br [] [], text "password_retrieval.php"
             , Form.view model.receivedAccountForm |> Html.map RetreiveAccountForm
@@ -1124,13 +1122,13 @@ testView model =
                 )
             , br [] [], br [] [], text "feed_page.php"
             , Form.view model.feedPageForm |> Html.map FeedPageForm
-            , br [] [], text "like.php"
+            , br [] [], text "user_like.php"
             , Form.view model.newLikeStatusForm |> Html.map LikeForm
-            , br [] [], text "message.php"
+            , br [] [], text "chat_message.php"
             , Form.view model.sendMessageForm |> Html.map SendMessageForm
-            , br [] [], text "notifs.php"
+            , br [] [], text "account_notifs.php"
             , Form.view model.notifsForm |> Html.map NotifsForm
-            , br [] [], text "user.php"
+            , br [] [], text "user_info.php"
             , Form.view model.userDetailsForm |> Html.map UserDetailsForm
             , br [] [], br [] [], br [] []
             , text (Debug.toString model)
