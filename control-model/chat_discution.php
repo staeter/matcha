@@ -1,4 +1,9 @@
 <?php
+ob_start();
+var_dump($_POST);
+$result = ob_get_clean();
+error_log("[POST] chat_discution.php: " . $result);
+
 echo '{
   "data" : {
     "messages" : [

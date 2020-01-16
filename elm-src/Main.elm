@@ -852,7 +852,7 @@ requestAccountRetrievalForm =
   |> Form.textField "a"
   |> Form.textField "b"
   |> Form.passwordField "newpw"
-  |> Form.passwordField "confirmNewPw"
+  |> Form.passwordField "confirm"
 
 
 -- update password
@@ -860,8 +860,9 @@ requestAccountRetrievalForm =
 requestUpdatePasswordForm : Form (Result String String)
 requestUpdatePasswordForm =
   Form.form resultMessageDecoder (OnSubmit "update password") "http://localhost/control/password_update.php"
+  |> Form.passwordField "oldpw"
   |> Form.passwordField "newpw"
-  |> Form.passwordField "confirmNewPw"
+  |> Form.passwordField "confirm"
 
 
 -- like
