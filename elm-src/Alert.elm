@@ -55,7 +55,7 @@ httpErrorMessage error =
     Timeout -> "Sory we got truble connecting to our server. The server do not respond."
     NetworkError -> "Sory we got truble connecting to our server. Please make sure your internet connection is working."
     BadStatus status -> "Sory we got truble connecting to our server. Something happened to our server: Status code " ++ String.fromInt status
-    BadBody message -> "Sory we got truble connecting to our server. The body of the request seems not to be valid: " ++ message
+    BadBody message -> "Sory we got truble connecting to our server. The body of the request is invalid: " ++ message
 
 invalidImputAlert : String -> Model a -> Model a
 invalidImputAlert serverMessage model =
