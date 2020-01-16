@@ -406,6 +406,21 @@
 		 	$this->_db->execute();
 		}
 
+		public function set_first_name($value)
+		{
+			$query = ('UPDATE user SET firstname = :value WHERE id_user = :id');
+		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
+		 	$this->_db->execute();
+		}
+
+		public function set_last_name($value)
+		{
+			$query = ('UPDATE user SET lastname = :value WHERE id_user = :id');
+		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
+		 	$this->_db->execute();
+		}
+
+		
 
 
 		/*

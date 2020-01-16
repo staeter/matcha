@@ -28,32 +28,34 @@ if (!(is_empty($_POST['pseudo'])))
 
 if (!(is_empty($_POST['first_name'])))
 {
-
+  User::set_first_name($_POST['first_name']);
 }
-if (!(is_empty($_POST['las_name'])))
+if (!(is_empty($_POST['last_name'])))
 {
-
+    User::set_last_name($_POST['last_name']);
 }
 if (!(is_empty($_POST['email'])))
 {
-
+  User::set_email($_POST['email']);
 }
 if (!(is_empty($_POST['gender'])))
 {
-
+  User::set_gender($_POST['gender']);
 }
 
 if (!(is_empty($_POST['orientation'])))
 {
+  User::set_sexuality_orientation($_POST['orientation']);
 
 }
 if (!(is_empty($_POST['biography'])))
 {
+  User::set_biography($_POST['biography']);
 
 }
 if (!(is_empty($_POST['birth'])))
 {
-
+  User::set_birthdate($POST['birth']);
 }
 
 if (!(is_empty($_POST['pictures'])))
