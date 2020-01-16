@@ -112,7 +112,8 @@ init flags url key =
     , alert = Nothing
     , signin = signinForm
     , signup = signupForm
-    , userInfo = Nothing
+    , userInfo = Just
+      { unreadNotifsAmount = 0 }
 
     , chatForm = requestChatsForm
     , receivedChat = Nothing
@@ -411,8 +412,8 @@ update msg model =
                   (\userInfo -> { userInfo | unreadNotifsAmount = amount})
                   model.userInfo
             }
-          Err _ ->
-            model
+          Err error ->
+            model |> Alert.serverNotReachedAlert error
       , Cmd.none
       )
 
@@ -425,8 +426,8 @@ notifsFormResultHandler result model cmd =
       ( { model | alert = alert, receivedNotifs = data }
       , cmd |> Cmd.map NotifsForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map NotifsForm
       )
 
@@ -437,8 +438,8 @@ sendMessageResultHandler result model cmd =
       ( { model | alert = alert, receivedMessageSent = Just confirm }
       , cmd |> Cmd.map SendMessageForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map SendMessageForm
       )
 
@@ -449,8 +450,8 @@ userDetailsResultHandler result model cmd =
       ( { model | alert = alert, receivedUserDetails = data }
       , cmd |> Cmd.map UserDetailsForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map UserDetailsForm
       )
 
@@ -460,8 +461,8 @@ newLikeStatusResultHandler result model cmd =
       ( { model | alert = alert, receivedNewLikeStatus = data }
       , cmd |> Cmd.map LikeForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map LikeForm
       )
 
@@ -477,8 +478,8 @@ openFeedResultHandler result model cmd =
           ( { model | alert = alert }
           , cmd |> Cmd.map OpenFeedForm
           )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map OpenFeedForm
       )
 
@@ -489,8 +490,8 @@ feedPageResultHandler result model cmd =
       ( { model | alert = alert, receivedFeedPage = data }
       , cmd |> Cmd.map FeedPageForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map FeedPageForm
       )
 
@@ -501,8 +502,8 @@ discutionResultHandler result model cmd =
       ( { model | alert = alert, receivedDiscution = data }
       , cmd |> Cmd.map DiscutionForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map DiscutionForm
       )
 
@@ -512,8 +513,8 @@ chatResultHandler result model cmd =
       ( { model | alert = alert, receivedChat = data }
       , cmd |> Cmd.map ChatForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map ChatForm
       )
 
@@ -523,8 +524,8 @@ filtersResultHandler result model cmd =
       ( { model | alert = alert, receivedPageContent = data }
       , cmd |> Cmd.map FiltersForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map FiltersForm
       )
 
@@ -538,8 +539,8 @@ confirmAccountResultHandler result model cmd =
       ( model |> Alert.invalidImputAlert message
       , cmd |> Cmd.map ConfirmAccountForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map ConfirmAccountForm
       )
 
@@ -553,8 +554,8 @@ retreiveAccountResultHandler result model cmd =
       ( model |> Alert.invalidImputAlert message
       , cmd |> Cmd.map RetreiveAccountForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map RetreiveAccountForm
       )
 
@@ -568,8 +569,8 @@ updatePasswordResultHandler result model cmd =
       ( model |> Alert.invalidImputAlert message
       , cmd |> Cmd.map UpdatePasswordForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map UpdatePasswordForm
       )
 
@@ -586,8 +587,8 @@ signinResultHandler result model cmd =
       ( model |> Alert.invalidImputAlert message
       , cmd |> Cmd.map SigninForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map SigninForm
       )
 
@@ -604,8 +605,8 @@ signupResultHandler result model cmd =
       ( model |> Alert.invalidImputAlert message
       , cmd |> Cmd.map SignupForm
       )
-    Err _ ->
-      ( model |> Alert.serverNotReachedAlert
+    Err error ->
+      ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map SignupForm
       )
 

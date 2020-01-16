@@ -6,6 +6,8 @@ module Alert exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
+import Http exposing (Error(..))
+
 import Json.Decode as Decode exposing (..)
 import Json.Decode.Field as Field exposing (..)
 
@@ -38,12 +40,22 @@ customAlert : String -> String -> Model a -> Model a
 customAlert color message model =
   { model | alert = Just (alert color message) }
 
-serverNotReachedAlert : Model a -> Model a
-serverNotReachedAlert model =
+serverNotReachedAlert : Http.Error -> Model a -> Model a
+serverNotReachedAlert error model =
   customAlert
     "DarkOrange"
-    "Sory we got truble connecting to our server. Please make sure your internet connection is working."
+    (httpErrorMessage error)
     model
+
+--"Sory we got truble connecting to our server. Please make sure your internet connection is working."
+httpErrorMessage : Http.Error -> String
+httpErrorMessage error =
+  case error of
+    BadUrl message -> "Sory we got truble connecting to our server. The URL seems to be incorect: " ++ message
+    Timeout -> "Sory we got truble connecting to our server. The server do not respond."
+    NetworkError -> "Sory we got truble connecting to our server. Please make sure your internet connection is working."
+    BadStatus status -> "Sory we got truble connecting to our server. Something happened to our server: Status code " ++ String.fromInt status
+    BadBody message -> "Sory we got truble connecting to our server. The body of the request seems not to be valid: " ++ message
 
 invalidImputAlert : String -> Model a -> Model a
 invalidImputAlert serverMessage model =
