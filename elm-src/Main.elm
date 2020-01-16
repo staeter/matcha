@@ -75,16 +75,16 @@ type alias Model =
   , signin : Form (Result String String)
   , signup : Form (Result String String)
   , userInfo : Maybe
-    { unreadNotifsAmount : Int
-    }
-  , chatForm : Form (DataAlert (List Chat)) -- chat_list.php
-  , receivedChat : Maybe (List Chat)
+    { unreadNotifsAmount : Int }
+  , confirmAccountForm : Form (Result String String) -- account_confirmation.php
+  , notifsForm : Form (DataAlert (List Notif)) -- account_notifs.php
+  , receivedNotifs : Maybe (List Notif)
   , discutionForm : Form (DataAlert Discution) -- chat_discution.php
   , receivedDiscution : Maybe Discution
-  , confirmAccountForm : Form (Result String String) -- account_confirmation.php
-  , receivedPageContent : Maybe PageContent -- feed_filter.php
-  , feedPageForm : Form (DataAlert (List User)) -- feed_page.php
-  , receivedFeedPage : Maybe (List User)
+  , chatForm : Form (DataAlert (List Chat)) -- chat_list.php
+  , receivedChat : Maybe (List Chat)
+  , sendMessageForm : Form ConfirmAlert -- chat_message.php
+  , receivedMessageSent : Maybe Bool
   , openFeedForm : -- feed_open.php
       Form
         ( DataAlert
@@ -92,17 +92,15 @@ type alias Model =
           , PageContent
           )
         )
-  , receivedFilters : Maybe (Form (DataAlert PageContent))
-  , newLikeStatusForm : Form (DataAlert Bool)
-  , receivedNewLikeStatus : Maybe Bool
-  , sendMessageForm : Form ConfirmAlert
-  , receivedMessageSent : Maybe Bool
-  , notifsForm : Form (DataAlert (List Notif))
-  , receivedNotifs : Maybe (List Notif)
-  , receivedAccountForm : Form (Result String String)
-  , updatePasswordForm : Form (Result String String)
-  , userDetailsForm : Form (DataAlert UserDetails)
+  , receivedFilters : Maybe (Form (DataAlert PageContent)) -- feed_filter.php
+  , feedPageForm : Form (DataAlert (List User)) -- feed_page.php
+  , receivedPageContent : Maybe PageContent
+  , retreivedAccountForm : Form (Result String String) -- password_retreive.php
+  , updatePasswordForm : Form (Result String String) -- password_update.php
+  , userDetailsForm : Form (DataAlert UserDetails) -- user_info.php
   , receivedUserDetails : Maybe UserDetails
+  , newLikeStatusForm : Form (DataAlert Bool) -- user_like.php
+  , receivedNewLikeStatus : Maybe Bool
   }
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
@@ -114,27 +112,25 @@ init flags url key =
     , signup = signupForm
     , userInfo = Just
       { unreadNotifsAmount = 0 }
-
-    , chatForm = requestChatsForm
-    , receivedChat = Nothing
-    , discutionForm = requestDiscutionForm
-    , receivedDiscution = Nothing
     , confirmAccountForm = requestAccountConfirmationForm
-    , receivedPageContent = Nothing
-    , feedPageForm = requestPageForm
-    , receivedFeedPage = Nothing
-    , openFeedForm = requestOpenFeedForm
-    , receivedFilters = Nothing
-    , newLikeStatusForm = requestLikeForm
-    , receivedNewLikeStatus = Nothing
-    , sendMessageForm = requestSendMessageForm
-    , receivedMessageSent = Nothing
     , notifsForm = requestNotifsForm
     , receivedNotifs = Nothing
-    , receivedAccountForm = requestAccountRetrievalForm
+    , discutionForm = requestDiscutionForm
+    , receivedDiscution = Nothing
+    , chatForm = requestChatsForm
+    , receivedChat = Nothing
+    , sendMessageForm = requestSendMessageForm
+    , receivedMessageSent = Nothing
+    , openFeedForm = requestOpenFeedForm
+    , receivedFilters = Nothing
+    , feedPageForm = requestPageForm
+    , receivedPageContent = Nothing
+    , retreivedAccountForm = requestAccountRetrievalForm
     , updatePasswordForm = requestUpdatePasswordForm
     , userDetailsForm = requestUserDetails
     , receivedUserDetails = Nothing
+    , newLikeStatusForm = requestLikeForm
+    , receivedNewLikeStatus = Nothing
     }
   , Cmd.none
   )
@@ -307,13 +303,13 @@ update msg model =
 
     RetreiveAccountForm formMsg ->
       let
-        (newForm, formCmd, response) = Form.update formMsg model.receivedAccountForm
+        (newForm, formCmd, response) = Form.update formMsg model.retreivedAccountForm
       in
         case response of
           Just result ->
-            retreiveAccountResultHandler result { model | receivedAccountForm = newForm } formCmd
+            retreiveAccountResultHandler result { model | retreivedAccountForm = newForm } formCmd
           Nothing ->
-            ( { model | receivedAccountForm = newForm }
+            ( { model | retreivedAccountForm = newForm }
             , formCmd |> Cmd.map RetreiveAccountForm
             )
 
@@ -498,7 +494,13 @@ feedPageResultHandler : Result Http.Error (DataAlert (List User)) -> Model -> Cm
 feedPageResultHandler result model cmd =
   case result of
     Ok { alert, data } ->
-      ( { model | alert = alert, receivedFeedPage = data }
+      ( { model
+          | alert = alert
+          , receivedPageContent =
+              Maybe.map
+                (\pc -> { pc | users = Maybe.withDefault pc.users data })
+                model.receivedPageContent
+        }
       , cmd |> Cmd.map FeedPageForm
       )
     Err error ->
@@ -1131,7 +1133,7 @@ testView model =
             , br [] [], br [] [], text "feed_page.php"
             , Form.view model.feedPageForm |> Html.map FeedPageForm
             , br [] [], text "password_retrieval.php"
-            , Form.view model.receivedAccountForm |> Html.map RetreiveAccountForm
+            , Form.view model.retreivedAccountForm |> Html.map RetreiveAccountForm
             , br [] [], text "password_update.php"
             , Form.view model.updatePasswordForm |> Html.map UpdatePasswordForm
             , br [] [], text "user_info.php"
