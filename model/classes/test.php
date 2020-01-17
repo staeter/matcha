@@ -37,11 +37,33 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 
 
    $usr = new User('sosa', hash_password($pw), $db);
-  $row1 = $usr->get_all_details();
+  $row = $usr->get_all_details();
     $row2 = $usr->get_pref_mail_notifications();
   print_r($row1);
   echo '<br> <br>';
   echo $row2;
+  $jsonmsg =(array('
+{
+"data" {
+"id": "'.$row['id_user'].'",
+"pseudo": "'.$row['pseudo'].'",
+"first_name": "'.$row['firstname'].'",
+"last_name": "'.$row['lastname'].'",
+"gender": "'.$stringforgender.'",
+"orientation": "'.$row['orientation'].'",
+"biography": "'.$row['biography'].'",
+"birth": "'.$row['birth'].'",
+"last_log": "'.$stringforlast_log.'",
+"pictures" : ["/data/name.png", "/data/pic2.png"],
+"is_loged": "'.$row['is_loged'].'",
+"popularity_score": "'.$row['popularity_score'].'"
+"tags" : ["joy", "stuff"],
+"liked" : false
+}
+}
+'));
+print_r($jsonmsg);
+
 
 
 
