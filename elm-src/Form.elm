@@ -209,65 +209,46 @@ update msg myForm =
 
 updateField : InputMsg -> Field -> (Field, Cmd InputMsg)
 updateField msg myField =
-  case myField.value of
-    Text _ ->
-      case msg of
-        TextMsg val -> ({ myField | value = Text val }, Cmd.none)
-        _ -> (myField, Cmd.none)
+  case (myField.value, msg) of
+    (Text _, TextMsg val) ->
+      ({ myField | value = Text val }, Cmd.none)
 
-    Password _ ->
-      case msg of
-        PasswordMsg val -> ({ myField | value = Password val }, Cmd.none)
-        _ -> (myField, Cmd.none)
+    (Password _, PasswordMsg val) ->
+      ({ myField | value = Password val }, Cmd.none)
 
-    DoubleSlider myDoubleSlider ->
-      case msg of
-        DoubleSliderMsg doubleSliderMsg ->
-          let
-            (newDoubleSlider, _, _) =
-              DSlider.update doubleSliderMsg myDoubleSlider
-          in
-            ({ myField | value = DoubleSlider newDoubleSlider }, Cmd.none)
-        _ -> (myField, Cmd.none)
+    (DoubleSlider myDoubleSlider, DoubleSliderMsg doubleSliderMsg) ->
+      let
+        (newDoubleSlider, _, _) =
+          DSlider.update doubleSliderMsg myDoubleSlider
+      in
+        ({ myField | value = DoubleSlider newDoubleSlider }, Cmd.none)
 
-    SingleSlider mySingleSlider ->
-      case msg of
-        SingleSliderMsg singleSliderMsg ->
-          let
-            (newSingleSlider, _, _) =
-              SSlider.update singleSliderMsg mySingleSlider
-          in
-            ({ myField | value = SingleSlider newSingleSlider }, Cmd.none)
-        _ -> (myField, Cmd.none)
+    (SingleSlider mySingleSlider, SingleSliderMsg singleSliderMsg) ->
+      let
+        (newSingleSlider, _, _) =
+          SSlider.update singleSliderMsg mySingleSlider
+      in
+        ({ myField | value = SingleSlider newSingleSlider }, Cmd.none)
 
-    Dropdown myDropdown _ ->
-      case msg of
-        DropdownMsg selectedVal ->
-          ({ myField | value = Dropdown myDropdown selectedVal }, Cmd.none)
-        _ -> (myField, Cmd.none)
+    (Dropdown myDropdown _, DropdownMsg selectedVal) ->
+      ({ myField | value = Dropdown myDropdown selectedVal }, Cmd.none)
 
-    Checkbox _ ->
-      case msg of
-        CheckboxMsg val ->
-          ({ myField | value = Checkbox val }, Cmd.none)
-        _ -> (myField, Cmd.none)
+    (Checkbox _, CheckboxMsg val) ->
+      ({ myField | value = Checkbox val }, Cmd.none)
 
-    Number _ ->
-      case msg of
-        NumberMsg val -> ({ myField | value = Number val }, Cmd.none)
-        _ -> (myField, Cmd.none)
+    (Number _, NumberMsg val) ->
+      ({ myField | value = Number val }, Cmd.none)
 
-    MultiInput { items, state } ->
-      case msg of
-        MultiInputMsg mimsg ->
-          let
-            ( nextState, nextItems, nextCmd ) =
-                MultInput.update { separators = [ "\n", "\t", " ", "," ] } mimsg state items
-          in
-            ( { myField | value = MultiInput{ items = nextItems, state = nextState } }
-            , nextCmd |> Cmd.map MultiInputMsg
-            )
-        _ -> (myField, Cmd.none)
+    (MultiInput { items, state }, MultiInputMsg mimsg) ->
+      let
+        ( nextState, nextItems, nextCmd ) =
+            MultInput.update { separators = [ "\n", "\t", " ", "," ] } mimsg state items
+      in
+        ( { myField | value = MultiInput{ items = nextItems, state = nextState } }
+        , nextCmd |> Cmd.map MultiInputMsg
+        )
+        
+    _ -> (myField, Cmd.none)
 
 
 
