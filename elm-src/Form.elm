@@ -143,12 +143,12 @@ numberField : Label -> Int -> Form a -> Form a
 numberField label defaultVal myForm =
   field label (Number defaultVal) myForm
 
-multiInputField : Label -> Form a -> Form a
-multiInputField label myForm =
+multiInputField : Label -> List String -> Form a -> Form a
+multiInputField label initialItems myForm =
   field
     label
     ( MultiInput
-        { items = []
+        { items = initialItems
         , state = MultInput.init label
         }
     )
@@ -247,7 +247,7 @@ updateField msg myField =
         ( { myField | value = MultiInput{ items = nextItems, state = nextState } }
         , nextCmd |> Cmd.map MultiInputMsg
         )
-        
+
     _ -> (myField, Cmd.none)
 
 
