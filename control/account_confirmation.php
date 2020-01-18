@@ -17,15 +17,23 @@
 
     if ($x == 1){
           echo '{
-            "result" : "Success",
-            "message" : "Votre compte à bien été vérfié."
-          }';
+	"result": "Success",
+  "message": "Un problème est arrivé dans la validation de votre compte !",
+	"alert": {
+		"color": "DarkGrenn",
+		"message": "Votre compte à bien été vérfié."
+	}
+}';
         }
     else if ($x == 0){
       echo '{
-        "result" : "Failure",
-        "message" : "Un problème est arrivé dans la validation de votre compte !"
-      }';
+	"result": "Failure",
+  "message": "Un problème est arrivé dans la validation de votre compte !",
+	"alert": {
+		"color": "DarkRed",
+		"message": "Un problème est arrivé dans la validation de votre compte !"
+	}
+}';
 
     }
 // a b
