@@ -40,7 +40,13 @@ type Access
   | Anonymous AModel
 
 type alias UModel =
-  { -- unreadNotifsAmount : Int
+  { -- feed
+    filtersForm : Maybe FiltersForm
+  , feedContent : List Profile
+  , feedPageNumber : Int
+  , feedPageAmount : Int
+  , feedElemAmount : Int
+  -- , unreadNotifsAmount : Int
   }
 
 type alias AModel =
@@ -49,37 +55,44 @@ type alias AModel =
   }
 
 
--- initialisations
+-- init
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
 init flags url key =
   ( { url = url
     , key = key
     , alert = Nothing
-    , access = anonymousAccess_init
+    , access = anonymousAccessInit
     }
   , Cmd.none
   )
 
-anonymousAccess_init : Access
-anonymousAccess_init = Anonymous
-  { signinForm = signinForm_init
-  , signupForm = signupForm_init
+anonymousAccessInit : Access
+anonymousAccessInit = Anonymous
+  { signinForm = signinFormInit
+  , signupForm = signupFormInit
   }
 
-userAccess_init : Access
-userAccess_init = User
-  {
+userAccessInit : Access
+userAccessInit = User
+  { filtersForm = Nothing
+  , feedContent = []
+  , feedPageNumber = 0
+  , feedPageAmount = 0
+  , feedElemAmount = 0
   }
 
-signinForm_init : Form (Result String String)
-signinForm_init =
+
+-- account
+
+signinFormInit : Form (Result String String)
+signinFormInit =
   Form.form resultMessageDecoder (OnSubmit "Signin") "http://localhost/control/account_signin.php"
   |> Form.textField "pseudo"
   |> Form.passwordField "password"
 
-signupForm_init : Form (Result String String)
-signupForm_init =
+signupFormInit : Form (Result String String)
+signupFormInit =
   Form.form resultMessageDecoder (OnSubmit "Signup") "http://localhost/control/account_signup.php"
   |> Form.textField "pseudo"
   |> Form.textField "lastname"
@@ -87,6 +100,181 @@ signupForm_init =
   |> Form.textField "email"
   |> Form.passwordField "password"
   |> Form.passwordField "confirm"
+
+
+-- feed
+
+type alias Feed a =
+  { a
+    | filtersForm : Maybe FiltersForm
+    , feedContent : List Profile
+    , feedPageNumber : Int
+    , feedPageAmount : Int
+    , feedElemAmount : Int
+  }
+
+type alias FiltersForm = Form (DataAlert PageContent)
+
+type alias Profile =
+  { id : Int
+  , pseudo : String
+  , picture : String
+  , tags : List String
+  , liked : Bool
+  }
+
+type alias PageContent =
+  { pageAmount : Int
+  , elemAmount : Int
+  , users : List Profile
+  }
+
+type alias FiltersEdgeValues =
+  { ageMin : Float
+  , ageMax : Float
+  , distanceMax : Float
+  , popularityMin : Float
+  , popularityMax : Float
+  }
+
+filtersFormInit : FiltersEdgeValues -> FiltersForm
+filtersFormInit {ageMin, ageMax, distanceMax, popularityMin, popularityMax} =
+  Form.form (dataAlertDecoder pageContentDecoder) LiveUpdate "http://localhost/control/feed_filter.php"
+  |> Form.doubleSliderField "age" (ageMin, ageMax, 1)
+  |> Form.doubleSliderField "popularity" (popularityMin, popularityMax, 1)
+  |> Form.singleSliderField "distanceMax" (3, distanceMax, 1)
+  |> Form.checkboxField "viewed" False
+  |> Form.checkboxField "liked" False
+
+requestFeedInit : Cmd Msg
+requestFeedInit =
+  Http.post
+      { url = "http://localhost/control/feed_open.php"
+      , body = emptyBody
+      , expect = Http.expectJson ReceiveFeedInit (dataAlertDecoder feedOpenDecoder)
+      }
+
+requestFeedPage : Int -> Feed a -> Maybe (Feed a, Cmd Msg)
+requestFeedPage requestedPageNumber umodel =
+  if requestedPageNumber /= umodel.feedPageNumber &&
+     requestedPageNumber < umodel.feedPageAmount &&
+     requestedPageNumber >= 0
+  then Just
+    ( { umodel | feedPageNumber = requestedPageNumber, feedContent = [] }
+    , Http.post
+        { url = "http://localhost/control/feed_page.php"
+        , body = multipartBody [stringPart "page" (String.fromInt requestedPageNumber)]
+        , expect = Http.expectJson ReceiveFiltersUpdate (dataAlertDecoder pageContentDecoder)
+        }
+    )
+  else Nothing
+
+receiveFeedInit : (FiltersForm, PageContent) -> Feed a -> Feed a
+receiveFeedInit (receivedFiltersForm, receivedPageContent) amodel =
+  { amodel | filtersForm = Just receivedFiltersForm}
+  |> receivePageContentUpdate receivedPageContent
+
+receivePageContentUpdate : PageContent -> Feed a -> Feed a
+receivePageContentUpdate receivedPageContent amodel =
+  { amodel
+    | feedContent = receivedPageContent.users
+    , feedPageNumber = 0
+    , feedPageAmount = receivedPageContent.pageAmount
+    , feedElemAmount = receivedPageContent.elemAmount
+  }
+
+receiveFeedPage : List Profile -> Feed a -> Feed a
+receiveFeedPage receivedContent amodel =
+  { amodel | feedContent = receivedContent }
+
+feedOpenDecoder : Decoder (FiltersForm, PageContent)
+feedOpenDecoder =
+  Field.require "filtersEdgeValues" filtersEdgeValuesDecoder <| \filtersEdgeValues ->
+  Field.require "pageContent" pageContentDecoder <| \pageContent ->
+
+  Decode.succeed
+    ( filtersFormInit filtersEdgeValues
+    , pageContent
+    )
+
+pageContentDecoder : Decoder PageContent
+pageContentDecoder =
+  Field.require "pageAmount" Decode.int <| \pageAmount ->
+  Field.require "elemAmount" Decode.int <| \elemAmount ->
+  Field.require "users" (Decode.list profileDecoder) <| \users ->
+
+  Decode.succeed
+    { pageAmount = pageAmount
+    , elemAmount = elemAmount
+    , users = users
+    }
+
+profileDecoder : Decoder Profile
+profileDecoder =
+  Field.require "id" Decode.int <| \id ->
+  Field.require "pseudo" Decode.string <| \pseudo ->
+  Field.require "picture" Decode.string <| \picture ->
+  Field.require "tags" (Decode.list Decode.string) <| \tags ->
+  Field.require "liked" Decode.bool <| \liked ->
+
+  Decode.succeed
+    { id = id
+    , pseudo = pseudo
+    , picture = picture
+    , tags = tags
+    , liked = liked
+    }
+
+filtersEdgeValuesDecoder : Decoder FiltersEdgeValues
+filtersEdgeValuesDecoder =
+  Field.require "ageMin" Decode.float <| \ageMin ->
+  Field.require "ageMax" Decode.float <| \ageMax ->
+  Field.require "distanceMax" Decode.float <| \distanceMax ->
+  Field.require "popularityMin" Decode.float <| \popularityMin ->
+  Field.require "popularityMax" Decode.float <| \popularityMax ->
+
+  Decode.succeed
+    { ageMin = ageMin
+    , ageMax = ageMax
+    , distanceMax = distanceMax
+    , popularityMin = popularityMin
+    , popularityMax = popularityMax
+    }
+
+
+-- decoders
+
+resultMessageDecoder : Decoder (Result String String)
+resultMessageDecoder =
+  Field.require "result" resultDecoder <| \result ->
+  Field.require "message" Decode.string <| \message ->
+
+  Decode.succeed (result message)
+
+resultDecoder : Decoder (String -> Result String String)
+resultDecoder =
+  Decode.string |> andThen
+    (\ str ->
+      case str of
+        "Success" ->
+          Decode.succeed Ok
+
+        "Failure" ->
+          Decode.succeed Err
+
+        _ ->
+          Decode.fail "statusDecoder failed : not a valid status"
+    )
+
+type alias DataAlert a =
+  { alert : Maybe Alert, data : Maybe a }
+
+dataAlertDecoder : Decoder a -> Decoder (DataAlert a)
+dataAlertDecoder dataDecoder =
+  Field.attempt "data" dataDecoder <| \data ->
+  Field.attempt "alert" alertDecoder <| \alert ->
+
+  Decode.succeed ({ data = data, alert = alert })
 
 
 -- url
@@ -105,9 +293,10 @@ onUrlChange url =
   UrlChange url
 
 type Route
-  = Signin
+  = Home
+  | Signin
   | Signup
-  | Home
+  | Unknown
 
 routeParser : Parser (Route -> a) a
 routeParser =
@@ -127,11 +316,18 @@ type Msg
   | UrlChange Url
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
+  | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
+  | ReceiveFiltersUpdate (Result Http.Error (DataAlert PageContent))
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  let maybeRoute = Parser.parse routeParser model.url in
-  case (model.access, maybeRoute, msg) of
+  let
+    route =
+      Maybe.withDefault
+        Unknown
+        (Parser.parse routeParser model.url)
+  in
+  case (model.access, route, msg) of
     (_, _, InternalLinkClicked url) ->
       (model, Nav.pushUrl model.key (Url.toString url) )
 
@@ -141,7 +337,7 @@ update msg model =
     (_, _, UrlChange url) ->
       ({ model | url = url }, Cmd.none)
 
-    (Anonymous amodel, Just Signin, SigninForm formMsg) ->
+    (Anonymous amodel, Signin, SigninForm formMsg) ->
       let
         (newForm, formCmd, response) = Form.update formMsg amodel.signinForm
       in
@@ -153,7 +349,7 @@ update msg model =
             , formCmd |> Cmd.map SigninForm
             )
 
-    (Anonymous amodel, Just Signup, SignupForm formMsg) ->
+    (Anonymous amodel, Signup, SignupForm formMsg) ->
       let
         (newForm, formCmd, response) = Form.update formMsg amodel.signupForm
       in
@@ -171,7 +367,7 @@ update msg model =
 signinFormResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
-      ( { model | access = userAccess_init } |> Alert.successAlert message
+      ( { model | access = userAccessInit } |> Alert.successAlert message
       , Cmd.batch
         [ Nav.pushUrl model.key "/"
         , cmd |> Cmd.map SigninForm
@@ -205,45 +401,18 @@ signupFormResultHandler result model cmd =
       )
 
 
--- general decoders
-
-resultMessageDecoder : Decoder (Result String String)
-resultMessageDecoder =
-  Field.require "result" resultDecoder <| \result ->
-  Field.require "message" Decode.string <| \message ->
-
-  Decode.succeed (result message)
-
-resultDecoder : Decoder (String -> Result String String)
-resultDecoder =
-  Decode.string |> andThen
-    (\ str ->
-      case str of
-        "Success" ->
-          Decode.succeed Ok
-
-        "Failure" ->
-          Decode.succeed Err
-
-        _ ->
-          Decode.fail "statusDecoder failed : not a valid status"
-    )
-
-dataAlertDecoder : Decoder a -> Decoder { data: Maybe a, alert: Maybe Alert }
-dataAlertDecoder dataDecoder =
-  Field.attempt "data" dataDecoder <| \data ->
-  Field.attempt "alert" alertDecoder <| \alert ->
-
-  Decode.succeed ({ data = data, alert = alert })
-
-
 -- view
 
 view : Model -> Browser.Document Msg
 view model =
-  let maybeRoute = Parser.parse routeParser model.url in
-  case (model.access, maybeRoute) of
-    (Anonymous amodel, Just Signin) ->
+  let
+    route =
+      Maybe.withDefault
+        Unknown
+        (Parser.parse routeParser model.url)
+  in
+  case (model.access, route) of
+    (Anonymous amodel, Signin) ->
       { title = "matcha - signin"
       , body =
         [ Alert.view model
@@ -251,7 +420,7 @@ view model =
         ]
       }
 
-    (Anonymous amodel, Just Signup) ->
+    (Anonymous amodel, Signup) ->
       { title = "matcha - signup"
       , body =
         [ Alert.view model
@@ -259,15 +428,24 @@ view model =
         ]
       }
 
+    (Anonymous _, Home) ->
+      { title = "matcha - home"
+      , body =
+        [ text "Welcome to Matcha. The best site too meet your future love!"
+        , br [] [], a [ href "/signin" ] [ text "Signin" ]
+        , text " or ", a [ href "/signup" ] [ text "Signup" ]
+        ]
+      }
+
     (Anonymous _, _) ->
       { title = "matcha - 404 page not found"
       , body =
-        [ text "You seem lost: "
+        [ text "You seem lost", br [] []
         , a [ href "/signin" ] [ text "go to signin" ]
         ]
       }
 
-    (User _, Just Home) ->
+    (User _, Home) ->
       { title = "matcha - home"
       , body =
         [ Alert.view model
@@ -278,7 +456,7 @@ view model =
     (User _, _) ->
       { title = "matcha - 404 page not found"
       , body =
-        [ text "You seem lost: "
+        [ text "You seem lost", br [] []
         , a [ href "/" ] [ text "go back home" ]
         ]
       }
