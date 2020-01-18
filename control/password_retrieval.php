@@ -20,18 +20,29 @@ if (empty($_POST['b']) || empty($_POST['newpw']) || empty($_POST['confirm']) || 
 }';
 return;
 }
+else if (strcmp($_POST['confirm'], $_POST['newpw']) !== 0)
+{
+  echo '{
+  "result": "Failure",
+  "message": "New Password and Confirm doesnt match!",
+  "alert": {
+    "color": "DarkRed",
+    "message": "New Password and Confirm doesnt match!"
+}
+}';
+return;
+}
 else {
-//
-// try {
-//     User::send_account_retrieval($_POST['b'], $db, "http://localhost/control/account_retreivial.php");
-// 	  }
-//   catch (Exception $e) {
-//     echo '{
-//       "result" : "Failure",
-//       "message" : "'.$e->getMessage().'"
-//     }';
-//     return;
-// 	}
+      try {
+        //User::send_account_retrieval($_POST['b'], $db, "http://localhost/control/account_retreivial.php");
+	       }
+        catch (Exception $e) {
+          echo '{
+            "result" : "Failure",
+            "message" : "'.$e->getMessage().'"
+          }';
+        return;
+	}
 // a b newpw
 /*
 {

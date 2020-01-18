@@ -18,7 +18,7 @@
     if ($x == 1){
           echo '{
 	"result": "Success",
-  "message": "Un problème est arrivé dans la validation de votre compte !",
+  "message": "Votre compte à bien été validé !",
 	"alert": {
 		"color": "DarkGrenn",
 		"message": "Votre compte à bien été vérfié."
