@@ -102,146 +102,6 @@ signupFormInit =
   |> Form.passwordField "confirm"
 
 
--- feed
-
-type alias Feed a =
-  { a
-    | filtersForm : Maybe FiltersForm
-    , feedContent : List Profile
-    , feedPageNumber : Int
-    , feedPageAmount : Int
-    , feedElemAmount : Int
-  }
-
-type alias FiltersForm = Form (DataAlert PageContent)
-
-type alias Profile =
-  { id : Int
-  , pseudo : String
-  , picture : String
-  , tags : List String
-  , liked : Bool
-  }
-
-type alias PageContent =
-  { pageAmount : Int
-  , elemAmount : Int
-  , users : List Profile
-  }
-
-type alias FiltersEdgeValues =
-  { ageMin : Float
-  , ageMax : Float
-  , distanceMax : Float
-  , popularityMin : Float
-  , popularityMax : Float
-  }
-
-filtersFormInit : FiltersEdgeValues -> FiltersForm
-filtersFormInit {ageMin, ageMax, distanceMax, popularityMin, popularityMax} =
-  Form.form (dataAlertDecoder pageContentDecoder) LiveUpdate "http://localhost/control/feed_filter.php"
-  |> Form.doubleSliderField "age" (ageMin, ageMax, 1)
-  |> Form.doubleSliderField "popularity" (popularityMin, popularityMax, 1)
-  |> Form.singleSliderField "distanceMax" (3, distanceMax, 1)
-  |> Form.checkboxField "viewed" False
-  |> Form.checkboxField "liked" False
-
-requestFeedInit : Cmd Msg
-requestFeedInit =
-  Http.post
-      { url = "http://localhost/control/feed_open.php"
-      , body = emptyBody
-      , expect = Http.expectJson ReceiveFeedInit (dataAlertDecoder feedOpenDecoder)
-      }
-
-requestFeedPage : Int -> Feed a -> Maybe (Feed a, Cmd Msg)
-requestFeedPage requestedPageNumber umodel =
-  if requestedPageNumber /= umodel.feedPageNumber &&
-     requestedPageNumber < umodel.feedPageAmount &&
-     requestedPageNumber >= 0
-  then Just
-    ( { umodel | feedPageNumber = requestedPageNumber, feedContent = [] }
-    , Http.post
-        { url = "http://localhost/control/feed_page.php"
-        , body = multipartBody [stringPart "page" (String.fromInt requestedPageNumber)]
-        , expect = Http.expectJson ReceiveFiltersUpdate (dataAlertDecoder pageContentDecoder)
-        }
-    )
-  else Nothing
-
-receiveFeedInit : (FiltersForm, PageContent) -> Feed a -> Feed a
-receiveFeedInit (receivedFiltersForm, receivedPageContent) amodel =
-  { amodel | filtersForm = Just receivedFiltersForm}
-  |> receivePageContentUpdate receivedPageContent
-
-receivePageContentUpdate : PageContent -> Feed a -> Feed a
-receivePageContentUpdate receivedPageContent amodel =
-  { amodel
-    | feedContent = receivedPageContent.users
-    , feedPageNumber = 0
-    , feedPageAmount = receivedPageContent.pageAmount
-    , feedElemAmount = receivedPageContent.elemAmount
-  }
-
-receiveFeedPage : List Profile -> Feed a -> Feed a
-receiveFeedPage receivedContent amodel =
-  { amodel | feedContent = receivedContent }
-
-feedOpenDecoder : Decoder (FiltersForm, PageContent)
-feedOpenDecoder =
-  Field.require "filtersEdgeValues" filtersEdgeValuesDecoder <| \filtersEdgeValues ->
-  Field.require "pageContent" pageContentDecoder <| \pageContent ->
-
-  Decode.succeed
-    ( filtersFormInit filtersEdgeValues
-    , pageContent
-    )
-
-pageContentDecoder : Decoder PageContent
-pageContentDecoder =
-  Field.require "pageAmount" Decode.int <| \pageAmount ->
-  Field.require "elemAmount" Decode.int <| \elemAmount ->
-  Field.require "users" (Decode.list profileDecoder) <| \users ->
-
-  Decode.succeed
-    { pageAmount = pageAmount
-    , elemAmount = elemAmount
-    , users = users
-    }
-
-profileDecoder : Decoder Profile
-profileDecoder =
-  Field.require "id" Decode.int <| \id ->
-  Field.require "pseudo" Decode.string <| \pseudo ->
-  Field.require "picture" Decode.string <| \picture ->
-  Field.require "tags" (Decode.list Decode.string) <| \tags ->
-  Field.require "liked" Decode.bool <| \liked ->
-
-  Decode.succeed
-    { id = id
-    , pseudo = pseudo
-    , picture = picture
-    , tags = tags
-    , liked = liked
-    }
-
-filtersEdgeValuesDecoder : Decoder FiltersEdgeValues
-filtersEdgeValuesDecoder =
-  Field.require "ageMin" Decode.float <| \ageMin ->
-  Field.require "ageMax" Decode.float <| \ageMax ->
-  Field.require "distanceMax" Decode.float <| \distanceMax ->
-  Field.require "popularityMin" Decode.float <| \popularityMin ->
-  Field.require "popularityMax" Decode.float <| \popularityMax ->
-
-  Decode.succeed
-    { ageMin = ageMin
-    , ageMax = ageMax
-    , distanceMax = distanceMax
-    , popularityMin = popularityMin
-    , popularityMax = popularityMax
-    }
-
-
 -- decoders
 
 resultMessageDecoder : Decoder (Result String String)
@@ -317,6 +177,7 @@ type Msg
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
+  | FiltersForm FiltersFormMsg
   | ReceiveFiltersUpdate (Result Http.Error (DataAlert PageContent))
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -361,6 +222,39 @@ update msg model =
             , formCmd |> Cmd.map SignupForm
             )
 
+    (User umodel, _, ReceiveFeedInit result) ->
+      case result of
+        Ok { data, alert } ->
+          ( { model | alert = alert, access = User (receiveFeedInit data umodel) }
+          , Cmd.none
+          )
+        Err error ->
+          ( model |> Alert.serverNotReachedAlert error
+          , Cmd.none
+          )
+
+    (User umodel, _, FiltersForm formMsg) ->
+      case umodel.filtersForm of
+        Nothing -> ( model, Cmd.none )
+        Just currentFiltersForm ->
+          let
+            (newForm, formCmd, response) = Form.update formMsg currentFiltersForm
+          in
+            case response of
+              Just (Ok { data, alert }) ->
+                ( { model | alert = alert, access = User (receivePageContentUpdate data umodel) }
+                , formCmd |> Cmd.map FiltersForm
+                )
+              Just (Err error) ->
+                ( { model | access = User { umodel | filtersForm = Just newForm } }
+                    |> Alert.serverNotReachedAlert error
+                , formCmd |> Cmd.map FiltersForm
+                )
+              Nothing ->
+                ( { model | access = User { umodel | filtersForm = Just newForm } }
+                , formCmd |> Cmd.map FiltersForm
+                )
+
     _ -> ( model, Cmd.none )
 
 
@@ -371,6 +265,7 @@ signinFormResultHandler result model cmd =
       , Cmd.batch
         [ Nav.pushUrl model.key "/"
         , cmd |> Cmd.map SigninForm
+        , requestFeedInit
         ]
       )
     Ok (Err message) ->
@@ -399,6 +294,156 @@ signupFormResultHandler result model cmd =
       ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map SignupForm
       )
+
+
+-- feed
+
+type alias Feed a =
+  { a
+    | filtersForm : Maybe FiltersForm
+    , feedContent : List Profile
+    , feedPageNumber : Int
+    , feedPageAmount : Int
+    , feedElemAmount : Int
+  }
+
+type alias FiltersForm = Form (DataAlert PageContent)
+type alias FiltersFormMsg = Form.Msg (DataAlert PageContent)
+
+type alias Profile =
+  { id : Int
+  , pseudo : String
+  , picture : String
+  , tags : List String
+  , liked : Bool
+  }
+
+type alias PageContent =
+  { pageAmount : Int
+  , elemAmount : Int
+  , users : List Profile
+  }
+
+type alias FiltersEdgeValues =
+  { ageMin : Float
+  , ageMax : Float
+  , distanceMax : Float
+  , popularityMin : Float
+  , popularityMax : Float
+  }
+
+filtersFormInit : FiltersEdgeValues -> FiltersForm
+filtersFormInit {ageMin, ageMax, distanceMax, popularityMin, popularityMax} =
+  Form.form (dataAlertDecoder pageContentDecoder) LiveUpdate "http://localhost/control/feed_filter.php"
+  |> Form.doubleSliderField "age" (ageMin, ageMax, 1)
+  |> Form.doubleSliderField "popularity" (popularityMin, popularityMax, 1)
+  |> Form.singleSliderField "distanceMax" (3, distanceMax, 1)
+  |> Form.checkboxField "viewed" False
+  |> Form.checkboxField "liked" False
+
+requestFeedInit : Cmd Msg
+requestFeedInit =
+  Http.post
+      { url = "http://localhost/control/feed_open.php"
+      , body = emptyBody
+      , expect = Http.expectJson ReceiveFeedInit (dataAlertDecoder feedOpenDecoder)
+      }
+
+requestFeedPage : Int -> Feed a -> Maybe (Feed a, Cmd Msg)
+requestFeedPage requestedPageNumber umodel =
+  if requestedPageNumber /= umodel.feedPageNumber &&
+     requestedPageNumber < umodel.feedPageAmount &&
+     requestedPageNumber >= 0
+  then Just
+    ( { umodel | feedPageNumber = requestedPageNumber, feedContent = [] }
+    , Http.post
+        { url = "http://localhost/control/feed_page.php"
+        , body = multipartBody [stringPart "page" (String.fromInt requestedPageNumber)]
+        , expect = Http.expectJson ReceiveFiltersUpdate (dataAlertDecoder pageContentDecoder)
+        }
+    )
+  else Nothing
+
+receiveFeedInit : Maybe (FiltersForm, PageContent) -> Feed a -> Feed a
+receiveFeedInit maybeData umodel =
+  case maybeData of
+    Just (receivedFiltersForm, receivedPageContent) ->
+      { umodel | filtersForm = Just receivedFiltersForm}
+      |> receivePageContentUpdate (Just receivedPageContent)
+    Nothing -> umodel
+
+receivePageContentUpdate : Maybe PageContent -> Feed a -> Feed a
+receivePageContentUpdate maybeReceivedPageContent umodel =
+  case maybeReceivedPageContent of
+    Just receivedPageContent ->
+      { umodel
+        | feedContent = receivedPageContent.users
+        , feedPageNumber = 0
+        , feedPageAmount = receivedPageContent.pageAmount
+        , feedElemAmount = receivedPageContent.elemAmount
+      }
+    Nothing -> umodel
+
+receiveFeedPage : Maybe (List Profile) -> Feed a -> Feed a
+receiveFeedPage maybeReceivedContent umodel =
+  case maybeReceivedContent of
+    Just receivedContent ->
+      { umodel | feedContent = receivedContent }
+    Nothing -> umodel
+
+feedOpenDecoder : Decoder (FiltersForm, PageContent)
+feedOpenDecoder =
+  Field.require "filtersEdgeValues" filtersEdgeValuesDecoder <| \filtersEdgeValues ->
+  Field.require "pageContent" pageContentDecoder <| \pageContent ->
+
+  Decode.succeed
+    ( filtersFormInit filtersEdgeValues
+    , pageContent
+    )
+
+pageContentDecoder : Decoder PageContent
+pageContentDecoder =
+  Field.require "pageAmount" Decode.int <| \pageAmount ->
+  Field.require "elemAmount" Decode.int <| \elemAmount ->
+  Field.require "users" (Decode.list profileDecoder) <| \users ->
+
+  Decode.succeed
+    { pageAmount = pageAmount
+    , elemAmount = elemAmount
+    , users = users
+    }
+
+profileDecoder : Decoder Profile
+profileDecoder =
+  Field.require "id" Decode.int <| \id ->
+  Field.require "pseudo" Decode.string <| \pseudo ->
+  Field.require "picture" Decode.string <| \picture ->
+  Field.require "tags" (Decode.list Decode.string) <| \tags ->
+  Field.require "liked" Decode.bool <| \liked ->
+
+  Decode.succeed
+    { id = id
+    , pseudo = pseudo
+    , picture = picture
+    , tags = tags
+    , liked = liked
+    }
+
+filtersEdgeValuesDecoder : Decoder FiltersEdgeValues
+filtersEdgeValuesDecoder =
+  Field.require "ageMin" Decode.float <| \ageMin ->
+  Field.require "ageMax" Decode.float <| \ageMax ->
+  Field.require "distanceMax" Decode.float <| \distanceMax ->
+  Field.require "popularityMin" Decode.float <| \popularityMin ->
+  Field.require "popularityMax" Decode.float <| \popularityMax ->
+
+  Decode.succeed
+    { ageMin = ageMin
+    , ageMax = ageMax
+    , distanceMax = distanceMax
+    , popularityMin = popularityMin
+    , popularityMax = popularityMax
+    }
 
 
 -- view
@@ -445,11 +490,13 @@ view model =
         ]
       }
 
-    (User _, Home) ->
+    (User umodel, Home) ->
       { title = "matcha - home"
       , body =
         [ Alert.view model
-        , text "this is home"
+        , Maybe.map Form.view umodel.filtersForm
+          |> Maybe.map (Html.map FiltersForm)
+          |> Maybe.withDefault (text "Loading...")
         ]
       }
 
