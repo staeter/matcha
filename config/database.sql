@@ -169,6 +169,7 @@ CREATE TABLE IF NOT EXISTS `messages` (
   `id_user_receiving` INT UNSIGNED,
   `date` DATETIME NOT NULL DEFAULT NOW(),
   `content` TEXT,
+  `msg_read` BOOLEAN DEFAULT false,
 
   PRIMARY KEY (`id_message`),
 
