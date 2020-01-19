@@ -14,6 +14,7 @@ try {
   $_SESSION['id'] = NULL;
   $_SESSION['pseudo'] = NULL;
   $_SESSION['mail'] = NULL;
+  $_SESSION['user'] = NULL;
   $x = 1;
   session_destroy();
 

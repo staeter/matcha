@@ -11,12 +11,13 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 
 
 $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
+$usr = unserialize($_SESSION['user']);
 
 if (!(is_empty($_POST['pseudo'])))
 {
-  if (User::is_valid_password($_POST['pseudo'] == TRUE))
+  if ($usr->is_valid_pseudo($_POST['pseudo'] == TRUE))
   {
-        User::set_password(hash_password($_POST['pseudo']));
+        $usr->set_pseudo($_POST['pseudo']);
   }
   else {
     echo '{
@@ -28,44 +29,61 @@ if (!(is_empty($_POST['pseudo'])))
 
 if (!(is_empty($_POST['first_name'])))
 {
-  User::set_first_name($_POST['first_name']);
+  $usr->set_first_name($_POST['first_name']);
 }
 if (!(is_empty($_POST['last_name'])))
 {
-    User::set_last_name($_POST['last_name']);
+    $usr->set_last_name($_POST['last_name']);
 }
 if (!(is_empty($_POST['email'])))
 {
-  User::set_email($_POST['email']);
+  if ($usr->is_valid_email($_POST['email']) == FALSE)
+  {
+    echo '{
+      "result" : "Failure",
+      "message" : "Le mail n est pas valide"
+    }';
+    return;
+  }
+
+  if ($usr->is_email_in_use($_POST['email']) == false)
+    $usr->set_email($_POST['email']);
+  else {
+    echo '{
+      "result" : "Failure",
+      "message" : "Le mail choisi est déjà utiliser"
+    }';
+  }
 }
 if (!(is_empty($_POST['gender'])))
 {
-  User::set_gender($_POST['gender']);
+  $usr->set_gender($_POST['gender']);
 }
 
 if (!(is_empty($_POST['orientation'])))
 {
-  User::set_sexuality_orientation($_POST['orientation']);
-
+  $usr->set_sexuality_orientation($_POST['orientation']);
 }
+
 if (!(is_empty($_POST['biography'])))
 {
-  User::set_biography($_POST['biography']);
+  $usr->set_biography($_POST['biography']);
 
 }
+
 if (!(is_empty($_POST['birth'])))
 {
-  User::set_birthdate($POST['birth']);
+  $usr->set_birthdate($POST['birth']);
 }
 
-if (!(is_empty($_POST['pictures'])))
-{
+//if (!(is_empty($_POST['pictures'])))
+//{
 
-}
-if (!(is_empty($_POST['tags'])))
-{
-
-}
+// }
+// if (!(is_empty($_POST['tags'])))
+// {
+//
+// }
 
 /*
 {
