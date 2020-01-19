@@ -494,9 +494,17 @@
 
 
 			//comme ca je like unlike avec la mm fonction
+		}
+
+		/*
+		** -------------------- Message --------------------
+		*/
 
 
-
+		public function send_message_to_id($id_destinataire, $content)
+		{
+			$query = ('INSERT INTO `messages` SET `id_user_sending` = :idusersending, `id_user_receiving` = :iduserreceiving, `content` = :message; ');
+			$this->_db->query($query, array(':idusersending' => $this->_id, ':iduserreceiving' => $id_destinataire, ':message' => $content));
 		}
 
 
@@ -608,10 +616,12 @@
 			}
 			return TRUE;
 		}
+
 		public static function is_valid($user)
 		{
 			return gettype($user) === 'object' && get_class($user) === __CLASS__;
 		}
+
 		function is_logged($session)
 		{
 			if (!array_key_exists('user', $session) ||
@@ -636,5 +646,7 @@
 			return TRUE;
 		}
 
-	}
+
+
+}
 ?>
