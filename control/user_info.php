@@ -8,21 +8,33 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 
 $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
 
-
+//$usr = unserialize($_SESSION['user']);
 try {
-  $usr = new User($_POST['id'], $db);
-  $row = $usr->get_all_details();
+
+$usr = new User($_POST['id'], $db);
+$row = $usr->get_all_details();
+
+$x = $usr->get_if_liked($_POST['id']);
+
+if ($x == true)
+  $x = 'true';
+else {
+  $x = 'false';
+}
 
 } catch (\Exception $e) {
- //  echo '{
- // "result": "Failure",
- // "message": "All information of the user isnt set.",
- // "alert": {
- //  "color": "DarkRed",
- //  "message": "Cant get information because user DOESNT EXISTS"}
- // }';
- // return;
+
+  // message d erreur non pris en compte car elm attend un field avec data
+  echo '{
+ "result": "Failure",
+ "message": "All information of the user isnt set.",
+ "alert": {
+  "color": "DarkRed",
+  "message": "Cant get information because user DOESNT EXISTS"}
+ }';
+ return;
 }
+
 
 
 //
@@ -38,7 +50,7 @@ if (isset($row))
   else {
     $stringforlast_log = $row['last_log'];
   }
-
+  //$row['orientation'] = '';
   if (empty($row['orientation']) || empty($row['biography']))
   {
     echo '{
@@ -75,7 +87,11 @@ if (isset($row))
   //       }
   //     }';
 
+//
 
+//en attendant
+// il faudra pmettre a jour le gender & l orientation dans la bdd pour fixer ca
+// reste aussi les pictures et les tags.
   echo '{
     "data" : {
       "id" : '.$row['id_user'].',
@@ -90,7 +106,7 @@ if (isset($row))
       "pictures" : ["/data/name.png", "/data/pic2.png"],
       "popularity_score" : '.$row['popularity_score'].',
       "tags" : ["joy", "stuff"],
-      "liked" : false
+      "liked" : '.$x.'
     },
     "alert" : {
       "color" : "DarkBlue",

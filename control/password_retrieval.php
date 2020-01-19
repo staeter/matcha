@@ -35,7 +35,8 @@ return;
 else {
       try {
         //User::send_account_retrieval($_POST['b'], $db, "http://localhost/control/account_retreivial.php");
-	       }
+      //  User::
+         }
         catch (Exception $e) {
           echo '{
             "result" : "Failure",

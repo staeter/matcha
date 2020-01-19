@@ -420,6 +420,32 @@
 		 	$this->_db->execute();
 		}
 
+
+		public function get_if_liked($idli)
+		{
+			// id user liking
+			// id user liked
+			// like 1 or 0
+			// time current time stamp fera le job
+
+
+			$query = ('SELECT `liked` FROM `like` WHERE `id_user_liking` = :idliking AND `id_user_liked` = :idliked');
+			$this->_db->query($query, array(':idliking' => $this->get_id(), 'idliked' => $idli));
+			$row = $this->_db->fetch();
+
+			if (isset($row['liked']))
+				{
+
+					if($row['liked']== 1)
+							return True;
+					else
+							return False;
+
+					// returne 1 si like   si dislike 0 si aucun like
+					// le dislike comptera pour le score de popularité
+				}
+				return False;
+	}
 		public function set_a_like($idli)
 		{
 			// id user liking
