@@ -1051,10 +1051,10 @@ resultDecoder =
 
 dataAlertDecoder : Decoder a -> Decoder { data: Maybe a, alert: Maybe Alert }
 dataAlertDecoder dataDecoder =
-  Field.attempt "data" dataDecoder <| \data ->
+  Field.require "data" dataDecoder <| \data ->
   Field.attempt "alert" alertDecoder <| \alert ->
 
-  Decode.succeed ({ data = data, alert = alert })
+  Decode.succeed ({ data = Just data, alert = alert })
 
 
 -- view
