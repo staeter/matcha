@@ -420,7 +420,58 @@
 		 	$this->_db->execute();
 		}
 
-		
+		public function set_a_like($idli)
+		{
+			// id user liking
+			// id user liked
+			// like 1 or 0
+			// time current time stamp fera le job
+
+
+			$query = ('SELECT `liked` FROM `like` WHERE `id_user_liking` = :idliking AND `id_user_liked` = :idliked');
+			$this->_db->query($query, array(':idliking' => $this->get_id(), 'idliked' => $idli));
+			$row = $this->_db->fetch();
+
+
+			if (isset($row['liked']))
+			{
+						if ($row['liked'] == 1)
+						{
+
+								// je unlike ici
+								$value = 0;
+								$query = ('UPDATE `like`  SET `liked` = :likkk WHERE `id_user_liking` = :idliking AND `id_user_liked` = :idliked');
+								$this->_db->query($query, array(':likkk' => $value, ':idliking' => $this->get_id(), 'idliked' => $idli));
+								//$row = $this->_db->fetch();
+							//	$this->_db->execute();
+							return(1);
+							}
+						else {
+
+								// je like ici
+								$value = 1;
+								$query = ('UPDATE `like` SET `liked` = :likkk WHERE  `id_user_liking` = :idliking AND `id_user_liked` = :idliked ');
+								$this->_db->query($query, array(':likkk' => $value, ':idliking' => $this->get_id(), 'idliked' => $idli));
+								//$this->_db->execute();
+							//	$row = $this->_db->fetch();
+							return(2);
+					}
+		}
+		else {
+							// je like + j insere les donnes du nouveau like
+			$value = 1;
+			$query = ('INSERT INTO `like` SET `id_user_liking` = :iduserlliking, `id_user_liked` = :iduserliked, `liked` = :likeornot; ');
+			$this->_db->query($query, array(':iduserlliking' => $this->_id, ':iduserliked' => $idli, ':likeornot' => $value));
+			return(3);
+			// je dois permettre qu un seul like
+		}
+
+
+			//comme ca je like unlike avec la mm fonction
+
+
+
+		}
 
 
 		/*
@@ -545,6 +596,18 @@
 				return false;
 			}
 			return true;
+		}
+
+		public function is_id_exist($id)
+		{
+
+			$query = 'SELECT * FROM `user` WHERE id_user = :iduseracheck';
+			$this->_db->query($query, array(':iduseracheck' => $id));
+			$row = $this->_db->fetch();
+			if ($row === false) {
+				return FALSE;
+			}
+			return TRUE;
 		}
 
 	}

@@ -14,15 +14,14 @@ try {
   $row = $usr->get_all_details();
 
 } catch (\Exception $e) {
-  echo '{
- "result": "Failure",
- "message": "An error occur to provide user s information.",
- "alert": {
-  "color": "DarkRed",
-  "message": "The id asked is not valid"
-}
-}';
-return;
+ //  echo '{
+ // "result": "Failure",
+ // "message": "All information of the user isnt set.",
+ // "alert": {
+ //  "color": "DarkRed",
+ //  "message": "Cant get information because user DOESNT EXISTS"}
+ // }';
+ // return;
 }
 
 

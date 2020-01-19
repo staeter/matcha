@@ -5,7 +5,7 @@ require '../model/functions/hash_password.php';
 
 try {
   $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
-  $usr = new User($_POST['pseudo'], hash_password($_POST['password']), $db);
+  $usr = new User('SOSALOCA', hash_password('sosa'), $db);
   if ($usr->is_validated_account())
   {
 
