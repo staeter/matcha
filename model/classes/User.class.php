@@ -507,6 +507,17 @@
 			$this->_db->query($query, array(':idusersending' => $this->_id, ':iduserreceiving' => $id_destinataire, ':message' => $content));
 		}
 
+		public function get_all_messages_of_user_connected()
+		{
+			$query = ('SELECT *  FROM `messages` WHERE id_user_sending = :id OR id_user_receiving =:id ORDER BY date DESC');
+			$this->_db->query($query, array(':id' => $this->get_id()));
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+		}
+
 
 		/*
 		** -------------------- Get --------------------
@@ -539,7 +550,7 @@
 
 		public function get_all_details()
 		{
-				$query = 'SELECT * FROM user WHERE id_user = :id';
+			$query = 'SELECT * FROM user WHERE id_user = :id';
 			$this->_db->query($query, array(':id' => $this->get_id()));
 			$row = $this->_db->fetch();
 			if ($row === false) {
