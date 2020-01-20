@@ -6,6 +6,7 @@ module Mainb exposing (..)
 import Browser exposing (application, UrlRequest)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 
 import Url exposing (..)
 import Url.Parser as Parser exposing (..)
@@ -178,7 +179,8 @@ type Msg
   | SignupForm (Form.Msg (Result String String))
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
   | FiltersForm FiltersFormMsg
-  | ReceiveFiltersUpdate (Result Http.Error (DataAlert PageContent))
+  | ReceivePageContentUpdate (Result Http.Error (DataAlert PageContent))
+  | FeedNav Int
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -242,7 +244,7 @@ update msg model =
           in
             case response of
               Just (Ok { data, alert }) ->
-                ( { model | alert = alert, access = User (receivePageContentUpdate data umodel) }
+                ( { model | alert = alert, access = User (receivePageContentUpdate True data umodel) }
                 , formCmd |> Cmd.map FiltersForm
                 )
               Just (Err error) ->
@@ -254,6 +256,25 @@ update msg model =
                 ( { model | access = User { umodel | filtersForm = Just newForm } }
                 , formCmd |> Cmd.map FiltersForm
                 )
+
+    (User umodel, Home, FeedNav page) ->
+      let maybeNewUModelCmdTuple = requestFeedPage page umodel in
+      case maybeNewUModelCmdTuple of
+        Just (newUModel, pageRequestCmd) ->
+          ( { model | access = User newUModel }, pageRequestCmd )
+        Nothing ->
+          ( model, Cmd.none )
+
+    (User umodel, _, ReceivePageContentUpdate result) ->
+      case result of
+        Ok { data, alert } ->
+          ( { model | alert = alert, access = User (receivePageContentUpdate False data umodel) }
+          , Cmd.none
+          )
+        Err error ->
+          ( model |> Alert.serverNotReachedAlert error
+          , Cmd.none
+          )
 
     _ -> ( model, Cmd.none )
 
@@ -359,7 +380,7 @@ requestFeedPage requestedPageNumber umodel =
     , Http.post
         { url = "http://localhost/control/feed_page.php"
         , body = multipartBody [stringPart "page" (String.fromInt requestedPageNumber)]
-        , expect = Http.expectJson ReceiveFiltersUpdate (dataAlertDecoder pageContentDecoder)
+        , expect = Http.expectJson ReceivePageContentUpdate (dataAlertDecoder pageContentDecoder)
         }
     )
   else Nothing
@@ -369,26 +390,19 @@ receiveFeedInit maybeData umodel =
   case maybeData of
     Just (receivedFiltersForm, receivedPageContent) ->
       { umodel | filtersForm = Just receivedFiltersForm}
-      |> receivePageContentUpdate (Just receivedPageContent)
+      |> receivePageContentUpdate True (Just receivedPageContent)
     Nothing -> umodel
 
-receivePageContentUpdate : Maybe PageContent -> Feed a -> Feed a
-receivePageContentUpdate maybeReceivedPageContent umodel =
+receivePageContentUpdate : Bool -> Maybe PageContent -> Feed a -> Feed a
+receivePageContentUpdate resetPage maybeReceivedPageContent umodel =
   case maybeReceivedPageContent of
     Just receivedPageContent ->
       { umodel
         | feedContent = receivedPageContent.users
-        , feedPageNumber = 0
+        , feedPageNumber = if resetPage then 0 else umodel.feedPageNumber
         , feedPageAmount = receivedPageContent.pageAmount
         , feedElemAmount = receivedPageContent.elemAmount
       }
-    Nothing -> umodel
-
-receiveFeedPage : Maybe (List Profile) -> Feed a -> Feed a
-receiveFeedPage maybeReceivedContent umodel =
-  case maybeReceivedContent of
-    Just receivedContent ->
-      { umodel | feedContent = receivedContent }
     Nothing -> umodel
 
 feedOpenDecoder : Decoder (FiltersForm, PageContent)
@@ -497,6 +511,7 @@ view model =
         , Maybe.map Form.view umodel.filtersForm
           |> Maybe.map (Html.map FiltersForm)
           |> Maybe.withDefault (text "Loading...")
+        , viewFeed umodel
         ]
       }
 
@@ -523,6 +538,40 @@ signupView amodel =
             , a [ href "/signin" ]
                 [ text "You alredy have an account?" ]
             ]
+
+viewProfile : Profile -> Html Msg
+viewProfile profile =
+  div []
+      [ img [ src profile.picture ] []
+      , br [] [], text profile.pseudo
+      , br [] [], div [] (List.map text profile.tags)
+      , if profile.liked then text "liked" else text "nope"
+      ]
+
+viewFeedPageNav : Feed a -> Html Msg
+viewFeedPageNav umodel =
+  div []
+    ( List.range 1 umodel.feedPageAmount
+    |> List.map (\ pageNr ->
+                    button [ onClick (FeedNav (pageNr - 1))
+                           , if pageNr - 1 == umodel.feedPageNumber
+                             then style "background-color" "lightblue"
+                             else style "background-color" "white"
+                           ]
+                           [ text (String.fromInt pageNr) ]
+                )
+    )
+
+viewFeed : Feed a -> Html Msg
+viewFeed umodel =
+  if List.isEmpty umodel.feedContent
+  then
+    text "Loading content..."
+  else
+    div []
+        [ div [] ( List.map viewProfile umodel.feedContent )
+        , viewFeedPageNav umodel
+        ]
 
 
 -- subscriptions
