@@ -36,22 +36,125 @@ $usr = unserialize($_SESSION['user']);
     // a l id de l user connecte et moi j ai besoin d une occurence avec le dernier messages
     // je dois traiter ca pour faire mon foreach
 
-   print_r($raw_message);
+ // print_r($raw_message);
+
+
+
+
+// echo '<br><br>';
+// on va tenter ici
+
+function is_not_yet_in_array($arraymult, $arraysimple)
+{
+
+  $i = 0;
+  $j = 0;
+  while (isset($arraymult[$i]['id_user_sending']))
+  {
+    if ($arraymult[$i]['id_user_sending'] == $arraysimple['id_user_sending'] && $arraymult[$i]['id_user_receiving'] == $arraysimple['id_user_receiving'])
+      return 0;
+    $i++;
+  }
+  return 1;
+}
+
+
+function rend_moi_une_occurence_par_conv($raw_message)
+{
+  $array = array();
+  $i = 0;
+  $j = 0;
+
+  while (isset($raw_message[$i]))
+  {
+
+    if (is_not_yet_in_array($array, $raw_message[$i]) == 1)
+    {
+      $array[$j] =  $raw_message[$i];
+      $j++;
+    }
+    $i++;
+  }
+return ($array);
+
+}
+
+$arraytoconvertinJson = rend_moi_une_occurence_par_conv($raw_message);
+
 
 
 // 3.       fonction deja coder
     $raw_user = $usr->get_all_details();
+// print_r($arraytoconvertinJson);
 
 
+    //echo '<br><br>';
 
-    echo '<br><br>';
 
-    if ($raw_message[0]['msg_read'] == 0)
-      $unread = 'false';
-    else
-      $unread = 'true';
+$jsondata = '{
+  "data" : [
+    ';
 
-    
+$findestring = '],
+"alert" : {
+  "color" : "DarkBlue",
+  "message" : "chat list alert"
+}
+}';
+
+foreach ($arraytoconvertinJson as $key => $value) {
+  // code...
+
+  //on va mettre les valeurs à inserer ici
+  //gere l affichie de id
+  if ($arraytoconvertinJson[$key]['id_user_receiving'] == $usr->get_id())
+      $arraytoconvertinJson[$key]['id_user_receiving'] = $arraytoconvertinJson[$key]['id_user_sending'];
+
+  // je dois gerer l affichage de Pseudo
+
+  $pseudotoprint = '';
+
+
+  //picture
+  //lastlog
+  //if ($arraytoconvertinJson[$key]['id_user_sending'] == $usr->get_id() || $arraytoconvertinJson[$key]['id_user_receiving'] == $usr->get_id())
+    $ret = $usr->get_all_details_of_this_id($arraytoconvertinJson[$key]['id_user_receiving']);
+//  else
+  //    $ret = $usr->get_all_details();
+  //   echo '<br><br><br>';
+  // echo '<br><br><br>';
+  // print_r($ret);
+  //
+  //   echo '<br><br><br>';
+  //     echo '<br><br><br>';
+    //unread
+  if ($raw_message[$key]['msg_read'] == 0)
+    $unread = 'false';
+  else
+    $unread = 'true';
+
+
+  $jsondata .='
+  {
+        "id" : '.$arraytoconvertinJson[$key]['id_user_receiving'].',
+        "pseudo" : "'.$ret['pseudo'].'",
+        "picture" : "/data/joneysPick.png",
+        "last_log" : "'.$ret['last_log'].'",
+        "last_message" : "'.$raw_message[$key]['content'].'",
+        "unread" : '.$unread.'
+      },
+  ';
+}
+
+
+$jsondata = substr($jsondata, 0, -4);
+
+// echo '<br><br>';
+
+$jsondata .= $findestring;
+echo $jsondata;
+
+
 
   //     $x = 0;
   //

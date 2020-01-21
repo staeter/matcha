@@ -570,6 +570,18 @@
 			 return $row;
 		}
 
+		public function get_all_details_of_this_id($id)
+		{
+			$query = 'SELECT * FROM user WHERE id_user = :id';
+			$this->_db->query($query, array(':id' => $id));
+			$row = $this->_db->fetch();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+		}
+
+
 
 		/*
 		** -------------------- Is valid --------------------
