@@ -60,6 +60,9 @@ CREATE TABLE IF NOT EXISTS `account_verification` (
 CREATE TABLE IF NOT EXISTS `notifications` (
 	`id_user` INT UNSIGNED NOT NULL,
 	`notification` VARCHAR(254) NOT NULL DEFAULT "Something happened.",
+  `date` DATETIME NOT NULL DEFAULT NOW(),
+  `readed` BOOLEAN DEFAULT false,
+
 
 	FOREIGN KEY (`id_user`)
     REFERENCES `user`(`id_user`)
