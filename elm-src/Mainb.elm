@@ -25,6 +25,7 @@ import Time exposing (..)
 
 import Alert exposing (..)
 import Form exposing (..)
+import Feed exposing (..)
 
 
 -- model
@@ -126,16 +127,6 @@ resultDecoder =
         _ ->
           Decode.fail "statusDecoder failed : not a valid status"
     )
-
-type alias DataAlert a =
-  { alert : Maybe Alert, data : Maybe a }
-
-dataAlertDecoder : Decoder a -> Decoder (DataAlert a)
-dataAlertDecoder dataDecoder =
-  Field.attempt "data" dataDecoder <| \data ->
-  Field.attempt "alert" alertDecoder <| \alert ->
-
-  Decode.succeed ({ data = data, alert = alert })
 
 
 -- url
@@ -258,7 +249,7 @@ update msg model =
                 )
 
     (User umodel, Home, FeedNav page) ->
-      let maybeNewUModelCmdTuple = requestFeedPage page umodel in
+      let maybeNewUModelCmdTuple = requestFeedPage page ReceivePageContentUpdate umodel in
       case maybeNewUModelCmdTuple of
         Just (newUModel, pageRequestCmd) ->
           ( { model | access = User newUModel }, pageRequestCmd )
@@ -286,7 +277,7 @@ signinFormResultHandler result model cmd =
       , Cmd.batch
         [ Nav.pushUrl model.key "/"
         , cmd |> Cmd.map SigninForm
-        , requestFeedInit
+        , requestFeedInit ReceiveFeedInit
         ]
       )
     Ok (Err message) ->
@@ -319,145 +310,19 @@ signupFormResultHandler result model cmd =
 
 -- feed
 
-type alias Feed a =
-  { a
-    | filtersForm : Maybe FiltersForm
-    , feedContent : List Profile
-    , feedPageNumber : Int
-    , feedPageAmount : Int
-    , feedElemAmount : Int
-  }
 
-type alias FiltersForm = Form (DataAlert PageContent)
-type alias FiltersFormMsg = Form.Msg (DataAlert PageContent)
 
-type alias Profile =
-  { id : Int
-  , pseudo : String
-  , picture : String
-  , tags : List String
-  , liked : Bool
-  }
+-- like
 
-type alias PageContent =
-  { pageAmount : Int
-  , elemAmount : Int
-  , users : List Profile
-  }
+likeForm : Form (DataAlert Bool)
+likeForm =
+  Form.form (dataAlertDecoder likeStatusDecoder) (OnSubmit "like") "http://localhost/control/user_like.php"
+  |> Form.numberField "id" 0
 
-type alias FiltersEdgeValues =
-  { ageMin : Float
-  , ageMax : Float
-  , distanceMax : Float
-  , popularityMin : Float
-  , popularityMax : Float
-  }
-
-filtersFormInit : FiltersEdgeValues -> FiltersForm
-filtersFormInit {ageMin, ageMax, distanceMax, popularityMin, popularityMax} =
-  Form.form (dataAlertDecoder pageContentDecoder) LiveUpdate "http://localhost/control/feed_filter.php"
-  |> Form.doubleSliderField "age" (ageMin, ageMax, 1)
-  |> Form.doubleSliderField "popularity" (popularityMin, popularityMax, 1)
-  |> Form.singleSliderField "distanceMax" (3, distanceMax, 1)
-  |> Form.checkboxField "viewed" False
-  |> Form.checkboxField "liked" False
-
-requestFeedInit : Cmd Msg
-requestFeedInit =
-  Http.post
-      { url = "http://localhost/control/feed_open.php"
-      , body = emptyBody
-      , expect = Http.expectJson ReceiveFeedInit (dataAlertDecoder feedOpenDecoder)
-      }
-
-requestFeedPage : Int -> Feed a -> Maybe (Feed a, Cmd Msg)
-requestFeedPage requestedPageNumber umodel =
-  if requestedPageNumber /= umodel.feedPageNumber &&
-     requestedPageNumber < umodel.feedPageAmount &&
-     requestedPageNumber >= 0
-  then Just
-    ( { umodel | feedPageNumber = requestedPageNumber, feedContent = [] }
-    , Http.post
-        { url = "http://localhost/control/feed_page.php"
-        , body = multipartBody [stringPart "page" (String.fromInt requestedPageNumber)]
-        , expect = Http.expectJson ReceivePageContentUpdate (dataAlertDecoder pageContentDecoder)
-        }
-    )
-  else Nothing
-
-receiveFeedInit : Maybe (FiltersForm, PageContent) -> Feed a -> Feed a
-receiveFeedInit maybeData umodel =
-  case maybeData of
-    Just (receivedFiltersForm, receivedPageContent) ->
-      { umodel | filtersForm = Just receivedFiltersForm}
-      |> receivePageContentUpdate True (Just receivedPageContent)
-    Nothing -> umodel
-
-receivePageContentUpdate : Bool -> Maybe PageContent -> Feed a -> Feed a
-receivePageContentUpdate resetPage maybeReceivedPageContent umodel =
-  case maybeReceivedPageContent of
-    Just receivedPageContent ->
-      { umodel
-        | feedContent = receivedPageContent.users
-        , feedPageNumber = if resetPage then 0 else umodel.feedPageNumber
-        , feedPageAmount = receivedPageContent.pageAmount
-        , feedElemAmount = receivedPageContent.elemAmount
-      }
-    Nothing -> umodel
-
-feedOpenDecoder : Decoder (FiltersForm, PageContent)
-feedOpenDecoder =
-  Field.require "filtersEdgeValues" filtersEdgeValuesDecoder <| \filtersEdgeValues ->
-  Field.require "pageContent" pageContentDecoder <| \pageContent ->
-
-  Decode.succeed
-    ( filtersFormInit filtersEdgeValues
-    , pageContent
-    )
-
-pageContentDecoder : Decoder PageContent
-pageContentDecoder =
-  Field.require "pageAmount" Decode.int <| \pageAmount ->
-  Field.require "elemAmount" Decode.int <| \elemAmount ->
-  Field.require "users" (Decode.list profileDecoder) <| \users ->
-
-  Decode.succeed
-    { pageAmount = pageAmount
-    , elemAmount = elemAmount
-    , users = users
-    }
-
-profileDecoder : Decoder Profile
-profileDecoder =
-  Field.require "id" Decode.int <| \id ->
-  Field.require "pseudo" Decode.string <| \pseudo ->
-  Field.require "picture" Decode.string <| \picture ->
-  Field.require "tags" (Decode.list Decode.string) <| \tags ->
-  Field.require "liked" Decode.bool <| \liked ->
-
-  Decode.succeed
-    { id = id
-    , pseudo = pseudo
-    , picture = picture
-    , tags = tags
-    , liked = liked
-    }
-
-filtersEdgeValuesDecoder : Decoder FiltersEdgeValues
-filtersEdgeValuesDecoder =
-  Field.require "ageMin" Decode.float <| \ageMin ->
-  Field.require "ageMax" Decode.float <| \ageMax ->
-  Field.require "distanceMax" Decode.float <| \distanceMax ->
-  Field.require "popularityMin" Decode.float <| \popularityMin ->
-  Field.require "popularityMax" Decode.float <| \popularityMax ->
-
-  Decode.succeed
-    { ageMin = ageMin
-    , ageMax = ageMax
-    , distanceMax = distanceMax
-    , popularityMin = popularityMin
-    , popularityMax = popularityMax
-    }
+likeStatusDecoder : Decoder Bool
+likeStatusDecoder =
+  Field.require "newLikeStatus" Decode.bool <| \newLikeStatus ->
+  Decode.succeed newLikeStatus
 
 
 -- view
