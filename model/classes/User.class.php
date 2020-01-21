@@ -518,6 +518,17 @@
 			 return $row;
 		}
 
+		public function get_all_messages_between_two_user($id)
+		{
+			$query = ('SELECT *  FROM `messages` WHERE id_user_sending = :idco AND id_user_receiving = :idvar OR id_user_sending = :idvar AND id_user_receiving = :idco  ORDER BY date DESC');
+			$this->_db->query($query, array(':idco' => $this->get_id(), ':idvar' => $id));
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+		}
+
 
 		/*
 		** -------------------- Get --------------------
