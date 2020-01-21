@@ -8,9 +8,9 @@ $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot'
 $usr = unserialize($_SESSION['user']);
 
 
-$row = $usr->get_all_messages_between_two_user($_POST['id']);
+$row = $usr->get_all_messages_between_two_user(7);
 
-
+//print_r($row);
 
 $string = '{
   "data" : {
@@ -21,8 +21,8 @@ foreach ($row as $key => $value) {
     $string .= '
     {
           "sent" : true,
-          "date" : "12-01-2020",
-          "content" : "sosasosa"
+          "date" : "'.$row[$key]['date'].'",
+          "content" : "'.$row[$key]['content'].'"
         },
         ';
   }
