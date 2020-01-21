@@ -545,6 +545,9 @@
 		// dislike OK
 
 
+
+											//SET
+
 		public function set_a_notif_for_like($value, $message)
 		{
 			$idconcat = $this->_pseudo . $message;
@@ -571,6 +574,22 @@
 			$idconcat = $this->_pseudo . ' visit ur profile !';
 			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
 			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+		}
+
+
+												//GET
+
+
+		public function get_all_notif_of_user_connected()
+		{
+			$query = ('SELECT *  FROM `notifications` WHERE id_user = :id');
+				// ORDER BY date DESC');
+			$this->_db->query($query, array(':id' => 4));
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
 		}
 
 		/*
