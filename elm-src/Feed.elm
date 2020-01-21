@@ -58,7 +58,7 @@ requestFeedInit toMsg =
       { url = "http://localhost/control/feed_open.php"
       , body = emptyBody
       , expect = Http.expectJson toMsg (dataAlertDecoder feedOpenDecoder)
-      } -- ReceiveFeedInit
+      }
 
 requestFeedPage : Int -> (Result Http.Error (DataAlert PageContent) -> msg) -> Feed a -> Maybe (Feed a, Cmd msg)
 requestFeedPage requestedPageNumber toMsg umodel =
@@ -71,7 +71,7 @@ requestFeedPage requestedPageNumber toMsg umodel =
         { url = "http://localhost/control/feed_page.php"
         , body = multipartBody [stringPart "page" (String.fromInt requestedPageNumber)]
         , expect = Http.expectJson toMsg (dataAlertDecoder pageContentDecoder)
-        } -- ReceivePageContentUpdate
+        }
     )
   else Nothing
 

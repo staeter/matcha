@@ -170,8 +170,10 @@ type Msg
   | SignupForm (Form.Msg (Result String String))
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
   | FiltersForm FiltersFormMsg
-  | ReceivePageContentUpdate (Result Http.Error (DataAlert PageContent))
   | FeedNav Int
+  | ReceivePageContentUpdate (Result Http.Error (DataAlert PageContent))
+  | Like Int
+  | ReceiveLikeUpdate (Result Http.Error (DataAlert (Int, Bool)))
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -267,6 +269,36 @@ update msg model =
           , Cmd.none
           )
 
+    (User umodel, Home, Like id) ->
+      let likeRequest = requestLike id ReceiveLikeUpdate in
+      ( model, likeRequest )
+
+    (User umodel, _, ReceiveLikeUpdate result) ->
+      case result of
+        Ok { data, alert } ->
+          case data of
+            Just (id, newLikeStatus) ->
+              ( { model | alert = alert , access = User
+                  { umodel | feedContent = List.map
+                      (\profile ->
+                        if profile.id == id
+                        then { profile | liked = newLikeStatus }
+                        else profile
+                      )
+                      umodel.feedContent
+                  }
+                }
+              , Cmd.none
+              )
+            Nothing ->
+              ( model |> Alert.invalidImputAlert "Sory we can't let you like/unlike this persone. It could be because your account isn't complete."
+              , Cmd.none
+              )
+        Err error ->
+          ( model |> Alert.serverNotReachedAlert error
+          , Cmd.none
+          )
+
     _ -> ( model, Cmd.none )
 
 
@@ -308,21 +340,21 @@ signupFormResultHandler result model cmd =
       )
 
 
--- feed
-
-
-
 -- like
 
-likeForm : Form (DataAlert Bool)
-likeForm =
-  Form.form (dataAlertDecoder likeStatusDecoder) (OnSubmit "like") "http://localhost/control/user_like.php"
-  |> Form.numberField "id" 0
+requestLike : Int -> (Result Http.Error (DataAlert (Int, Bool)) -> msg) -> Cmd msg
+requestLike id toMsg =
+  Http.post
+      { url = "http://localhost/control/user_like.php"
+      , body = multipartBody [stringPart "id" (String.fromInt id)]
+      , expect = Http.expectJson toMsg (dataAlertDecoder likeStatusDecoder)
+      }
 
-likeStatusDecoder : Decoder Bool
+likeStatusDecoder : Decoder (Int, Bool)
 likeStatusDecoder =
+  Field.require "id" Decode.int <| \id ->
   Field.require "newLikeStatus" Decode.bool <| \newLikeStatus ->
-  Decode.succeed newLikeStatus
+  Decode.succeed (id, newLikeStatus)
 
 
 -- view
@@ -410,8 +442,17 @@ viewProfile profile =
       [ img [ src profile.picture ] []
       , br [] [], text profile.pseudo
       , br [] [], div [] (List.map text profile.tags)
-      , if profile.liked then text "liked" else text "nope"
+      , viewLikeButton profile.id profile.liked
       ]
+
+viewLikeButton : Int -> Bool -> Html Msg
+viewLikeButton id isLiked =
+  button [ onClick (Like id)
+         , if isLiked
+           then style "background-color" "red"
+           else style "background-color" "white"
+         ]
+         [ text "Like" ]
 
 viewFeedPageNav : Feed a -> Html Msg
 viewFeedPageNav umodel =

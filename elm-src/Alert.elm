@@ -50,7 +50,6 @@ serverNotReachedAlert error model =
     (httpErrorMessage error)
     model
 
---"Sory we got truble connecting to our server. Please make sure your internet connection is working."
 httpErrorMessage : Http.Error -> String
 httpErrorMessage error =
   case error of
