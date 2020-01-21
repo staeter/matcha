@@ -531,6 +531,49 @@
 
 
 		/*
+		** -------------------- Notif --------------------
+		*/
+
+
+
+		//j ai besoin de plusieurs fonction pour ajouter une notif selon le cas dans lequel on est
+		// pour resumer notif quand
+		// liked OK
+		// match OK mais pas encore utiliser
+		// profile viewed OK mais pas encore utiliser
+		// new message OK
+		// dislike OK
+
+
+		public function set_a_notif_for_like($value, $message)
+		{
+			$idconcat = $this->_pseudo . $message;
+			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
+			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+		}
+
+		public function set_a_notif_for_new_message($value)
+		{
+			$idconcat = $this->_pseudo . ' send u a message !';
+			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
+			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+		}
+
+		public function set_a_notif_for_match($value)
+		{
+			$idconcat = 'U got a match with ' .$this->_pseudo;
+			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
+			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+		}
+
+		public function set_a_notif_for_profile_viewed($value)
+		{
+			$idconcat = $this->_pseudo . ' visit ur profile !';
+			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
+			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+		}
+
+		/*
 		** -------------------- Get --------------------
 		*/
 		public function get_id()

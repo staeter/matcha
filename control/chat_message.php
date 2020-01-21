@@ -37,6 +37,7 @@ else if(empty($_POST['content']))
 else {
 
   $usr->send_message_to_id($_POST['id'], $_POST['content']);
+  $usr->set_a_notif_for_new_message($_POST['id']);
 
   echo '{
     "confirm" : true,

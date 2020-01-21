@@ -56,6 +56,7 @@ else {
 $ret = $usr->set_a_like($_POST['id']);
 if ($ret == 1)
 {
+  $usr->set_a_notif_for_like($_POST['id'], ' unliked u  :( )!');
   echo '{
   "data" : {
     "newLikeStatus" : false
@@ -70,7 +71,7 @@ return;
 }
 if ($ret == 2)
 {
-
+    $usr->set_a_notif_for_like($_POST['id'], ' liked u again :p !');
     echo '{
     "data" : {
       "newLikeStatus" : true
@@ -84,6 +85,7 @@ if ($ret == 2)
 }
 if ($ret == 3)
 {
+  $usr->set_a_notif_for_like($_POST['id'], ' liked u !');
   echo '{
   "data" : {
     "newLikeStatus" : true
