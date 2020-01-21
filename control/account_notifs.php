@@ -15,7 +15,81 @@ if (empty($row))
   echo 'c vide';
 }
 else
-print_r($row);
+//print_r($row);
+
+
+
+$string = '{
+    "data" : [
+      ';
+
+
+foreach ($row as $key => $value) {
+    // code...
+    if ($row[$key]['readed'] == false)
+      $readed = 'false';
+    else
+      $readed = 'true';
+
+    $string .= '
+    {
+      "id" : '.$row[$key]['id_user'].',
+      "content" : "'.$row[$key]['notification'].'",
+      "date" : "'.$row[$key]['date_notif'].'",
+      "unread" : '.$readed.'
+
+        },
+        ';
+}
+// ok je dois enlever la virgule ici
+
+function enleve_virgule($string)
+{
+
+
+
+    $nbchar = strlen($string);
+
+  $string = substr($string, 0, -10);
+
+  $endofstring = '],
+  "alert" : {
+    "color" : "DarkBlue",
+    "message" : "account notifs alert"
+  }
+  }';
+
+
+    // $findestring = '
+    //   ]
+    // },
+    //   "alert" : {
+    //   "color" : "DarkBlue",
+    //   "message" : "chat discution alert"
+    // }
+    // }';
+
+    //
+  //   $string1 .= $findestring;
+  $string .= $endofstring;
+  echo $string;
+
+
+
+//    echo $string1;
+
+  }
+
+enleve_virgule($string);
+
+
+// mtn j affiche le msg formaté en json
+
+// ok mtn methode fait comme les autres pour formater en message json
+// par contre je dois rajouter au moins reaed dans bdd table notif & par facilité date OK C FAIT
+
+
+
 //
 // echo '{
 //   "data" : [
