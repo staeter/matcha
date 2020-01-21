@@ -13,6 +13,9 @@ if ($usr->is_valid_id($_POST['id']) === false)
   echo '{
     "result" : "failure",
     "message" : "the id requested doesnt exist",
+    "data" : {
+      "newLikeStatus" : false
+    },
     "alert" : {
       "color" : "DarkRed",
       "message" : "The id requested doesnt exist"
