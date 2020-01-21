@@ -8,7 +8,7 @@ $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot'
 $usr = unserialize($_SESSION['user']);
 
 
-$row = $usr->get_all_messages_between_two_user(7);
+$row = $usr->get_all_messages_between_two_user($_POST['id']);
 
 //print_r($row);
 
