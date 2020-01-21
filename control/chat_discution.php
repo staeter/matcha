@@ -8,7 +8,9 @@ $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot'
 $usr = unserialize($_SESSION['user']);
 
 
-$row = $usr->get_all_messages_between_two_user(7);
+$row = $usr->get_all_messages_between_two_user($_POST['id']);
+
+
 
 $string = '{
   "data" : {
@@ -27,17 +29,27 @@ foreach ($row as $key => $value) {
 
 function enleve_virgule($string)
 {
+
+
+  // echo $string;
+  //
+  // echo '<br><br>';
     $nbchar = strlen($string);
-    $nbcharalertfixe = 80;
-    $string[$nbchar - $nbcharalertfixe] = ' ';
+  // echo $nbchar;
+  // echo '<br><br>';
+  $string1 = substr($string, 0, -10);
+
+  // echo $string1;
+  // echo '<br><br>';
 
 
-    $count = $nbchar - $nbcharalertfixe - 178;
-
-    $newstring2 = substr($string, 0,  ($nbchar - $nbcharalertfixe - 17));
-    echo $newstring2;
-
-    $findestring = $string .= '
+    //
+    // $count = $nbchar - $nbcharalertfixe - 178;
+    //
+    // $newstring2 = substr($string, 0,  ($nbchar - $nbcharalertfixe - 17));
+    // echo $newstring2;
+    //
+    $findestring = '
       ]
     },
       "alert" : {
@@ -46,9 +58,12 @@ function enleve_virgule($string)
     }
     }';
 
-    $newstring2 .= $findestring;
-    echo $newstring2;
+    //
+     $string1 .= $findestring;
+    // echo $newstring2;
 
+
+    echo $string1;
     // $stringstart = '{
     //   "data" : {
     //     "messages" : [';
@@ -112,8 +127,22 @@ function enleve_virgule($string)
 // echo '<br>';
 // $string[257] = 'X';
 // echo $string;
+if (empty($row))
+{
+  echo '{
+  "data" : {
+    "messages" : [
 
-enleve_virgule($string);
+  ]},
+  "alert" : {
+    "color" : "DarkRed",
+    "message" : "there is not conversation between those user!"
+  }
+  }';
+}
+else {
+  enleve_virgule($string);
+}
 //echo $string;
 
 //echo '<br><br><br><br><br><br><br><br><br><br>';
