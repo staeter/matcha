@@ -51,7 +51,9 @@ type alias LModel =
   -- user
   , userDetails : Maybe UserDetails
   -- header
-  -- , unreadNotifsAmount : Int
+  , unreadNotifsAmount : Int
+  -- notifs
+  , notifs: List Notif
   }
 
 type alias AModel =
@@ -86,6 +88,8 @@ loggedAccessInit = Logged
   , feedPageAmount = 0
   , feedElemAmount = 0
   , userDetails = Nothing
+  , unreadNotifsAmount = 0
+  , notifs = []
   }
 
 
@@ -153,6 +157,7 @@ type Route
   | Signin
   | Signup
   | User Int
+  | Notifs
   | Unknown
 
 routeParser : Parser (Route -> a) a
@@ -162,7 +167,13 @@ routeParser =
     , Parser.map Signin (Parser.s "signin")
     , Parser.map Signup (Parser.s "signup")
     , Parser.map User   (Parser.s "user" </> Parser.int)
+    , Parser.map Notifs (Parser.s "notifs")
     ]
+
+urlToRoute : Url -> Route
+urlToRoute url =
+  Parser.parse routeParser url
+  |> Maybe.withDefault Unknown
 
 
 -- update
@@ -181,29 +192,28 @@ type Msg
   | Like Int
   | ReceiveLikeUpdate (Result Http.Error (DataAlert (Int, Bool)))
   | ReceiveUserDetails (Result Http.Error (DataAlert UserDetails))
-  -- | ReceiveUnreadNotifsAmount (Result Http.Error (DataAlert Int))
+  | ReceiveUnreadNotifsAmount (Result Http.Error (DataAlert Int))
+  | Tick Time.Posix
+  | ReceiveNotifS (Result Http.Error (DataAlert (List Notif)))
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  let
-    route =
-      Maybe.withDefault
-        Unknown
-        (Parser.parse routeParser model.url)
-  in
+  let route = urlToRoute model.url in
   case (model.access, route, msg) of
     (_, _, InternalLinkClicked url) ->
-      let
-        newRoute =
-          Maybe.withDefault
-            Unknown
-            (Parser.parse routeParser url)
-      in
+      let newRoute = urlToRoute url in
       case newRoute of
         User id ->
           ( model
           , Cmd.batch
               [ requestUserDetails id ReceiveUserDetails
+              , Nav.pushUrl model.key (Url.toString url)
+              ]
+          )
+        Notifs ->
+          ( model
+          , Cmd.batch
+              [ requestNotifs ReceiveNotifS
               , Nav.pushUrl model.key (Url.toString url)
               ]
           )
@@ -216,12 +226,7 @@ update msg model =
       (model, Nav.load href)
 
     (_, _, UrlChange url) ->
-      let
-        newRoute =
-          Maybe.withDefault
-            Unknown
-            (Parser.parse routeParser url)
-      in
+      let newRoute = urlToRoute url in
       case newRoute of
         User id ->
           ( { model | url = url }
@@ -260,7 +265,7 @@ update msg model =
           , Cmd.none
           )
         Err error ->
-          ( model |> Alert.serverNotReachedAlert error
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
           , Cmd.none
           )
 
@@ -278,7 +283,7 @@ update msg model =
                 )
               Just (Err error) ->
                 ( { model | access = Logged { lmodel | filtersForm = Just newForm } }
-                    |> Alert.serverNotReachedAlert error
+                    |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
                 , formCmd |> Cmd.map FiltersForm
                 )
               Nothing ->
@@ -301,20 +306,20 @@ update msg model =
           , Cmd.none
           )
         Err error ->
-          ( model |> Alert.serverNotReachedAlert error
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
           , Cmd.none
           )
 
     (Logged lmodel, Home, Like id) ->
       let likeRequest = requestLike id ReceiveLikeUpdate in
       ( model, likeRequest )
-    -- (Logged lmodel, User urlId, Like id) ->
-    --   if urlId == id
-    --   then
-    --     let likeRequest = requestLike id ReceiveLikeUpdate in
-    --     ( model, likeRequest )
-    --   else
-    --     ( model, Cmd.none )
+    (Logged lmodel, User urlId, Like id) ->
+      if urlId == id
+      then
+        let likeRequest = requestLike id ReceiveLikeUpdate in
+        ( model, likeRequest )
+      else
+        ( model, Cmd.none )
 
     (Logged lmodel, _, ReceiveLikeUpdate result) ->
       case result of
@@ -340,11 +345,11 @@ update msg model =
               , Cmd.none
               )
             Nothing ->
-              ( model |> Alert.invalidImputAlert "Sory we can't let you like/unlike this persone. It could be because your account isn't complete."
+              ( model |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you like/unlike this persone. It could be because your account isn't complete.")
               , Cmd.none
               )
         Err error ->
-          ( model |> Alert.serverNotReachedAlert error
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
           , Cmd.none
           )
 
@@ -360,41 +365,63 @@ update msg model =
               )
             Nothing ->
               ( { model | access = Logged { lmodel | userDetails = Nothing } }
-                |> Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete."
+                |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
               , Cmd.none
               )
         Err error ->
-          ( model |> Alert.serverNotReachedAlert error
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
           , Cmd.none
           )
 
-    -- (Logged lmodel, _, ReceiveUnreadNotifsAmount result) ->
-    --   (unreadNotifsAmountResultHandler result lmodel model, Cmd.none)
+    (Logged lmodel, _, ReceiveUnreadNotifsAmount result) ->
+      (unreadNotifsAmountResultHandler result lmodel model, Cmd.none)
+
+    (Logged lmodel, _, Tick _) ->
+      (model, requestUnreadNotifsAmount)
+
+    (Logged lmodel, _, ReceiveNotifS result) ->
+      case result of
+        Ok { data, alert } ->
+          case data of
+            Just newNotifList ->
+              ( { model | alert = alert , access = Logged
+                  { lmodel | notifs = newNotifList }
+                }
+              , Cmd.none
+              )
+            Nothing ->
+              ( model |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
+              , Cmd.none
+              )
+        Err error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
 
     _ -> ( model, Cmd.none )
 
--- unreadNotifsAmountResultHandler : Result Http.Error (DataAlert Int) -> LModel -> Model -> Model
--- unreadNotifsAmountResultHandler result lmodel model =
---   case result of
---     Ok { alert, data } ->
---       let newAlert = if alert == Nothing then model.alert else alert in -- //ni: alert smarter update
---         data
---         |> Maybe.map
---             (\amount ->
---               { model
---                 | alert = newAlert
---                 , access = Logged { lmodel | unreadNotifsAmount = amount }
---               }
---             )
---         |> Maybe.withDefault
---             (model |> Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount"))
---     Err error ->
---       model |> Alert.serverNotReachedAlert error
+unreadNotifsAmountResultHandler : Result Http.Error (DataAlert Int) -> LModel -> Model -> Model
+unreadNotifsAmountResultHandler result lmodel model =
+  case result of
+    Ok { alert, data } ->
+      let newAlert = if alert == Nothing then model.alert else alert in -- //ni: alert smarter update
+        data
+        |> Maybe.map
+            (\amount ->
+              { model
+                | alert = newAlert
+                , access = Logged { lmodel | unreadNotifsAmount = amount }
+              }
+            )
+        |> Maybe.withDefault
+            (model |> (Alert.put << Just) (Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount")))
+    Err error ->
+      model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
 
 signinFormResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
-      ( { model | access = loggedAccessInit } |> Alert.successAlert message
+      ( { model | access = loggedAccessInit } |> (Alert.put << Just) (Alert.successAlert message)
       , Cmd.batch
         [ Nav.pushUrl model.key "/"
         , cmd |> Cmd.map SigninForm
@@ -402,47 +429,79 @@ signinFormResultHandler result model cmd =
         ]
       )
     Ok (Err message) ->
-      ( model |> Alert.invalidImputAlert message
+      ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
       , cmd |> Cmd.map SigninForm
       )
     Err error ->
-      ( model |> Alert.serverNotReachedAlert error
+      ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
       , cmd |> Cmd.map SigninForm
       )
 
 signupFormResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
-      ( model |> Alert.successAlert message
+      ( model |> (Alert.put << Just) (Alert.successAlert message)
       , Cmd.batch
         [ Nav.pushUrl model.key "/signin"
         , cmd |> Cmd.map SignupForm
         ]
       )
     Ok (Err message) ->
-      ( model |> Alert.invalidImputAlert message
+      ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
       , cmd |> Cmd.map SignupForm
       )
     Err error ->
-      ( model |> Alert.serverNotReachedAlert error
+      ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
       , cmd |> Cmd.map SignupForm
       )
 
 
 -- notifs amount
 
--- requestUnreadNotifsAmount : Cmd Msg
--- requestUnreadNotifsAmount =
---   Http.post
---       { url = "http://localhost/control/account_notifs_amount.php"
---       , body = emptyBody
---       , expect = Http.expectJson ReceiveUnreadNotifsAmount (dataAlertDecoder unreadNotifsAmountDecoder)
---       }
---
--- unreadNotifsAmountDecoder : Decoder Int
--- unreadNotifsAmountDecoder =
---   Field.require "amount" Decode.int <| \amount ->
---   Decode.succeed amount
+requestUnreadNotifsAmount : Cmd Msg
+requestUnreadNotifsAmount =
+  Http.post
+      { url = "http://localhost/control/account_notifs_amount.php"
+      , body = emptyBody
+      , expect = Http.expectJson ReceiveUnreadNotifsAmount (dataAlertDecoder unreadNotifsAmountDecoder)
+      }
+
+unreadNotifsAmountDecoder : Decoder Int
+unreadNotifsAmountDecoder =
+  Field.require "amount" Decode.int <| \amount ->
+  Decode.succeed amount
+
+
+-- notifs
+
+type alias Notif =
+  { id : Int
+  , content : String
+  , date : String
+  , unread : Bool
+  }
+
+requestNotifs : ((Result Http.Error (DataAlert (List Notif))) -> msg) -> Cmd msg
+requestNotifs myMsg =
+  Http.post
+      { url = "http://localhost/control/account_notifs.php"
+      , body = emptyBody
+      , expect = Http.expectJson myMsg (Decode.list notifDecoder |> dataAlertDecoder)
+      }
+
+notifDecoder : Decoder Notif
+notifDecoder =
+  Field.require "id" Decode.int <| \id ->
+  Field.require "content" Decode.string <| \content ->
+  Field.require "date" Decode.string <| \date ->
+  Field.require "unread" Decode.bool <| \unread ->
+
+  Decode.succeed
+    { id = id
+    , content = content
+    , date = date
+    , unread = unread
+    }
 
 
 -- like
@@ -583,12 +642,7 @@ lastLogDecoder =
 
 view : Model -> Browser.Document Msg
 view model =
-  let
-    route =
-      Maybe.withDefault
-        Unknown
-        (Parser.parse routeParser model.url)
-  in
+  let route = urlToRoute model.url in
   case (model.access, route) of
     (Anonymous amodel, Signin) ->
       { title = "matcha - signin"
@@ -626,7 +680,8 @@ view model =
     (Logged lmodel, Home) ->
       { title = "matcha - home"
       , body =
-        [ Alert.view model
+        [ viewHeader lmodel.unreadNotifsAmount
+        , Alert.view model
         , Maybe.map Form.view lmodel.filtersForm
           |> Maybe.map (Html.map FiltersForm)
           |> Maybe.withDefault (text "Loading...")
@@ -647,6 +702,14 @@ view model =
           |> List.singleton
       }
 
+    (Logged lmodel, Notifs) ->
+      { title = "matcha - notifications"
+      , body =
+        [ Alert.view model
+        , viewNotifs lmodel.notifs
+        ]
+      }
+
     (Logged _, _) ->
       { title = "matcha - 404 page not found"
       , body =
@@ -654,6 +717,26 @@ view model =
         , a [ href "/" ] [ text "go back home" ]
         ]
       }
+
+viewNotifs : List Notif -> Html Msg
+viewNotifs notifs =
+  div [] (List.map viewNotif notifs)
+
+viewNotif : Notif -> Html Msg
+viewNotif notif =
+  div [ if notif.unread
+        then style "background-color" "LightGrey"
+        else style "background-color" "White"
+      ]
+      [ text notif.content
+      , br [] []
+      , text notif.date
+      ]
+
+viewHeader : Int -> Html Msg
+viewHeader notifsAmount =
+  div []
+      [ a [ href "/notifs" ] [ text (String.fromInt notifsAmount)] ]
 
 viewUserDetails : UserDetails -> Html Msg
 viewUserDetails userDetails =
@@ -757,7 +840,7 @@ subscriptions model =
     Anonymous amodel ->
       anonymousAccess_sub amodel
     Logged lmodel ->
-      Sub.none
+      Time.every 1000 Tick
 
 anonymousAccess_sub : AModel -> Sub Msg
 anonymousAccess_sub amodel =

@@ -39,16 +39,26 @@ alert color message =
   , message = message
   }
 
-customAlert : String -> String -> Model a -> Model a
-customAlert color message model =
-  { model | alert = Just (alert color message) }
+put : Maybe Alert -> Model a -> Model a
+put maybeNewAlert model =
+  case maybeNewAlert of
+    Just newAlert ->
+      { model | alert = Just newAlert }
+    Nothing -> model
 
-serverNotReachedAlert : Http.Error -> Model a -> Model a
-serverNotReachedAlert error model =
-  customAlert
+withDefault : Alert -> Maybe Alert -> Model a -> Model a
+withDefault default maybeNewAlert model =
+  case maybeNewAlert of
+    Just newAlert ->
+      { model | alert = Just newAlert }
+    Nothing ->
+      { model | alert = Just default }
+
+serverNotReachedAlert : Http.Error -> Alert
+serverNotReachedAlert error =
+  alert
     "DarkOrange"
     (httpErrorMessage error)
-    model
 
 httpErrorMessage : Http.Error -> String
 httpErrorMessage error =
@@ -59,19 +69,17 @@ httpErrorMessage error =
     BadStatus status -> "Sory we got truble connecting to our server. Something happened to our server: Status code " ++ String.fromInt status
     BadBody message -> "Sory we got truble connecting to our server. The body of the request is invalid: " ++ message
 
-invalidImputAlert : String -> Model a -> Model a
-invalidImputAlert serverMessage model =
-  customAlert
+invalidImputAlert : String -> Alert
+invalidImputAlert serverMessage =
+  alert
     "DarkRed"
     serverMessage
-    model
 
-successAlert : String -> Model a -> Model a
-successAlert serverMessage model =
-  customAlert
+successAlert : String -> Alert
+successAlert serverMessage =
+  alert
     "DarkGreen"
     serverMessage
-    model
 
 
 -- decoder
