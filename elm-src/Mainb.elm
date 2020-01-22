@@ -50,6 +50,7 @@ type alias LModel =
   , feedElemAmount : Int
   -- user
   , userDetails : Maybe UserDetails
+  -- header
   -- , unreadNotifsAmount : Int
   }
 
@@ -180,6 +181,7 @@ type Msg
   | Like Int
   | ReceiveLikeUpdate (Result Http.Error (DataAlert (Int, Bool)))
   | ReceiveUserDetails (Result Http.Error (DataAlert UserDetails))
+  -- | ReceiveUnreadNotifsAmount (Result Http.Error (DataAlert Int))
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -306,6 +308,13 @@ update msg model =
     (Logged lmodel, Home, Like id) ->
       let likeRequest = requestLike id ReceiveLikeUpdate in
       ( model, likeRequest )
+    -- (Logged lmodel, User urlId, Like id) ->
+    --   if urlId == id
+    --   then
+    --     let likeRequest = requestLike id ReceiveLikeUpdate in
+    --     ( model, likeRequest )
+    --   else
+    --     ( model, Cmd.none )
 
     (Logged lmodel, _, ReceiveLikeUpdate result) ->
       case result of
@@ -313,13 +322,19 @@ update msg model =
           case data of
             Just (id, newLikeStatus) ->
               ( { model | alert = alert , access = Logged
-                  { lmodel | feedContent = List.map
-                      (\profile ->
-                        if profile.id == id
-                        then { profile | liked = newLikeStatus }
-                        else profile
-                      )
-                      lmodel.feedContent
+                  { lmodel
+                      | feedContent = lmodel.feedContent |> List.map
+                          (\profile ->
+                            if profile.id == id
+                            then { profile | liked = newLikeStatus }
+                            else profile
+                          )
+                      , userDetails = lmodel.userDetails |> Maybe.map
+                          (\usrd->
+                            if usrd.id == id
+                            then { usrd | liked = newLikeStatus }
+                            else usrd
+                          )
                   }
                 }
               , Cmd.none
@@ -352,8 +367,29 @@ update msg model =
           ( model |> Alert.serverNotReachedAlert error
           , Cmd.none
           )
+
+    -- (Logged lmodel, _, ReceiveUnreadNotifsAmount result) ->
+    --   (unreadNotifsAmountResultHandler result lmodel model, Cmd.none)
+
     _ -> ( model, Cmd.none )
 
+-- unreadNotifsAmountResultHandler : Result Http.Error (DataAlert Int) -> LModel -> Model -> Model
+-- unreadNotifsAmountResultHandler result lmodel model =
+--   case result of
+--     Ok { alert, data } ->
+--       let newAlert = if alert == Nothing then model.alert else alert in -- //ni: alert smarter update
+--         data
+--         |> Maybe.map
+--             (\amount ->
+--               { model
+--                 | alert = newAlert
+--                 , access = Logged { lmodel | unreadNotifsAmount = amount }
+--               }
+--             )
+--         |> Maybe.withDefault
+--             (model |> Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount"))
+--     Err error ->
+--       model |> Alert.serverNotReachedAlert error
 
 signinFormResultHandler result model cmd =
   case result of
@@ -391,6 +427,22 @@ signupFormResultHandler result model cmd =
       ( model |> Alert.serverNotReachedAlert error
       , cmd |> Cmd.map SignupForm
       )
+
+
+-- notifs amount
+
+-- requestUnreadNotifsAmount : Cmd Msg
+-- requestUnreadNotifsAmount =
+--   Http.post
+--       { url = "http://localhost/control/account_notifs_amount.php"
+--       , body = emptyBody
+--       , expect = Http.expectJson ReceiveUnreadNotifsAmount (dataAlertDecoder unreadNotifsAmountDecoder)
+--       }
+--
+-- unreadNotifsAmountDecoder : Decoder Int
+-- unreadNotifsAmountDecoder =
+--   Field.require "amount" Decode.int <| \amount ->
+--   Decode.succeed amount
 
 
 -- like
@@ -612,14 +664,13 @@ viewUserDetails userDetails =
               userDetails.pictures
           )
       , h2 [] [ text userDetails.pseudo ]
-      , br [] []
       , h3 [] [ text (userDetails.first_name ++ " " ++ userDetails.last_name) ]
-      , br [] []
       , text (orientationToString userDetails.orientation ++ " " ++ genderToString userDetails.gender )
-      , br [] []
       , text userDetails.birth
-      , br [] [], br [] []
+      , br [] []
       , text userDetails.biography
+      , br [] []
+      , viewLikeButton userDetails.id userDetails.liked
       ]
 
 orientationToString : Orientation -> String
