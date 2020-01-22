@@ -27,6 +27,9 @@ type alias Alert =
   , message : String
   }
 
+type alias DataAlert a =
+  { alert : Maybe Alert, data : Maybe a }
+
 
 -- functions
 
@@ -47,7 +50,6 @@ serverNotReachedAlert error model =
     (httpErrorMessage error)
     model
 
---"Sory we got truble connecting to our server. Please make sure your internet connection is working."
 httpErrorMessage : Http.Error -> String
 httpErrorMessage error =
   case error of
@@ -81,6 +83,13 @@ alertDecoder =
 
   Decode.succeed
     (alert color message)
+
+dataAlertDecoder : Decoder a -> Decoder (DataAlert a)
+dataAlertDecoder dataDecoder =
+  Field.attempt "data" dataDecoder <| \data ->
+  Field.attempt "alert" alertDecoder <| \dAlert ->
+
+  Decode.succeed ({ data = data, alert = dAlert })
 
 
 -- view

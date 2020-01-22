@@ -4,6 +4,7 @@ module Form exposing (..)
 
 import Array exposing (..)
 import Json.Decode as Decode exposing (..)
+import Json.Encode as Encode exposing (list, encode, Value)
 import Http exposing (..)
 
 import Html exposing (..)
@@ -13,7 +14,9 @@ import Html.Events exposing (..)
 import SingleSlider as SSlider exposing (..)
 import DoubleSlider as DSlider exposing (..)
 import Dropdown as Dropd exposing (..)
+import MultiInput as MultInput exposing (..)
 
+import Regex exposing (Regex)
 
 
 -- types
@@ -40,6 +43,7 @@ type Value
   | Dropdown (Dropd.Options InputMsg) (Maybe String)
   | Checkbox Bool
   | Number Int
+  | MultiInput { items : List String, state : MultInput.State }
 
 -- type alias Condition =
 --   { label : Label
@@ -139,6 +143,17 @@ numberField : Label -> Int -> Form a -> Form a
 numberField label defaultVal myForm =
   field label (Number defaultVal) myForm
 
+multiInputField : Label -> List String -> Form a -> Form a
+multiInputField label initialItems myForm =
+  field
+    label
+    ( MultiInput
+        { items = initialItems
+        , state = MultInput.init label
+        }
+    )
+    myForm
+
 -- condition : Label -> (Value -> Bool) -> Condition
 -- condition label validation =
 --   Condition label validation
@@ -157,6 +172,7 @@ type InputMsg
   | DropdownMsg (Maybe String)
   | CheckboxMsg Bool
   | NumberMsg Int
+  | MultiInputMsg MultInput.Msg
 
 update :  Msg a -> Form a -> (Form a, Cmd (Msg a), Maybe (Result Http.Error a))
 update msg myForm =
@@ -169,13 +185,14 @@ update msg myForm =
 
           Just myField ->
             let
-              myNewField = updateField inputMsg myField
+              (myNewField, fieldCmd) = updateField inputMsg myField
               myNewForm = { myForm | fields = myForm.fields |> Array.set id myNewField }
-
-              cmd =
+              submitionCmd =
                 case myForm.submition of
                   LiveUpdate -> submit myForm
                   OnSubmit _ -> Cmd.none
+
+              cmd = Cmd.batch [Cmd.map (Input id) fieldCmd, submitionCmd]
             in
               ( myNewForm, cmd, Nothing)
 
@@ -190,55 +207,49 @@ update msg myForm =
     Response result ->
       (myForm, Cmd.none, Just result)
 
-updateField : InputMsg -> Field -> Field
+updateField : InputMsg -> Field -> (Field, Cmd InputMsg)
 updateField msg myField =
-  case myField.value of
-    Text _ ->
-      case msg of
-        TextMsg val -> { myField | value = Text val }
-        _ -> myField
+  case (myField.value, msg) of
+    (Text _, TextMsg val) ->
+      ({ myField | value = Text val }, Cmd.none)
 
-    Password _ ->
-      case msg of
-        PasswordMsg val -> { myField | value = Password val }
-        _ -> myField
+    (Password _, PasswordMsg val) ->
+      ({ myField | value = Password val }, Cmd.none)
 
-    DoubleSlider myDoubleSlider ->
-      case msg of
-        DoubleSliderMsg doubleSliderMsg ->
-          let
-            (newDoubleSlider, _, _) =
-              DSlider.update doubleSliderMsg myDoubleSlider
-          in
-            { myField | value = DoubleSlider newDoubleSlider }
-        _ -> myField
+    (DoubleSlider myDoubleSlider, DoubleSliderMsg doubleSliderMsg) ->
+      let
+        (newDoubleSlider, _, _) =
+          DSlider.update doubleSliderMsg myDoubleSlider
+      in
+        ({ myField | value = DoubleSlider newDoubleSlider }, Cmd.none)
 
-    SingleSlider mySingleSlider ->
-      case msg of
-        SingleSliderMsg singleSliderMsg ->
-          let
-            (newSingleSlider, _, _) =
-              SSlider.update singleSliderMsg mySingleSlider
-          in
-            { myField | value = SingleSlider newSingleSlider }
-        _ -> myField
+    (SingleSlider mySingleSlider, SingleSliderMsg singleSliderMsg) ->
+      let
+        (newSingleSlider, _, _) =
+          SSlider.update singleSliderMsg mySingleSlider
+      in
+        ({ myField | value = SingleSlider newSingleSlider }, Cmd.none)
 
-    Dropdown myDropdown _ ->
-      case msg of
-        DropdownMsg selectedVal ->
-          { myField | value = Dropdown myDropdown selectedVal }
-        _ -> myField
+    (Dropdown myDropdown _, DropdownMsg selectedVal) ->
+      ({ myField | value = Dropdown myDropdown selectedVal }, Cmd.none)
 
-    Checkbox _ ->
-      case msg of
-        CheckboxMsg val ->
-          { myField | value = Checkbox val }
-        _ -> myField
+    (Checkbox _, CheckboxMsg val) ->
+      ({ myField | value = Checkbox val }, Cmd.none)
 
-    Number _ ->
-      case msg of
-        NumberMsg val -> { myField | value = Number val }
-        _ -> myField
+    (Number _, NumberMsg val) ->
+      ({ myField | value = Number val }, Cmd.none)
+
+    (MultiInput { items, state }, MultiInputMsg mimsg) ->
+      let
+        ( nextState, nextItems, nextCmd ) =
+            MultInput.update { separators = [ "\n", "\t", " ", "," ] } mimsg state items
+      in
+        ( { myField | value = MultiInput{ items = nextItems, state = nextState } }
+        , nextCmd |> Cmd.map MultiInputMsg
+        )
+
+    _ -> (myField, Cmd.none)
+
 
 
 submit : Form a -> Cmd (Msg a)
@@ -277,6 +288,11 @@ httpPostFieldBodyPart myField =
       then stringPart myField.label "True" |> List.singleton
       else stringPart myField.label "False" |> List.singleton
     Number val -> stringPart myField.label (String.fromInt val) |> List.singleton
+    MultiInput { items, state } ->
+      Encode.list Encode.string items
+      |> Encode.encode 0
+      |> stringPart myField.label
+      |> List.singleton
 
 
 -- subscriptions
@@ -286,6 +302,8 @@ subscriptions_field id myField =
   case myField.value of
     DoubleSlider val ->
       DSlider.subscriptions val |> Sub.map (Input id << DoubleSliderMsg)
+    MultiInput { items, state } ->
+      MultInput.subscriptions state |> Sub.map (Input id << MultiInputMsg)
     _ -> Sub.none
 
 subscriptions : Form a -> Sub (Msg a)
@@ -353,3 +371,20 @@ view_field id myField =
             , onInput (Input id << NumberMsg << Maybe.withDefault 0 << String.toInt)
             , Html.Attributes.value (String.fromInt val)
             ] []
+
+    MultiInput { items, state } ->
+      MultInput.view
+        { placeholder = myField.label
+        , toOuterMsg = Input id << MultiInputMsg
+        , isValid = matches "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        }
+        [] items state
+
+matches : String -> String -> Bool
+matches regex =
+    let
+      validRegex =
+        Regex.fromString regex
+        |> Maybe.withDefault Regex.never
+    in
+      Regex.findAtMost 1 validRegex >> List.isEmpty >> not
