@@ -529,6 +529,40 @@
 			 return $row;
 		}
 
+		/*
+		** -------------------- Picture --------------------
+		*/
+
+		public function set_picture($path)
+		{
+			//$query ()
+
+			$query = ('INSERT INTO picture id_user = :id AND `path` = :pathfichier');
+			$this->_db->query($query, array(':id' => $this->_id, ':pathfichier' => $path));
+			$modified_row_count = $this->_db->rowCount();
+			if ($modified_row_count !== 1) {
+				throw new DatabaseException("Fail setting picture in data base. " . $modified_row_count . " rows have been modified in the database.");
+			}
+		}
+
+		public function set_is_picture_profil($bool, $id_picture)
+		{
+			$query = 'UPDATE picture SET is_profile-picture = :p WHERE id_picture = :id;';
+			$this->_db->query($query, array(':p' => $bool, ':id' => $id_picture));
+		}
+
+		public function get_picture_profil($id)
+		{
+			$query = 'SELECT path FROM picture WHERE id_user = :id AND is_profile-picture = :bool';
+			$this->_db->query($query, array(':id' => $id, ':bool' => true));
+			$row = $this->_db->fetch();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+		}
+
+
 
 		/*
 		** -------------------- Notif --------------------
@@ -540,6 +574,8 @@
 		// pour resumer notif quand
 		// liked OK
 		// match OK mais pas encore utiliser
+
+	// fonction qui notif quand like & unlike 	
 		// profile viewed OK mais pas encore utiliser
 		// new message OK
 		// dislike OK

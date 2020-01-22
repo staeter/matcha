@@ -59,7 +59,8 @@ if ($ret == 1)
   $usr->set_a_notif_for_like($_POST['id'], ' unliked u  :( )!');
   echo '{
   "data" : {
-    "newLikeStatus" : false
+    "newLikeStatus" : false,
+
   },
   "alert" : {
     "color" : "DarkBlue",
