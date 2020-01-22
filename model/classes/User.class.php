@@ -584,12 +584,23 @@
 		{
 			$query = ('SELECT *  FROM `notifications` WHERE id_user = :id');
 				// ORDER BY date DESC');
-			$this->_db->query($query, array(':id' => 4));
+			$this->_db->query($query, array(':id' => $this->_pseudo));
 			$row = $this->_db->fetchAll();
 			if ($row === false) {
 				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
 			}
 			 return $row;
+		}
+
+		public function get_count_notif_user_connected()
+		{
+			$query = ('SELECT *  FROM `notifications` WHERE id_user = :id');
+				// ORDER BY date DESC');
+			$this->_db->query($query, array(':id' => $this->_pseudo));
+			$row = $this->_db->rowCount();
+
+			return $row;
+
 		}
 
 		/*

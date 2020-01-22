@@ -12,7 +12,14 @@ $usr = unserialize($_SESSION['user']);
 $row = $usr->get_all_notif_of_user_connected();
 if (empty($row))
 {
-  echo 'c vide';
+  echo '{
+	"data": [],
+	"alert": {
+		"color": "DarkBlue",
+		"message": "There is no notification for u sorry !"
+	}
+}';
+            return;
 }
 else
 //print_r($row);
@@ -54,7 +61,7 @@ function enleve_virgule($string)
 
   $endofstring = '],
   "alert" : {
-    "color" : "DarkBlue",
+    "color" : "DarkGreen",
     "message" : "account notifs alert"
   }
   }';
