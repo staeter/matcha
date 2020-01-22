@@ -6,6 +6,7 @@ error_log("[POST] user_like.php: " . $result);
 
 echo '{
   "data" : {
+    "id" : 3,
     "newLikeStatus" : true
   },
   "alert" : {
@@ -17,6 +18,7 @@ echo '{
 /*
 {
   -- mamybe "data" : {
+    "id" : 12,
     "newLikeStatus" : true or false
   },
   -- mamybe "alert" : {
@@ -24,5 +26,6 @@ echo '{
     "message" : "message for the user"
   }
 }
+/!\ changes happened
 */
 ?>
