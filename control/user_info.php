@@ -92,6 +92,10 @@ if (isset($row))
 //en attendant
 // il faudra pmettre a jour le gender & l orientation dans la bdd pour fixer ca
 // reste aussi les pictures et les tags.
+
+$usr->set_a_notif_for_profile_viewed($_POST['id']);
+
+
   echo '{
     "data" : {
       "id" : '.$row['id_user'].',
