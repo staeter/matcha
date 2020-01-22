@@ -52,11 +52,8 @@ type alias LModel =
   , userDetails : Maybe UserDetails
   -- header
   , unreadNotifsAmount : Int
-<<<<<<< HEAD
   -- notifs
   , notifs: List Notif
-=======
->>>>>>> 7863c2c535da74eba5bd4a2a77d8024e33798367
   }
 
 type alias AModel =
@@ -92,10 +89,7 @@ loggedAccessInit = Logged
   , feedElemAmount = 0
   , userDetails = Nothing
   , unreadNotifsAmount = 0
-<<<<<<< HEAD
   , notifs = []
-=======
->>>>>>> 7863c2c535da74eba5bd4a2a77d8024e33798367
   }
 
 
@@ -200,10 +194,7 @@ type Msg
   | ReceiveUserDetails (Result Http.Error (DataAlert UserDetails))
   | ReceiveUnreadNotifsAmount (Result Http.Error (DataAlert Int))
   | Tick Time.Posix
-<<<<<<< HEAD
   | ReceiveNotifS (Result Http.Error (DataAlert (List Notif)))
-=======
->>>>>>> 7863c2c535da74eba5bd4a2a77d8024e33798367
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -387,7 +378,6 @@ update msg model =
 
     (Logged lmodel, _, Tick _) ->
       (model, requestUnreadNotifsAmount)
-<<<<<<< HEAD
 
     (Logged lmodel, _, ReceiveNotifS result) ->
       case result of
@@ -407,8 +397,6 @@ update msg model =
           ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
           , Cmd.none
           )
-=======
->>>>>>> 7863c2c535da74eba5bd4a2a77d8024e33798367
 
     _ -> ( model, Cmd.none )
 
@@ -426,15 +414,9 @@ unreadNotifsAmountResultHandler result lmodel model =
               }
             )
         |> Maybe.withDefault
-<<<<<<< HEAD
             (model |> (Alert.put << Just) (Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount")))
     Err error ->
       model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
-=======
-            (model |> Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount"))
-    Err error ->
-      model |> Alert.serverNotReachedAlert error
->>>>>>> 7863c2c535da74eba5bd4a2a77d8024e33798367
 
 signinFormResultHandler result model cmd =
   case result of
@@ -488,7 +470,6 @@ unreadNotifsAmountDecoder : Decoder Int
 unreadNotifsAmountDecoder =
   Field.require "amount" Decode.int <| \amount ->
   Decode.succeed amount
-<<<<<<< HEAD
 
 
 -- notifs
@@ -521,8 +502,6 @@ notifDecoder =
     , date = date
     , unread = unread
     }
-=======
->>>>>>> 7863c2c535da74eba5bd4a2a77d8024e33798367
 
 
 -- like
