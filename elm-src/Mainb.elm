@@ -53,7 +53,9 @@ type alias LModel =
   -- header
   , unreadNotifsAmount : Int
   -- notifs
-  , notifs: List Notif
+  , notifs : List Notif
+  -- signout
+  , signoutForm : Form (Result String String)
   }
 
 type alias AModel =
@@ -90,26 +92,8 @@ loggedAccessInit = Logged
   , userDetails = Nothing
   , unreadNotifsAmount = 0
   , notifs = []
+  , signoutForm = signoutFormInit
   }
-
-
--- account
-
-signinFormInit : Form (Result String String)
-signinFormInit =
-  Form.form resultMessageDecoder (OnSubmit "Signin") "http://localhost/control/account_signin.php"
-  |> Form.textField "pseudo"
-  |> Form.passwordField "password"
-
-signupFormInit : Form (Result String String)
-signupFormInit =
-  Form.form resultMessageDecoder (OnSubmit "Signup") "http://localhost/control/account_signup.php"
-  |> Form.textField "pseudo"
-  |> Form.textField "lastname"
-  |> Form.textField "firstname"
-  |> Form.textField "email"
-  |> Form.passwordField "password"
-  |> Form.passwordField "confirm"
 
 
 -- decoders
@@ -185,6 +169,7 @@ type Msg
   | UrlChange Url
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
+  | SignoutForm  (Form.Msg (Result String String))
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
   | FiltersForm FiltersFormMsg
   | FeedNav Int
@@ -256,6 +241,18 @@ update msg model =
           Nothing ->
             ( { model | access = Anonymous { amodel | signupForm = newForm } }
             , formCmd |> Cmd.map SignupForm
+            )
+
+    (Logged lmodel, _, SignoutForm formMsg) ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg lmodel.signoutForm
+      in
+        case response of
+          Just result ->
+            signoutFormResultHandler result model formCmd
+          Nothing ->
+            ( { model | access = Logged { lmodel | signoutForm = newForm } }
+            , formCmd |> Cmd.map SignoutForm
             )
 
     (Logged lmodel, _, ReceiveFeedInit result) ->
@@ -454,6 +451,46 @@ signupFormResultHandler result model cmd =
       ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
       , cmd |> Cmd.map SignupForm
       )
+
+signoutFormResultHandler result model cmd =
+  case result of
+    Ok (Ok message) ->
+      ( { model | access = anonymousAccessInit }  |> (Alert.put << Just) (Alert.successAlert message)
+      , Cmd.batch
+        [ Nav.pushUrl model.key "/"
+        , cmd |> Cmd.map SignoutForm
+        ]
+      )
+    Ok (Err message) ->
+      ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
+      , cmd |> Cmd.map SignoutForm
+      )
+    Err error ->
+      ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+      , cmd |> Cmd.map SignoutForm
+      )
+
+-- account
+
+signinFormInit : Form (Result String String)
+signinFormInit =
+  Form.form resultMessageDecoder (OnSubmit "Signin") "http://localhost/control/account_signin.php"
+  |> Form.textField "pseudo"
+  |> Form.passwordField "password"
+
+signupFormInit : Form (Result String String)
+signupFormInit =
+  Form.form resultMessageDecoder (OnSubmit "Signup") "http://localhost/control/account_signup.php"
+  |> Form.textField "pseudo"
+  |> Form.textField "lastname"
+  |> Form.textField "firstname"
+  |> Form.textField "email"
+  |> Form.passwordField "password"
+  |> Form.passwordField "confirm"
+
+signoutFormInit : Form (Result String String)
+signoutFormInit =
+    Form.form resultMessageDecoder (OnSubmit "signout") "http://localhost/control/account_signout.php"
 
 
 -- notifs amount
@@ -680,7 +717,7 @@ view model =
     (Logged lmodel, Home) ->
       { title = "matcha - home"
       , body =
-        [ viewHeader lmodel.unreadNotifsAmount
+        [ viewHeader lmodel
         , Alert.view model
         , Maybe.map Form.view lmodel.filtersForm
           |> Maybe.map (Html.map FiltersForm)
@@ -725,7 +762,7 @@ viewNotifs notifs =
 viewNotif : Notif -> Html Msg
 viewNotif notif =
   div [ if notif.unread
-        then style "background-color" "LightGrey"
+        then style "background-color" "LightBlue"
         else style "background-color" "White"
       ]
       [ text notif.content
@@ -733,10 +770,12 @@ viewNotif notif =
       , text notif.date
       ]
 
-viewHeader : Int -> Html Msg
-viewHeader notifsAmount =
+viewHeader : LModel -> Html Msg
+viewHeader lmodel =
   div []
-      [ a [ href "/notifs" ] [ text (String.fromInt notifsAmount)] ]
+      [ a [ href "/notifs" ] [ text (String.fromInt lmodel.unreadNotifsAmount)]
+      , Form.view lmodel.signoutForm |> Html.map SignoutForm
+      ]
 
 viewUserDetails : UserDetails -> Html Msg
 viewUserDetails userDetails =
