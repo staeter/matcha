@@ -51,7 +51,7 @@ type alias LModel =
   -- user
   , userDetails : Maybe UserDetails
   -- header
-  -- , unreadNotifsAmount : Int
+  , unreadNotifsAmount : Int
   }
 
 type alias AModel =
@@ -86,6 +86,7 @@ loggedAccessInit = Logged
   , feedPageAmount = 0
   , feedElemAmount = 0
   , userDetails = Nothing
+  , unreadNotifsAmount = 0
   }
 
 
@@ -181,7 +182,8 @@ type Msg
   | Like Int
   | ReceiveLikeUpdate (Result Http.Error (DataAlert (Int, Bool)))
   | ReceiveUserDetails (Result Http.Error (DataAlert UserDetails))
-  -- | ReceiveUnreadNotifsAmount (Result Http.Error (DataAlert Int))
+  | ReceiveUnreadNotifsAmount (Result Http.Error (DataAlert Int))
+  | Tick Time.Posix
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -308,13 +310,13 @@ update msg model =
     (Logged lmodel, Home, Like id) ->
       let likeRequest = requestLike id ReceiveLikeUpdate in
       ( model, likeRequest )
-    -- (Logged lmodel, User urlId, Like id) ->
-    --   if urlId == id
-    --   then
-    --     let likeRequest = requestLike id ReceiveLikeUpdate in
-    --     ( model, likeRequest )
-    --   else
-    --     ( model, Cmd.none )
+    (Logged lmodel, User urlId, Like id) ->
+      if urlId == id
+      then
+        let likeRequest = requestLike id ReceiveLikeUpdate in
+        ( model, likeRequest )
+      else
+        ( model, Cmd.none )
 
     (Logged lmodel, _, ReceiveLikeUpdate result) ->
       case result of
@@ -368,28 +370,31 @@ update msg model =
           , Cmd.none
           )
 
-    -- (Logged lmodel, _, ReceiveUnreadNotifsAmount result) ->
-    --   (unreadNotifsAmountResultHandler result lmodel model, Cmd.none)
+    (Logged lmodel, _, ReceiveUnreadNotifsAmount result) ->
+      (unreadNotifsAmountResultHandler result lmodel model, Cmd.none)
+
+    (Logged lmodel, _, Tick _) ->
+      (model, requestUnreadNotifsAmount)
 
     _ -> ( model, Cmd.none )
 
--- unreadNotifsAmountResultHandler : Result Http.Error (DataAlert Int) -> LModel -> Model -> Model
--- unreadNotifsAmountResultHandler result lmodel model =
---   case result of
---     Ok { alert, data } ->
---       let newAlert = if alert == Nothing then model.alert else alert in -- //ni: alert smarter update
---         data
---         |> Maybe.map
---             (\amount ->
---               { model
---                 | alert = newAlert
---                 , access = Logged { lmodel | unreadNotifsAmount = amount }
---               }
---             )
---         |> Maybe.withDefault
---             (model |> Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount"))
---     Err error ->
---       model |> Alert.serverNotReachedAlert error
+unreadNotifsAmountResultHandler : Result Http.Error (DataAlert Int) -> LModel -> Model -> Model
+unreadNotifsAmountResultHandler result lmodel model =
+  case result of
+    Ok { alert, data } ->
+      let newAlert = if alert == Nothing then model.alert else alert in -- //ni: alert smarter update
+        data
+        |> Maybe.map
+            (\amount ->
+              { model
+                | alert = newAlert
+                , access = Logged { lmodel | unreadNotifsAmount = amount }
+              }
+            )
+        |> Maybe.withDefault
+            (model |> Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount"))
+    Err error ->
+      model |> Alert.serverNotReachedAlert error
 
 signinFormResultHandler result model cmd =
   case result of
@@ -431,18 +436,18 @@ signupFormResultHandler result model cmd =
 
 -- notifs amount
 
--- requestUnreadNotifsAmount : Cmd Msg
--- requestUnreadNotifsAmount =
---   Http.post
---       { url = "http://localhost/control/account_notifs_amount.php"
---       , body = emptyBody
---       , expect = Http.expectJson ReceiveUnreadNotifsAmount (dataAlertDecoder unreadNotifsAmountDecoder)
---       }
---
--- unreadNotifsAmountDecoder : Decoder Int
--- unreadNotifsAmountDecoder =
---   Field.require "amount" Decode.int <| \amount ->
---   Decode.succeed amount
+requestUnreadNotifsAmount : Cmd Msg
+requestUnreadNotifsAmount =
+  Http.post
+      { url = "http://localhost/control/account_notifs_amount.php"
+      , body = emptyBody
+      , expect = Http.expectJson ReceiveUnreadNotifsAmount (dataAlertDecoder unreadNotifsAmountDecoder)
+      }
+
+unreadNotifsAmountDecoder : Decoder Int
+unreadNotifsAmountDecoder =
+  Field.require "amount" Decode.int <| \amount ->
+  Decode.succeed amount
 
 
 -- like
@@ -757,7 +762,7 @@ subscriptions model =
     Anonymous amodel ->
       anonymousAccess_sub amodel
     Logged lmodel ->
-      Sub.none
+      Time.every 1000 Tick
 
 anonymousAccess_sub : AModel -> Sub Msg
 anonymousAccess_sub amodel =
