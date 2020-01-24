@@ -56,6 +56,9 @@ type alias LModel =
   , notifs : List Notif
   -- signout
   , signoutForm : Form (Result String String)
+  -- chat
+  , chats : List Chat
+  , discution : Maybe Discution
   }
 
 type alias AModel =
@@ -93,6 +96,8 @@ loggedAccessInit = Logged
   , unreadNotifsAmount = 0
   , notifs = []
   , signoutForm = signoutFormInit
+  , chats = []
+  , discution = Nothing
   }
 
 
@@ -142,6 +147,7 @@ type Route
   | Signup
   | User Int
   | Notifs
+  | Chats
   | Unknown
 
 routeParser : Parser (Route -> a) a
@@ -152,6 +158,7 @@ routeParser =
     , Parser.map Signup (Parser.s "signup")
     , Parser.map User   (Parser.s "user" </> Parser.int)
     , Parser.map Notifs (Parser.s "notifs")
+    , Parser.map Chats   (Parser.s "chat")
     ]
 
 urlToRoute : Url -> Route
@@ -167,6 +174,7 @@ type Msg
   | InternalLinkClicked Url
   | ExternalLinkClicked String
   | UrlChange Url
+  | Tick Time.Posix
   | SigninForm (Form.Msg (Result String String))
   | SignupForm (Form.Msg (Result String String))
   | SignoutForm  (Form.Msg (Result String String))
@@ -178,14 +186,21 @@ type Msg
   | ReceiveLikeUpdate (Result Http.Error (DataAlert (Int, Bool)))
   | ReceiveUserDetails (Result Http.Error (DataAlert UserDetails))
   | ReceiveUnreadNotifsAmount (Result Http.Error (DataAlert Int))
-  | Tick Time.Posix
   | ReceiveNotifS (Result Http.Error (DataAlert (List Notif)))
+  | ReceiveChats (Result Http.Error (DataAlert (List Chat)))
+  | AccessDiscution Int
+  | ReceiveDiscution (Result Http.Error (DataAlert Discution))
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   let route = urlToRoute model.url in
   case (model.access, route, msg) of
-    (_, _, InternalLinkClicked url) ->
+    (Anonymous _, _, InternalLinkClicked url) ->
+      ( model
+      , Nav.pushUrl model.key (Url.toString url)
+      )
+
+    (Logged _, _, InternalLinkClicked url) ->
       let newRoute = urlToRoute url in
       case newRoute of
         User id ->
@@ -202,6 +217,13 @@ update msg model =
               , Nav.pushUrl model.key (Url.toString url)
               ]
           )
+        Chats ->
+          ( model
+          , Cmd.batch
+              [ requestChats ReceiveChats
+              , Nav.pushUrl model.key (Url.toString url)
+              ]
+          )
         _ ->
           ( model
           , Nav.pushUrl model.key (Url.toString url)
@@ -211,13 +233,29 @@ update msg model =
       (model, Nav.load href)
 
     (_, _, UrlChange url) ->
-      let newRoute = urlToRoute url in
-      case newRoute of
-        User id ->
-          ( { model | url = url }
-          , requestUserDetails id ReceiveUserDetails
-          )
-        _ -> ({ model | url = url }, Cmd.none)
+      ({ model | url = url }, Cmd.none)
+
+    (Logged lmodel, Notifs, Tick _) ->
+      ( model
+      , Cmd.batch
+          [ requestNotifs ReceiveNotifS
+          , requestUnreadNotifsAmount
+          ]
+      )
+
+    (Logged lmodel, Chats, Tick _) ->
+      ( model
+      , Cmd.batch
+          [ requestChats ReceiveChats
+          , lmodel.discution
+            |> Maybe.map (\lmd-> requestDiscution lmd.id ReceiveDiscution)
+            |> Maybe.withDefault Cmd.none
+          , requestUnreadNotifsAmount
+          ]
+      )
+
+    (Logged lmodel, _, Tick _) ->
+      (model, requestUnreadNotifsAmount)
 
     (Anonymous amodel, Signin, SigninForm formMsg) ->
       let
@@ -373,9 +411,6 @@ update msg model =
     (Logged lmodel, _, ReceiveUnreadNotifsAmount result) ->
       (unreadNotifsAmountResultHandler result lmodel model, Cmd.none)
 
-    (Logged lmodel, _, Tick _) ->
-      (model, requestUnreadNotifsAmount)
-
     (Logged lmodel, _, ReceiveNotifS result) ->
       case result of
         Ok { data, alert } ->
@@ -390,6 +425,40 @@ update msg model =
               ( model |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
               , Cmd.none
               )
+        Err error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
+
+    (Logged lmodel, _, ReceiveChats result) ->
+      case result of
+        Ok { data, alert } ->
+          case data of
+            Just chatList ->
+              ( { model | access = Logged { lmodel | chats = chatList } }
+                  |> Alert.put alert
+              , Cmd.none
+              )
+            Nothing ->
+              ( model |> Alert.put alert
+              , Cmd.none
+              )
+        Err error ->
+          ( model |> Alert.put (Just (Alert.serverNotReachedAlert error))
+          , Cmd.none
+          )
+
+    (Logged lmodel, Chats, AccessDiscution id) ->
+      ( model, requestDiscution id ReceiveDiscution )
+
+    (Logged lmodel, _, ReceiveDiscution result) ->
+      case result of
+        Ok { data, alert } ->
+          ( { model | alert = alert , access = Logged
+              { lmodel | discution = data }
+            }
+          , Cmd.none
+          )
         Err error ->
           ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
           , Cmd.none
@@ -469,6 +538,95 @@ signoutFormResultHandler result model cmd =
       ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
       , cmd |> Cmd.map SignoutForm
       )
+
+
+-- chat
+
+type alias Chat =
+  { id : Int
+  , pseudo : String
+  , picture : String
+  , last_log : LastLog
+  , last_message : String
+  , unread : Bool
+  }
+
+type alias Discution =
+  { id : Int
+  , pseudo : String
+  , picture : String
+  , last_log : LastLog
+  , messages : List Message
+  }
+
+type alias Message =
+  { sent : Bool
+  , date : String
+  , content : String
+  }
+
+requestChats : (Result Http.Error (DataAlert (List Chat)) -> msg) -> Cmd msg
+requestChats toMsg =
+  Http.post
+      { url = "http://localhost/control/chat_list.php"
+      , body = emptyBody
+      , expect = Http.expectJson toMsg (Decode.list chatDecoder |> dataAlertDecoder)
+      }
+
+requestDiscution : Int -> (Result Http.Error (DataAlert Discution) -> msg) -> Cmd msg
+requestDiscution id toMsg =
+  Http.post
+      { url = "http://localhost/control/chat_discution.php"
+      , body = multipartBody [stringPart "id" (String.fromInt id)]
+      , expect = Http.expectJson toMsg (dataAlertDecoder discutionDecoder)
+      }
+
+chatDecoder : Decoder Chat
+chatDecoder =
+  Field.require "id" Decode.int <| \id ->
+  Field.require "pseudo" Decode.string <| \pseudo ->
+  Field.require "picture" Decode.string <| \picture ->
+  Field.require "last_log" lastLogDecoder <| \last_log ->
+  Field.require "last_message" Decode.string <| \last_message ->
+  Field.require "unread" Decode.bool <| \unread ->
+
+  Decode.succeed
+    { id = id
+    , pseudo = pseudo
+    , picture = picture
+    , last_log = last_log
+    , last_message = last_message
+    , unread = unread
+    }
+
+discutionDecoder : Decoder Discution
+discutionDecoder =
+  Field.require "id" Decode.int <| \id ->
+  Field.require "pseudo" Decode.string <| \pseudo ->
+  Field.require "picture" Decode.string <| \picture ->
+  Field.require "last_log" lastLogDecoder <| \last_log ->
+  Field.require "messages" (Decode.list messageDecoder) <| \messages ->
+
+  Decode.succeed
+    { id = id
+    , pseudo = pseudo
+    , picture = picture
+    , last_log = last_log
+    , messages = messages
+    }
+
+messageDecoder : Decoder Message
+messageDecoder =
+  Field.require "sent" Decode.bool <| \sent ->
+  Field.require "date" Decode.string <| \date ->
+  Field.require "content" Decode.string <| \content ->
+
+  Decode.succeed
+    { sent = sent
+    , date = date
+    , content = content
+    }
+
 
 -- account
 
@@ -733,17 +891,29 @@ view model =
             |> Maybe.withDefault "Loading..."
           )
       , body =
-          lmodel.userDetails
-          |> Maybe.map viewUserDetails
-          |> Maybe.withDefault ( text "Loading..." )
-          |> List.singleton
+          [ viewHeader lmodel
+          , lmodel.userDetails
+            |> Maybe.map viewUserDetails
+            |> Maybe.withDefault ( text "Loading..." )
+          ]
       }
 
     (Logged lmodel, Notifs) ->
       { title = "matcha - notifications"
       , body =
-        [ Alert.view model
+        [ viewHeader lmodel
+        , Alert.view model
         , viewNotifs lmodel.notifs
+        ]
+      }
+
+    (Logged lmodel, Chats) ->
+      { title = "matcha - notifications"
+      , body =
+        [ viewHeader lmodel
+        , Alert.view model
+        , viewChats lmodel.chats
+        , viewDiscution lmodel.discution
         ]
       }
 
@@ -754,6 +924,39 @@ view model =
         , a [ href "/" ] [ text "go back home" ]
         ]
       }
+
+viewChats : List Chat -> Html Msg
+viewChats chatList =
+  div [] (List.map viewChat chatList)
+
+viewChat : Chat -> Html Msg
+viewChat chat =
+  div [ if chat.unread
+        then style "background-color" "LightBlue"
+        else style "background-color" "White"
+      , onClick (AccessDiscution chat.id)
+      ]
+      [ img [ src chat.picture ] []
+      , text chat.pseudo
+      ]
+
+viewDiscution : Maybe Discution -> Html Msg
+viewDiscution maybeDiscution =
+  maybeDiscution
+  |> Maybe.map
+      (\discution ->
+        div [] (List.map viewMessage discution.messages)
+      )
+  |> Maybe.withDefault (div [] [ text "Loading..." ])
+
+viewMessage : Message -> Html Msg
+viewMessage message =
+  div [ if message.sent
+        then style "background-color" "LightBlue"
+        else style "background-color" "LightGrey"
+      ]
+      [ text message.content
+      ]
 
 viewNotifs : List Notif -> Html Msg
 viewNotifs notifs =
@@ -773,7 +976,8 @@ viewNotif notif =
 viewHeader : LModel -> Html Msg
 viewHeader lmodel =
   div []
-      [ a [ href "/notifs" ] [ text (String.fromInt lmodel.unreadNotifsAmount)]
+      [ a [ href "/chat" ] [ text "chat" ]
+      , a [ href "/notifs" ] [ text (String.fromInt lmodel.unreadNotifsAmount)]
       , Form.view lmodel.signoutForm |> Html.map SignoutForm
       ]
 
@@ -879,7 +1083,7 @@ subscriptions model =
     Anonymous amodel ->
       anonymousAccess_sub amodel
     Logged lmodel ->
-      Time.every 1000 Tick
+      Time.every 250 Tick
 
 anonymousAccess_sub : AModel -> Sub Msg
 anonymousAccess_sub amodel =

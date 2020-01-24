@@ -30,6 +30,8 @@ type alias Alert =
 type alias DataAlert a =
   { alert : Maybe Alert, data : Maybe a }
 
+-- type alias ConfirmAlert =
+--   { alert : Maybe Alert, confirm : Bool }
 
 -- functions
 
