@@ -49,6 +49,7 @@ filtersFormInit {ageMin, ageMax, distanceMax, popularityMin, popularityMax} =
   |> Form.doubleSliderField "age" (ageMin, ageMax, 1)
   |> Form.doubleSliderField "popularity" (popularityMin, popularityMax, 1)
   |> Form.singleSliderField "distanceMax" (3, distanceMax, 1)
+  |> Form.multiInputField "tags" []
   |> Form.checkboxField "viewed" False
   |> Form.checkboxField "liked" False
 
