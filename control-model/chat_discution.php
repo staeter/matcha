@@ -6,6 +6,10 @@ error_log("[POST] chat_discution.php: " . $result);
 
 echo '{
   "data" : {
+    "id" : 5,
+    "pseudo" : "Joney",
+    "picture" : "/data/joneysPick.png",
+    "last_log" : "Now",
     "messages" : [
       {
         "sent" : true,
@@ -38,6 +42,10 @@ echo '{
 /*
 {
   -- mamybe "data" : {
+    "id" : 5,
+    "pseudo" : "Joney",
+    "picture" : "/data/joneysPick.png",
+    "last_log" : "Now",
     "messages" : [
       {
         "sent" : true or false,
