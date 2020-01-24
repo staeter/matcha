@@ -59,6 +59,7 @@ type alias LModel =
   -- chat
   , chats : List Chat
   , discution : Maybe Discution
+  , sendMessageForm : Form ConfirmAlert
   }
 
 type alias AModel =
@@ -98,6 +99,7 @@ loggedAccessInit = Logged
   , signoutForm = signoutFormInit
   , chats = []
   , discution = Nothing
+  , sendMessageForm = requestSendMessageForm
   }
 
 
@@ -190,6 +192,7 @@ type Msg
   | ReceiveChats (Result Http.Error (DataAlert (List Chat)))
   | AccessDiscution Int
   | ReceiveDiscution (Result Http.Error (DataAlert Discution))
+  | SendMessageForm (Form.Msg ConfirmAlert)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -464,7 +467,38 @@ update msg model =
           , Cmd.none
           )
 
+    (Logged lmodel, _, SendMessageForm formMsg) ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg lmodel.sendMessageForm
+      in
+        case response of
+          Just result ->
+            sendMessageResultHandler result model { lmodel | sendMessageForm = newForm } formCmd
+          Nothing ->
+            ( { model | access = Logged { lmodel | sendMessageForm = newForm } }
+            , formCmd |> Cmd.map SendMessageForm
+            )
+
     _ -> ( model, Cmd.none )
+
+
+sendMessageResultHandler : Result Http.Error ConfirmAlert -> Model -> LModel -> Cmd (Form.Msg ConfirmAlert) -> (Model, Cmd Msg)
+sendMessageResultHandler result model lmodel cmd =
+  case result of
+    Ok { confirm, alert } ->
+      ( model
+          |> Alert.withDefault
+              ( if confirm
+                then Alert.successAlert "Message sent!"
+                else Alert.invalidImputAlert "We can't send that message to this user. It may be because your or his/her account isn't complete or because there is no match between you two."
+              )
+              alert
+      , cmd |> Cmd.map SendMessageForm
+      )
+    Err error ->
+      ( model |> (Alert.put << Just << Alert.serverNotReachedAlert) error
+      , cmd |> Cmd.map SendMessageForm
+      )
 
 unreadNotifsAmountResultHandler : Result Http.Error (DataAlert Int) -> LModel -> Model -> Model
 unreadNotifsAmountResultHandler result lmodel model =
@@ -626,6 +660,22 @@ messageDecoder =
     , date = date
     , content = content
     }
+
+
+-- send message
+
+requestSendMessageForm : Form ConfirmAlert
+requestSendMessageForm =
+  Form.form confirmAlertDecoder (OnSubmit "Send message to that id") "http://localhost/control/chat_message.php"
+  |> Form.numberField "id" 0
+  |> Form.textField "content"
+
+confirmAlertDecoder : Decoder { confirm: Bool, alert: Maybe Alert }
+confirmAlertDecoder =
+  Field.require "confirm" Decode.bool <| \confirm ->
+  Field.attempt "alert" alertDecoder <| \alert ->
+
+  Decode.succeed ({ confirm = confirm, alert = alert })
 
 
 -- account
@@ -913,7 +963,7 @@ view model =
         [ viewHeader lmodel
         , Alert.view model
         , viewChats lmodel.chats
-        , viewDiscution lmodel.discution
+        , viewDiscution lmodel.discution lmodel.sendMessageForm
         ]
       }
 
@@ -940,12 +990,15 @@ viewChat chat =
       , text chat.pseudo
       ]
 
-viewDiscution : Maybe Discution -> Html Msg
-viewDiscution maybeDiscution =
+viewDiscution : Maybe Discution -> Form ConfirmAlert -> Html Msg
+viewDiscution maybeDiscution sendMessageForm =
   maybeDiscution
   |> Maybe.map
       (\discution ->
-        div [] (List.map viewMessage discution.messages)
+        div []
+            [ div [] (List.map viewMessage discution.messages)
+            , (Form.view sendMessageForm |> Html.map SendMessageForm)
+            ]
       )
   |> Maybe.withDefault (div [] [ text "Loading..." ])
 
@@ -976,7 +1029,8 @@ viewNotif notif =
 viewHeader : LModel -> Html Msg
 viewHeader lmodel =
   div []
-      [ a [ href "/chat" ] [ text "chat" ]
+      [ a [ href "/" ] [ text "home" ]
+      , a [ href "/chat" ] [ text "chat" ]
       , a [ href "/notifs" ] [ text (String.fromInt lmodel.unreadNotifsAmount)]
       , Form.view lmodel.signoutForm |> Html.map SignoutForm
       ]

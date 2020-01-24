@@ -30,8 +30,8 @@ type alias Alert =
 type alias DataAlert a =
   { alert : Maybe Alert, data : Maybe a }
 
--- type alias ConfirmAlert =
---   { alert : Maybe Alert, confirm : Bool }
+type alias ConfirmAlert =
+  { alert : Maybe Alert, confirm : Bool }
 
 -- functions
 
@@ -100,6 +100,13 @@ dataAlertDecoder dataDecoder =
   Field.attempt "alert" alertDecoder <| \dAlert ->
 
   Decode.succeed ({ data = data, alert = dAlert })
+
+confirmAlertDecoder : Decoder ConfirmAlert
+confirmAlertDecoder =
+  Field.require "confirm" Decode.bool <| \confirm ->
+  Field.attempt "alert" alertDecoder <| \myAlert ->
+
+  Decode.succeed ({ confirm = confirm, alert = myAlert })
 
 
 -- view
