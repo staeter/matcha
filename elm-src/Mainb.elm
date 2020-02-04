@@ -31,6 +31,7 @@ import Debug exposing (..)
 import Alert exposing (..)
 import Form exposing (..)
 import Feed exposing (..)
+import BasicValues exposing (..)
 
 
 -- model
@@ -269,15 +270,6 @@ update msg model =
 
     (_, _, UrlChange url) ->
       ({ model | route = urlToRoute url }, Cmd.none)
-
-    -- (Anonymous amodel, Retreive a b, Tick _) ->
-    --   ( { model | access = Anonymous
-    --       { amodel | accountRetrievalForm = Just
-    --           (requestAccountRetrievalForm a b)
-    --       }
-    --     }
-    --   , Cmd.none
-    --   )
 
     (Logged lmodel, Notifs, Tick _) ->
       ( model
@@ -877,19 +869,6 @@ type alias UserDetails =
   , liked : Bool
   }
 
-type Gender
-  = Man
-  | Woman
-
-type Orientation
-  = Homosexual
-  | Bisexual
-  | Heterosexual
-
-type LastLog
-  = Now
-  | AWhileAgo String
-
 requestUserDetails : Int -> (Result Http.Error (DataAlert UserDetails) -> msg) -> Cmd msg
 requestUserDetails id toMsg =
   Http.post
@@ -929,51 +908,6 @@ userDetailsDecoder =
     , tags = tags
     , liked = liked
     }
-
-genderDecoder : Decoder Gender
-genderDecoder =
-  Decode.string |> andThen
-    (\ str ->
-      case str of
-        "Man" ->
-          Decode.succeed Man
-
-        "Woman" ->
-          Decode.succeed Woman
-
-        _ ->
-          Decode.fail "genderDecoder failed : not valid gender"
-    )
-
-orientationDecoder : Decoder Orientation
-orientationDecoder =
-  Decode.string |> andThen
-    (\ str ->
-      case str of
-        "Homosexual" ->
-          Decode.succeed Homosexual
-
-        "Bisexual" ->
-          Decode.succeed Bisexual
-
-        "Heterosexual" ->
-          Decode.succeed Heterosexual
-
-        _ ->
-          Decode.fail "orientationDecoder failed : not valid orientation"
-    )
-
-lastLogDecoder : Decoder LastLog
-lastLogDecoder =
-  Decode.string |> andThen
-    (\ str ->
-      case str of
-        "Now" ->
-          Decode.succeed Now
-
-        date ->
-          Decode.succeed (AWhileAgo date)
-    )
 
 
 -- view
