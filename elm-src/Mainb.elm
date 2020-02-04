@@ -22,6 +22,10 @@ import Array exposing (..)
 import Time exposing (..)
 
 
+
+import Debug exposing (..)
+
+
 -- modules
 
 import Alert exposing (..)
@@ -66,7 +70,7 @@ type alias AModel =
   { signinForm : Form (Result String String)
   , signupForm : Form (Result String String)
   -- retreive
-  , accountRetrievalForm : Int -> Int -> Form (Result String String)
+  , accountRetrievalForm : Maybe (Form (Result String String))
   }
 
 
@@ -77,17 +81,25 @@ init flags url key =
   ( { url = url
     , key = key
     , alert = Nothing
-    , access = anonymousAccessInit
+    , access = anonymousAccessInit url
     }
   , Cmd.none
   )
 
-anonymousAccessInit : Access
-anonymousAccessInit = Anonymous
-  { signinForm = signinFormInit
-  , signupForm = signupFormInit
-  , accountRetrievalForm = requestAccountRetrievalForm
-  }
+anonymousAccessInit : Url -> Access
+anonymousAccessInit url =
+  let route = urlToRoute url in
+  case route of
+    Retreive a b -> Anonymous
+      { signinForm = signinFormInit
+      , signupForm = signupFormInit
+      , accountRetrievalForm = Just (requestAccountRetrievalForm a b)
+      }
+    _ -> Anonymous
+      { signinForm = signinFormInit
+      , signupForm = signupFormInit
+      , accountRetrievalForm = Nothing
+      }
 
 loggedAccessInit : Access
 loggedAccessInit = Logged
@@ -203,7 +215,7 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   let route = urlToRoute model.url in
   case (model.access, route, msg) of
-    (Anonymous _, _, InternalLinkClicked url) ->
+    (Anonymous amodel, _, InternalLinkClicked url) ->
       ( model
       , Nav.pushUrl model.key (Url.toString url)
       )
@@ -237,11 +249,39 @@ update msg model =
           , Nav.pushUrl model.key (Url.toString url)
           )
 
-    (_, _, ExternalLinkClicked href) ->
+    (Logged _, _, ExternalLinkClicked href) ->
       (model, Nav.load href)
+
+    (Anonymous amodel, _, UrlChange url) ->
+      let
+        newRoute = urlToRoute url
+      in
+      case newRoute of
+        Retreive a b ->
+          let
+            accountRetrievalForm = Just
+              (requestAccountRetrievalForm a b)
+          in
+          ( { model | url = url, access = Anonymous
+              { amodel | accountRetrievalForm = accountRetrievalForm
+              }
+            }
+          , Cmd.none
+          )
+        _ ->
+          ({ model | url = url }, Cmd.none)
 
     (_, _, UrlChange url) ->
       ({ model | url = url }, Cmd.none)
+
+    -- (Anonymous amodel, Retreive a b, Tick _) ->
+    --   ( { model | access = Anonymous
+    --       { amodel | accountRetrievalForm = Just
+    --           (requestAccountRetrievalForm a b)
+    --       }
+    --     }
+    --   , Cmd.none
+    --   )
 
     (Logged lmodel, Notifs, Tick _) ->
       ( model
@@ -288,6 +328,21 @@ update msg model =
             ( { model | access = Anonymous { amodel | signupForm = newForm } }
             , formCmd |> Cmd.map SignupForm
             )
+
+    (Anonymous amodel, _, AccountRetrievalForm formMsg) ->
+      case amodel.accountRetrievalForm of
+        Nothing -> ( model, Cmd.none )
+        Just accountRetrievalForm ->
+          let
+            (newForm, formCmd, response) = Form.update formMsg accountRetrievalForm
+          in
+            case response of
+              Just result ->
+                retreiveAccountResultHandler result { model | access = Anonymous { amodel | accountRetrievalForm = Just newForm } } formCmd
+              Nothing ->
+                ( { model | access = Anonymous { amodel | accountRetrievalForm = Just newForm } }
+                , formCmd |> Cmd.map AccountRetrievalForm
+                )
 
     (Logged lmodel, _, SignoutForm formMsg) ->
       let
@@ -571,10 +626,11 @@ signupFormResultHandler result model cmd =
       , cmd |> Cmd.map SignupForm
       )
 
+signoutFormResultHandler : Result Http.Error (Result String String) -> Model -> Cmd (Form.Msg (Result String String)) -> (Model, Cmd Msg)
 signoutFormResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
-      ( { model | access = anonymousAccessInit }  |> (Alert.put << Just) (Alert.successAlert message)
+      ( { model | access = anonymousAccessInit model.url }  |> (Alert.put << Just) (Alert.successAlert message)
       , Cmd.batch
         [ Nav.pushUrl model.key "/"
         , cmd |> Cmd.map SignoutForm
@@ -587,6 +643,21 @@ signoutFormResultHandler result model cmd =
     Err error ->
       ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
       , cmd |> Cmd.map SignoutForm
+      )
+
+retreiveAccountResultHandler result model cmd =
+  case result of
+    Ok (Ok message) ->
+      ( model |> (Alert.put << Just) (Alert.successAlert message)
+      , cmd |> Cmd.map AccountRetrievalForm
+      )
+    Ok (Err message) ->
+      ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
+      , cmd |> Cmd.map AccountRetrievalForm
+      )
+    Err error ->
+      ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+      , cmd |> Cmd.map AccountRetrievalForm
       )
 
 
@@ -944,7 +1015,9 @@ view model =
       { title = "matcha - retreive password"
       , body =
         [ Alert.view model
-        , Form.view (amodel.accountRetrievalForm a b) |> Html.map AccountRetrievalForm
+        , amodel.accountRetrievalForm
+          |> Maybe.map (Form.view >> Html.map AccountRetrievalForm)
+          |> Maybe.withDefault (div [] [])
         ]
       }
 
