@@ -10,6 +10,7 @@ import Html.Events exposing (..)
 
 import Url exposing (..)
 import Url.Parser as Parser exposing (..)
+import Url.Parser.Query as PQuery exposing (..)
 import Browser.Navigation as Nav exposing (..)
 
 import Json.Decode as Decode exposing (..)
@@ -59,12 +60,13 @@ type alias LModel =
   -- chat
   , chats : List Chat
   , discution : Maybe Discution
-  , sendMessageForm : Form ConfirmAlert
   }
 
 type alias AModel =
   { signinForm : Form (Result String String)
   , signupForm : Form (Result String String)
+  -- retreive
+  , accountRetrievalForm : Int -> Int -> Form (Result String String)
   }
 
 
@@ -84,6 +86,7 @@ anonymousAccessInit : Access
 anonymousAccessInit = Anonymous
   { signinForm = signinFormInit
   , signupForm = signupFormInit
+  , accountRetrievalForm = requestAccountRetrievalForm
   }
 
 loggedAccessInit : Access
@@ -99,7 +102,6 @@ loggedAccessInit = Logged
   , signoutForm = signoutFormInit
   , chats = []
   , discution = Nothing
-  , sendMessageForm = requestSendMessageForm
   }
 
 
@@ -150,9 +152,10 @@ type Route
   | User Int
   | Notifs
   | Chats
+  | Retreive Int Int
   | Unknown
 
-routeParser : Parser (Route -> a) a
+routeParser : Parser.Parser (Route -> a) a
 routeParser =
   Parser.oneOf
     [ Parser.map Home   (Parser.top)
@@ -160,7 +163,8 @@ routeParser =
     , Parser.map Signup (Parser.s "signup")
     , Parser.map User   (Parser.s "user" </> Parser.int)
     , Parser.map Notifs (Parser.s "notifs")
-    , Parser.map Chats   (Parser.s "chat")
+    , Parser.map Chats  (Parser.s "chat")
+    , Parser.map Retreive (Parser.s "retreive" </> Parser.int </> Parser.int)
     ]
 
 urlToRoute : Url -> Route
@@ -193,6 +197,7 @@ type Msg
   | AccessDiscution Int
   | ReceiveDiscution (Result Http.Error (DataAlert Discution))
   | SendMessageForm (Form.Msg ConfirmAlert)
+  | AccountRetrievalForm (Form.Msg (Result String String))
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -468,16 +473,27 @@ update msg model =
           )
 
     (Logged lmodel, _, SendMessageForm formMsg) ->
-      let
-        (newForm, formCmd, response) = Form.update formMsg lmodel.sendMessageForm
-      in
-        case response of
-          Just result ->
-            sendMessageResultHandler result model { lmodel | sendMessageForm = newForm } formCmd
-          Nothing ->
-            ( { model | access = Logged { lmodel | sendMessageForm = newForm } }
-            , formCmd |> Cmd.map SendMessageForm
-            )
+      case lmodel.discution of
+        Nothing -> ( model, Cmd.none )
+        Just discution ->
+          let
+            (newForm, formCmd, response) = Form.update formMsg discution.sendMessageForm
+          in
+            case response of
+              Just result ->
+                sendMessageResultHandler
+                  result
+                  model
+                  { lmodel | discution = Just
+                    { discution | sendMessageForm = newForm }
+                  }
+                  formCmd
+              Nothing ->
+                ( { model | access = Logged
+                    { lmodel | discution = Just { discution | sendMessageForm = newForm } }
+                  }
+                , formCmd |> Cmd.map SendMessageForm
+                )
 
     _ -> ( model, Cmd.none )
 
@@ -587,6 +603,7 @@ type alias Chat =
 
 type alias Discution =
   { id : Int
+  , sendMessageForm : Form ConfirmAlert
   , pseudo : String
   , picture : String
   , last_log : LastLog
@@ -643,6 +660,7 @@ discutionDecoder =
 
   Decode.succeed
     { id = id
+    , sendMessageForm = requestSendMessageForm id
     , pseudo = pseudo
     , picture = picture
     , last_log = last_log
@@ -664,10 +682,9 @@ messageDecoder =
 
 -- send message
 
-requestSendMessageForm : Form ConfirmAlert
-requestSendMessageForm =
-  Form.form confirmAlertDecoder (OnSubmit "Send message to that id") "http://localhost/control/chat_message.php"
-  |> Form.numberField "id" 0
+requestSendMessageForm : Int -> Form ConfirmAlert
+requestSendMessageForm id =
+  Form.form confirmAlertDecoder (OnSubmit "Send message to that id") "http://localhost/control/chat_message.php" [("id", String.fromInt id)]
   |> Form.textField "content"
 
 confirmAlertDecoder : Decoder { confirm: Bool, alert: Maybe Alert }
@@ -682,13 +699,13 @@ confirmAlertDecoder =
 
 signinFormInit : Form (Result String String)
 signinFormInit =
-  Form.form resultMessageDecoder (OnSubmit "Signin") "http://localhost/control/account_signin.php"
+  Form.form resultMessageDecoder (OnSubmit "Signin") "http://localhost/control/account_signin.php" []
   |> Form.textField "pseudo"
   |> Form.passwordField "password"
 
 signupFormInit : Form (Result String String)
 signupFormInit =
-  Form.form resultMessageDecoder (OnSubmit "Signup") "http://localhost/control/account_signup.php"
+  Form.form resultMessageDecoder (OnSubmit "Signup") "http://localhost/control/account_signup.php" []
   |> Form.textField "pseudo"
   |> Form.textField "lastname"
   |> Form.textField "firstname"
@@ -698,7 +715,7 @@ signupFormInit =
 
 signoutFormInit : Form (Result String String)
 signoutFormInit =
-    Form.form resultMessageDecoder (OnSubmit "signout") "http://localhost/control/account_signout.php"
+    Form.form resultMessageDecoder (OnSubmit "signout") "http://localhost/control/account_signout.php" []
 
 
 -- notifs amount
@@ -764,6 +781,15 @@ likeStatusDecoder =
   Field.require "id" Decode.int <| \id ->
   Field.require "newLikeStatus" Decode.bool <| \newLikeStatus ->
   Decode.succeed (id, newLikeStatus)
+
+
+-- retreive
+
+requestAccountRetrievalForm : Int -> Int -> Form (Result String String)
+requestAccountRetrievalForm a b =
+  Form.form resultMessageDecoder (OnSubmit "Retrieve password") "http://localhost/control/password_retrieval.php" [("a", String.fromInt a), ("b", String.fromInt b)]
+  |> Form.passwordField "newpw"
+  |> Form.passwordField "confirm"
 
 
 -- user details
@@ -914,6 +940,14 @@ view model =
         ]
       }
 
+    (Anonymous amodel, Retreive a b) ->
+      { title = "matcha - retreive password"
+      , body =
+        [ Alert.view model
+        , Form.view (amodel.accountRetrievalForm a b) |> Html.map AccountRetrievalForm
+        ]
+      }
+
     (Anonymous _, _) ->
       { title = "matcha - 404 page not found"
       , body =
@@ -963,7 +997,7 @@ view model =
         [ viewHeader lmodel
         , Alert.view model
         , viewChats lmodel.chats
-        , viewDiscution lmodel.discution lmodel.sendMessageForm
+        , viewDiscution lmodel.discution
         ]
       }
 
@@ -990,14 +1024,14 @@ viewChat chat =
       , text chat.pseudo
       ]
 
-viewDiscution : Maybe Discution -> Form ConfirmAlert -> Html Msg
-viewDiscution maybeDiscution sendMessageForm =
+viewDiscution : Maybe Discution -> Html Msg
+viewDiscution maybeDiscution =
   maybeDiscution
   |> Maybe.map
       (\discution ->
         div []
             [ div [] (List.map viewMessage discution.messages)
-            , (Form.view sendMessageForm |> Html.map SendMessageForm)
+            , (Form.view discution.sendMessageForm |> Html.map SendMessageForm)
             ]
       )
   |> Maybe.withDefault (div [] [ text "Loading..." ])

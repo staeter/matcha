@@ -24,6 +24,7 @@ import Regex exposing (Regex)
 type alias Form a =
   { url : String
   , fields : Array Field
+  , implicitFields : List (String, String)
   , decoder : Decoder a
   , submition : Submition
   }
@@ -54,10 +55,11 @@ type Submition
  = OnSubmit String
  | LiveUpdate
 
-form : Decoder a -> Submition -> String -> Form a
-form decoder submitionType url =
+form : Decoder a -> Submition -> String -> List (String, String) -> Form a
+form decoder submitionType url implicitFields =
   { url = url
   , fields = Array.empty
+  , implicitFields = implicitFields
   , decoder = decoder
   , submition = submitionType
   }
@@ -257,11 +259,10 @@ submit myForm =
   Http.post
       { url = myForm.url
       , body =
-        multipartBody
-          (List.concat (List.map
-            httpPostFieldBodyPart
-            (Array.toList myForm.fields)
-          ))
+        List.append
+          ( List.map httpPostFieldBodyPart (Array.toList myForm.fields) )
+          ( List.map (\(key, val)-> stringPart key val |> List.singleton) myForm.implicitFields )
+        |> List.concat |> multipartBody
       , expect = Http.expectJson Response myForm.decoder
       }
 

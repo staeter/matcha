@@ -45,7 +45,7 @@ type alias FiltersEdgeValues =
 
 filtersFormInit : FiltersEdgeValues -> FiltersForm
 filtersFormInit {ageMin, ageMax, distanceMax, popularityMin, popularityMax} =
-  Form.form (dataAlertDecoder pageContentDecoder) LiveUpdate "http://localhost/control/feed_filter.php"
+  Form.form (dataAlertDecoder pageContentDecoder) LiveUpdate "http://localhost/control/feed_filter.php" []
   |> Form.doubleSliderField "age" (ageMin, ageMax, 1)
   |> Form.doubleSliderField "popularity" (popularityMin, popularityMax, 1)
   |> Form.singleSliderField "distanceMax" (3, distanceMax, 1)
