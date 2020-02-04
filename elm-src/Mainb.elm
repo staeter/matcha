@@ -36,7 +36,7 @@ import Feed exposing (..)
 -- model
 
 type alias Model =
-  { url : Url
+  { route : Route
   , key : Nav.Key
   , alert : Maybe Alert
   , access : Access
@@ -78,17 +78,17 @@ type alias AModel =
 
 init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
 init flags url key =
-  ( { url = url
+  let route = urlToRoute url in
+  ( { route = route
     , key = key
     , alert = Nothing
-    , access = anonymousAccessInit url
+    , access = anonymousAccessInit route
     }
   , Cmd.none
   )
 
-anonymousAccessInit : Url -> Access
-anonymousAccessInit url =
-  let route = urlToRoute url in
+anonymousAccessInit : Route -> Access
+anonymousAccessInit route =
   case route of
     Retreive a b -> Anonymous
       { signinForm = signinFormInit
@@ -213,8 +213,7 @@ type Msg
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  let route = urlToRoute model.url in
-  case (model.access, route, msg) of
+  case (model.access, model.route, msg) of
     (Anonymous amodel, _, InternalLinkClicked url) ->
       ( model
       , Nav.pushUrl model.key (Url.toString url)
@@ -253,26 +252,23 @@ update msg model =
       (model, Nav.load href)
 
     (Anonymous amodel, _, UrlChange url) ->
-      let
-        newRoute = urlToRoute url
-      in
+      let newRoute = urlToRoute url in
       case newRoute of
         Retreive a b ->
           let
             accountRetrievalForm = Just
               (requestAccountRetrievalForm a b)
           in
-          ( { model | url = url, access = Anonymous
-              { amodel | accountRetrievalForm = accountRetrievalForm
-              }
+          ( { model | route = newRoute, access = Anonymous
+              { amodel | accountRetrievalForm = accountRetrievalForm }
             }
           , Cmd.none
           )
         _ ->
-          ({ model | url = url }, Cmd.none)
+          ({ model | route = newRoute }, Cmd.none)
 
     (_, _, UrlChange url) ->
-      ({ model | url = url }, Cmd.none)
+      ({ model | route = urlToRoute url }, Cmd.none)
 
     -- (Anonymous amodel, Retreive a b, Tick _) ->
     --   ( { model | access = Anonymous
@@ -630,7 +626,7 @@ signoutFormResultHandler : Result Http.Error (Result String String) -> Model -> 
 signoutFormResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
-      ( { model | access = anonymousAccessInit model.url }  |> (Alert.put << Just) (Alert.successAlert message)
+      ( { model | access = anonymousAccessInit model.route }  |> (Alert.put << Just) (Alert.successAlert message)
       , Cmd.batch
         [ Nav.pushUrl model.key "/"
         , cmd |> Cmd.map SignoutForm
@@ -984,8 +980,7 @@ lastLogDecoder =
 
 view : Model -> Browser.Document Msg
 view model =
-  let route = urlToRoute model.url in
-  case (model.access, route) of
+  case (model.access, model.route) of
     (Anonymous amodel, Signin) ->
       { title = "matcha - signin"
       , body =
