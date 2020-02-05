@@ -11,8 +11,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
-import SingleSlider as SSlider exposing (..)
-import DoubleSlider as DSlider exposing (..)
+import SingleSlider as SS exposing (..)
+import DoubleSlider as DS exposing (..)
 import Dropdown as Dropd exposing (..)
 import MultiInput as MultInput exposing (..)
 
@@ -29,22 +29,110 @@ type alias Form a =
   , submition : Submition
   }
 
-type alias Field =
-  { label : Label
-  , value : Value
+type Field
+  = Text TextFieldModel
+  | Password TextFieldModel
+  | DoubleSlider DoubleSliderFieldModel
+  | SingleSlider SingleSliderFieldModel
+  | Dropdown DropdownFieldModel
+  | Checkbox CheckboxFieldModel
+  | Number NumberFieldModel
+  | MultiInput MultiInputFieldModel
+
+type alias MultiInputFieldModel =
+  { label : String
+  , items : List String
+  , state : MultInput.State
+  , placeholder : String
   }
 
-type alias Label = String
+type alias NumberFieldModel =
+  { label : String
+  , value : Int
+  }
 
-type Value
-  = Text String
-  | Password String
-  | DoubleSlider DSlider.Model
-  | SingleSlider SSlider.Model
-  | Dropdown (Dropd.Options InputMsg) (Maybe String)
-  | Checkbox Bool
-  | Number Int
-  | MultiInput { items : List String, state : MultInput.State }
+type alias CheckboxFieldModel =
+  { label : String
+  , value : Bool
+  , text : String
+  }
+
+type alias DropdownFieldModel =
+  { label : String
+  , value : Maybe String
+  , options : Dropd.Options InputMsg
+  }
+
+defaultDropdownFieldModel : String -> List String -> DropdownFieldModel
+defaultDropdownFieldModel label options =
+  let
+    defaultOptions =
+      Dropd.defaultOptions DropdownMsg
+  in
+    { label = label
+    , value = List.head options
+    , options =
+        { items = options |> List.map
+            (\str ->
+                { value = str
+                , text = str
+                , enabled = True
+                }
+            )
+        , emptyItem = Nothing
+        , onChange = DropdownMsg
+        }
+    }
+
+type alias SingleSliderFieldModel =
+  { label : String
+  , value : SS.SingleSlider InputMsg
+  }
+
+defaultSingleSliderFieldModel : String -> (Float, Float) -> SingleSliderFieldModel
+defaultSingleSliderFieldModel label (min, max) =
+  { label = label
+  , value = SS.init { min = min
+                    , max = max
+                    , step = 1
+                    , value = min
+                    , onChange = SingleSliderMsg
+                    }
+  }
+
+type alias DoubleSliderFieldModel =
+  { label : String
+  , value : DS.DoubleSlider InputMsg
+  }
+
+defaultDoubleSliderFieldModel : String -> (Float, Float) -> DoubleSliderFieldModel
+defaultDoubleSliderFieldModel label (min, max) =
+  { label = label
+  , value = DS.init { min = min
+                    , max = max
+                    , lowValue = min
+                    , highValue = max
+                    , step = 1
+                    , onLowChange = DoubleSliderLowMsg
+                    , onHighChange = DoubleSliderHighMsg
+                    }
+  }
+
+type alias TextFieldModel =
+  { label : String
+  , value : String
+  , validation : List ((String -> Bool), String)
+  -- , htmlAttributes : List (Attribute msg)
+  }
+
+defaultTextFieldModel : String -> TextFieldModel
+defaultTextFieldModel label =
+  { label = label
+  , value = ""
+  , validation = []
+  -- , htmlAttributes = []
+  }
+
 
 -- type alias Condition =
 --   { label : Label
@@ -64,94 +152,53 @@ form decoder submitionType url implicitFields =
   , submition = submitionType
   }
 
-field : Label -> Value -> Form a -> Form a
-field label value myForm =
-  { myForm | fields
-    = Array.push (Field label value) myForm.fields
-  }
+add : Field -> Form a -> Form a
+add field myForm =
+  { myForm | fields = Array.push field myForm.fields }
 
-textField : Label -> Form a -> Form a
+textField : String -> Form a -> Form a
 textField label myForm =
-  field label (Text "") myForm
+  add (defaultTextFieldModel label |> Text) myForm
 
-passwordField : Label -> Form a -> Form a
+passwordField : String -> Form a -> Form a
 passwordField label myForm =
-  field label (Password "") myForm
+  add (defaultTextFieldModel label |> Password) myForm
 
-doubleSliderField : Label -> (Float, Float, Int) -> Form a -> Form a
-doubleSliderField label (min, max, step) myForm =
-  field
-    label
-    ( DoubleSlider
-        ( let
-            myDoubleSlider = DSlider.defaultModel
-          in
-            { myDoubleSlider
-                | min = min
-                , max = max
-                , step = step
-                , lowValue = min
-                , highValue = max
-            }
-        )
-    )
-    myForm
+doubleSliderField : String -> (Float, Float) -> Form a -> Form a
+doubleSliderField label (min, max) myForm =
+  add (defaultDoubleSliderFieldModel label (min, max) |> DoubleSlider) myForm
 
-singleSliderField : Label -> (Float, Float, Float) -> Form a -> Form a
-singleSliderField label (min, max, step) myForm =
-  field
-    label
-    ( SingleSlider
-        ( let
-            mySingleSlider = SSlider.defaultModel
-          in
-            { mySingleSlider
-                | min = min
-                , max = max
-                , step = step
-                , value = min
-            }
-        )
-    )
-    myForm
+singleSliderField : String -> (Float, Float) -> Form a -> Form a
+singleSliderField label (min, max) myForm =
+  add (defaultSingleSliderFieldModel label (min, max) |> SingleSlider) myForm
 
-dropdownField : Label -> List String -> Form a -> Form a
+dropdownField : String -> List String -> Form a -> Form a
 dropdownField label options myForm =
-    let
-      myDropdownTmp =
-        Dropd.defaultOptions DropdownMsg
+  add (defaultDropdownFieldModel label options |> Dropdown) myForm
 
-      myDropdown =
-        { myDropdownTmp
-          | items = options |> List.map
-              (\str ->
-                  { value = str
-                  , text = str
-                  , enabled = True
-                  }
-              )
+checkboxField : String -> Bool -> String -> Form a -> Form a
+checkboxField label checked text myForm =
+  add
+    ( Checkbox
+        { label = label
+        , value = checked
+        , text = text
         }
+    )
+    myForm
 
-      selectedVal =
-        List.head options
-    in
-      field label (Dropdown myDropdown selectedVal) myForm
-
-checkboxField : Label -> Bool -> Form a -> Form a
-checkboxField label checked myForm =
-  field label (Checkbox checked) myForm
-
-numberField : Label -> Int -> Form a -> Form a
+numberField : String -> Int -> Form a -> Form a
 numberField label defaultVal myForm =
-  field label (Number defaultVal) myForm
+  add (Number { label = label, value = defaultVal }) myForm
 
-multiInputField : Label -> List String -> Form a -> Form a
+multiInputField : String -> List String -> Form a -> Form a
 multiInputField label initialItems myForm =
-  field
-    label
+  add
     ( MultiInput
-        { items = initialItems
+        { label = label
+        , items = initialItems
         , state = MultInput.init label
+        , placeholder = label
         }
     )
     myForm
@@ -169,12 +216,17 @@ type Msg a
 type InputMsg
   = TextMsg String
   | PasswordMsg String
-  | DoubleSliderMsg DSlider.Msg
-  | SingleSliderMsg SSlider.Msg
+  | DoubleSliderLowMsg Float
+  | DoubleSliderHighMsg Float
+  | SingleSliderMsg Float
   | DropdownMsg (Maybe String)
   | CheckboxMsg Bool
   | NumberMsg Int
   | MultiInputMsg MultInput.Msg
+
+type DoubleSliderMsg
+  = DoubleSliderLowChange Float
+  | DoubleSliderHighChange Float
 
 update :  Msg a -> Form a -> (Form a, Cmd (Msg a), Maybe (Result Http.Error a))
 update msg myForm =
@@ -211,42 +263,41 @@ update msg myForm =
 
 updateField : InputMsg -> Field -> (Field, Cmd InputMsg)
 updateField msg myField =
-  case (myField.value, msg) of
-    (Text _, TextMsg val) ->
-      ({ myField | value = Text val }, Cmd.none)
+  case (myField, msg) of
+    (Text model, TextMsg newVal) ->
+      (Text { model | value = newVal }, Cmd.none)
 
-    (Password _, PasswordMsg val) ->
-      ({ myField | value = Password val }, Cmd.none)
+    (Password model, PasswordMsg newVal) ->
+      (Password { model | value = newVal }, Cmd.none)
 
-    (DoubleSlider myDoubleSlider, DoubleSliderMsg doubleSliderMsg) ->
-      let
-        (newDoubleSlider, _, _) =
-          DSlider.update doubleSliderMsg myDoubleSlider
-      in
-        ({ myField | value = DoubleSlider newDoubleSlider }, Cmd.none)
+    (DoubleSlider model, DoubleSliderLowMsg newLowVal) ->
+      ( DoubleSlider { model | value = DS.updateLowValue newLowVal model.value }
+      , Cmd.none )
 
-    (SingleSlider mySingleSlider, SingleSliderMsg singleSliderMsg) ->
-      let
-        (newSingleSlider, _, _) =
-          SSlider.update singleSliderMsg mySingleSlider
-      in
-        ({ myField | value = SingleSlider newSingleSlider }, Cmd.none)
+    (DoubleSlider model, DoubleSliderHighMsg newHighVal) ->
+      ( DoubleSlider { model | value = DS.updateHighValue newHighVal model.value }
+      , Cmd.none )
 
-    (Dropdown myDropdown _, DropdownMsg selectedVal) ->
-      ({ myField | value = Dropdown myDropdown selectedVal }, Cmd.none)
+    (SingleSlider model, SingleSliderMsg newVal) ->
+      ( SingleSlider { model | value = SS.update newVal model.value }
+      , Cmd.none )
 
-    (Checkbox _, CheckboxMsg val) ->
-      ({ myField | value = Checkbox val }, Cmd.none)
+    (Dropdown model, DropdownMsg newVal) ->
+      ( Dropdown { model | value = newVal }
+      , Cmd.none )
 
-    (Number _, NumberMsg val) ->
-      ({ myField | value = Number val }, Cmd.none)
+    (Checkbox model, CheckboxMsg newVal) ->
+      (Checkbox { model | value = newVal }, Cmd.none)
 
-    (MultiInput { items, state }, MultiInputMsg mimsg) ->
+    (Number model, NumberMsg newVal) ->
+      (Number { model | value = newVal }, Cmd.none)
+
+    (MultiInput model, MultiInputMsg mimsg) ->
       let
         ( nextState, nextItems, nextCmd ) =
-            MultInput.update { separators = [ "\n", "\t", " ", "," ] } mimsg state items
+            MultInput.update { separators = [ "\n", "\t", " ", "," ] } mimsg model.state model.items
       in
-        ( { myField | value = MultiInput{ items = nextItems, state = nextState } }
+        ( MultiInput { model | items = nextItems, state = nextState }
         , nextCmd |> Cmd.map MultiInputMsg
         )
 
@@ -268,31 +319,38 @@ submit myForm =
 
 httpPostFieldBodyPart : Field -> List Http.Part
 httpPostFieldBodyPart myField =
-  case myField.value of
-    Text str -> stringPart myField.label str |> List.singleton
-    Password str -> stringPart myField.label str |> List.singleton
-    DoubleSlider doubleSlider ->
-      stringPart (myField.label ++ "Min") (String.fromFloat doubleSlider.lowValue)
-      :: stringPart (myField.label ++ "Max") (String.fromFloat doubleSlider.highValue)
-      :: []
-    SingleSlider singleSlider ->
-      stringPart myField.label (String.fromFloat singleSlider.value)
+  case myField of
+    Text model -> stringPart model.label model.value |> List.singleton
+    Password model -> stringPart model.label model.value |> List.singleton
+    DoubleSlider model ->
+      ( DS.fetchLowValue model.value
+        |> String.fromFloat
+        |> Http.stringPart (model.label ++ "Min")
+      ) ::
+      ( DS.fetchHighValue model.value
+        |> String.fromFloat
+        |> Http.stringPart (model.label ++ "Max")
+        |> List.singleton
+      )
+    SingleSlider model ->
+      SS.fetchValue model.value
+      |> String.fromFloat
+      |> Http.stringPart model.label
       |> List.singleton
-    Dropdown _ maybeVal ->
-      maybeVal
+    Dropdown model ->
+      model.value
       |> Maybe.map
-        (\val -> stringPart myField.label val |> List.singleton)
-      |> Maybe.withDefault
-        (stringPart myField.label "Invalid" |> List.singleton)
-    Checkbox checked ->
-      if checked
-      then stringPart myField.label "True" |> List.singleton
-      else stringPart myField.label "False" |> List.singleton
-    Number val -> stringPart myField.label (String.fromInt val) |> List.singleton
-    MultiInput { items, state } ->
+        (\val -> stringPart model.label val |> List.singleton)
+      |> Maybe.withDefault []
+    Checkbox model ->
+      if model.value
+      then Http.stringPart model.label "True" |> List.singleton
+      else Http.stringPart model.label "False" |> List.singleton
+    Number model -> stringPart model.label (String.fromInt model.value) |> List.singleton
+    MultiInput { label, items, state, placeholder } ->
       Encode.list Encode.string items
       |> Encode.encode 0
-      |> stringPart myField.label
+      |> Http.stringPart label
       |> List.singleton
 
 
@@ -300,16 +358,15 @@ httpPostFieldBodyPart myField =
 
 subscriptions_field : Int -> Field -> Sub (Msg a)
 subscriptions_field id myField =
-  case myField.value of
-    DoubleSlider val ->
-      DSlider.subscriptions val |> Sub.map (Input id << DoubleSliderMsg)
-    MultiInput { items, state } ->
-      MultInput.subscriptions state |> Sub.map (Input id << MultiInputMsg)
+  case myField of
     _ -> Sub.none
 
 subscriptions : Form a -> Sub (Msg a)
 subscriptions myForm =
-  Sub.batch (Array.toList (Array.indexedMap subscriptions_field myForm.fields))
+  myForm.fields
+  |> Array.indexedMap subscriptions_field
+  |> Array.toList
+  |> Sub.batch
 
 
 -- view
@@ -317,9 +374,14 @@ subscriptions myForm =
 view : Form a -> Html (Msg a)
 view myForm =
   Html.form [ onSubmit Submit ]
-            (List.append
-              (Array.toList (Array.indexedMap view_field myForm.fields))
-              (List.singleton (submitButton myForm.submition))
+            ( List.append
+                ( myForm.fields
+                  |> Array.indexedMap view_field
+                  |> Array.toList
+                )
+                ( submitButton myForm.submition
+                  |> List.singleton
+                )
             )
 
 submitButton : Submition -> Html (Msg a)
@@ -330,52 +392,55 @@ submitButton submitionType =
 
 view_field : Int -> Field -> Html (Msg a)
 view_field id myField =
-  case myField.value of
-    Text val ->
-      input [ type_ "text"
-            , placeholder myField.label
-            , onInput (Input id << TextMsg)
-            , Html.Attributes.value val
-            ] []
+  case myField of
+    Text model ->
+      input ( [ type_ "text"
+              , onInput (Input id << PasswordMsg)
+              , Html.Attributes.value model.value
+              ]
+              -- |> List.append htmlAttributes
+            ) []
 
-    Password val ->
-      input [ type_ "password"
-            , placeholder myField.label
-            , onInput (Input id << PasswordMsg)
-            , Html.Attributes.value val
-            ] []
+    Password model ->
+      input ( [ type_ "password"
+              , onInput (Input id << PasswordMsg)
+              , Html.Attributes.value model.value
+              ]
+              -- |> List.append htmlAttributes
+            ) []
 
-    DoubleSlider val ->
-      DSlider.view val |> Html.map (Input id << DoubleSliderMsg)
-
-    SingleSlider val ->
-      SSlider.view val |> Html.map (Input id << SingleSliderMsg)
-
-    Dropdown myDropdown selectedVal ->
-      Dropd.dropdown myDropdown [] selectedVal
+    DoubleSlider model ->
+      DS.view model.value
       |> Html.map (Input id)
 
-    Checkbox checked ->
+    SingleSlider model ->
+      SS.view model.value
+      |> Html.map (Input id)
+
+    Dropdown model ->
+      Dropd.dropdown model.options [] model.value
+      |> Html.map (Input id)
+
+    Checkbox model ->
       div []
           [ input [ type_ "checkbox"
-                  , Html.Attributes.id myField.label
+                  , Html.Attributes.id model.label
                   , onCheck (Input id << CheckboxMsg)
-                  , Html.Attributes.checked checked
+                  , Html.Attributes.checked model.value
                   ] []
-          , label [ for myField.label ]
-                  [ text myField.label ]
+          , label [ for model.label ]
+                  [ text model.text ]
           ]
 
-    Number val ->
+    Number model ->
       input [ type_ "number"
-            , placeholder myField.label
             , onInput (Input id << NumberMsg << Maybe.withDefault 0 << String.toInt)
-            , Html.Attributes.value (String.fromInt val)
+            , Html.Attributes.value (String.fromInt model.value)
             ] []
 
-    MultiInput { items, state } ->
+    MultiInput { label, items, state, placeholder } ->
       MultInput.view
-        { placeholder = myField.label
+        { placeholder = placeholder
         , toOuterMsg = Input id << MultiInputMsg
         , isValid = matches "^[a-z0-9]+(?:-[a-z0-9]+)*$"
         }
