@@ -516,48 +516,47 @@ update msg model =
           )
 
     (Logged lmodel, _, SendMessageForm formMsg) ->
-      case lmodel.discution of
-        Nothing -> ( model, Cmd.none )
-        Just discution ->
+      Maybe.withDefault ( model, Cmd.none ) <| Maybe.map
+        (\discution ->
           let
             (newForm, formCmd, response) = Form.update formMsg discution.sendMessageForm
           in
             case response of
-              Just result ->
-                sendMessageResultHandler
-                  result
-                  model
-                  { lmodel | discution = Just
-                    { discution | sendMessageForm = newForm }
-                  }
-                  formCmd
               Nothing ->
-                ( { model | access = Logged
-                    { lmodel | discution = Just { discution | sendMessageForm = newForm } }
-                  }
+                ( model |> setSendMessageForm newForm discution lmodel
+                , formCmd |> Cmd.map SendMessageForm
+                )
+              Just result ->
+                ( sendMessageFormResultHandler result discution lmodel model
+                  |> setSendMessageForm newForm discution lmodel
                 , formCmd |> Cmd.map SendMessageForm
                 )
 
+        ) lmodel.discution
+
     _ -> ( model, Cmd.none )
 
-
-sendMessageResultHandler : Result Http.Error ConfirmAlert -> Model -> LModel -> Cmd (Form.Msg ConfirmAlert) -> (Model, Cmd Msg)
-sendMessageResultHandler result model lmodel cmd =
+sendMessageFormResultHandler result discution lmodel model =
   case result of
     Ok { confirm, alert } ->
-      ( model
-          |> Alert.withDefault
-              ( if confirm
-                then Alert.successAlert "Message sent!"
-                else Alert.invalidImputAlert "We can't send that message to this user. It may be because your or his/her account isn't complete or because there is no match between you two."
-              )
-              alert
-      , cmd |> Cmd.map SendMessageForm
-      )
+      model
+      |> Alert.withDefault
+          ( if confirm
+            then Alert.successAlert "Message sent!"
+            else Alert.invalidImputAlert "We can't send that message to this user. It may be because your or his/her account isn't complete or because there is no match between you two."
+          ) alert
+
     Err error ->
-      ( model |> (Alert.put << Just << Alert.serverNotReachedAlert) error
-      , cmd |> Cmd.map SendMessageForm
-      )
+      model
+      |> (Alert.put << Just << Alert.serverNotReachedAlert) error
+
+setSendMessageForm : Form ConfirmAlert -> Discution -> LModel -> Model -> Model
+setSendMessageForm newForm discution lmodel model =
+  { model | access = Logged
+      { lmodel | discution = Just
+          { discution | sendMessageForm = newForm }
+      }
+  }
 
 unreadNotifsAmountResultHandler : Result Http.Error (DataAlert Int) -> LModel -> Model -> Model
 unreadNotifsAmountResultHandler result lmodel model =
