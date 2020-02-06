@@ -395,7 +395,7 @@ view_field id myField =
   case myField of
     Text model ->
       input ( [ type_ "text"
-              , onInput (Input id << PasswordMsg)
+              , onInput (Input id << TextMsg)
               , Html.Attributes.value model.value
               ]
               -- |> List.append htmlAttributes

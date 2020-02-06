@@ -22,10 +22,6 @@ import Array exposing (..)
 import Time exposing (..)
 
 
-
-import Debug exposing (..)
-
-
 -- modules
 
 import Alert exposing (..)
@@ -209,6 +205,7 @@ type Msg
   | ReceiveChats (Result Http.Error (DataAlert (List Chat)))
   | AccessDiscution Int
   | ReceiveDiscution (Result Http.Error (DataAlert Discution))
+  | ReceiveDiscutionRefresh (Result Http.Error (DataAlert Discution))
   | SendMessageForm (Form.Msg ConfirmAlert)
   | AccountRetrievalForm (Form.Msg (Result String String))
 
@@ -284,7 +281,7 @@ update msg model =
       , Cmd.batch
           [ requestChats ReceiveChats
           , lmodel.discution
-            |> Maybe.map (\lmd-> requestDiscution lmd.id ReceiveDiscution)
+            |> Maybe.map (\lmd-> requestDiscution lmd.id ReceiveDiscutionRefresh)
             |> Maybe.withDefault Cmd.none
           , requestUnreadNotifsAmount
           ]
@@ -507,6 +504,24 @@ update msg model =
         Ok { data, alert } ->
           ( { model | alert = alert , access = Logged
               { lmodel | discution = data }
+            }
+          , Cmd.none
+          )
+        Err error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
+
+    (Logged lmodel, _, ReceiveDiscutionRefresh result) ->
+      case result of
+        Ok { data, alert } ->
+          ( { model | alert = alert , access = Logged
+              { lmodel | discution =
+                  Maybe.map2
+                    (\ new old -> { new | sendMessageForm = old.sendMessageForm } )
+                    data
+                    lmodel.discution
+              }
             }
           , Cmd.none
           )
@@ -1172,7 +1187,7 @@ subscriptions model =
     Anonymous amodel ->
       anonymousAccess_sub amodel
     Logged lmodel ->
-      Time.every 250 Tick
+      Time.every 3000 Tick
 
 anonymousAccess_sub : AModel -> Sub Msg
 anonymousAccess_sub amodel =
