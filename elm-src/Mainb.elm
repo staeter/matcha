@@ -68,6 +68,8 @@ type alias AModel =
   , signupForm : Form (Result String String)
   -- retreive
   , accountRetrievalForm : Maybe (Form (Result String String))
+  -- confirm
+  , accountConfirmationForm : Maybe (Form (Result String String))
   }
 
 
@@ -91,11 +93,19 @@ anonymousAccessInit route =
       { signinForm = signinFormInit
       , signupForm = signupFormInit
       , accountRetrievalForm = Just (requestAccountRetrievalForm a b)
+      , accountConfirmationForm = Nothing
+      }
+    Confirm a b -> Anonymous
+      { signinForm = signinFormInit
+      , signupForm = signupFormInit
+      , accountRetrievalForm = Nothing
+      , accountConfirmationForm = Just (requestAccountConfirmationForm a b)
       }
     _ -> Anonymous
       { signinForm = signinFormInit
       , signupForm = signupFormInit
       , accountRetrievalForm = Nothing
+      , accountConfirmationForm = Nothing
       }
 
 loggedAccessInit : Access
@@ -162,18 +172,20 @@ type Route
   | Notifs
   | Chats
   | Retreive Int Int
+  | Confirm Int Int
   | Unknown
 
 routeParser : Parser.Parser (Route -> a) a
 routeParser =
   Parser.oneOf
-    [ Parser.map Home   (Parser.top)
-    , Parser.map Signin (Parser.s "signin")
-    , Parser.map Signup (Parser.s "signup")
-    , Parser.map User   (Parser.s "user" </> Parser.int)
-    , Parser.map Notifs (Parser.s "notifs")
-    , Parser.map Chats  (Parser.s "chat")
+    [ Parser.map Home     (Parser.top)
+    , Parser.map Signin   (Parser.s "signin")
+    , Parser.map Signup   (Parser.s "signup")
+    , Parser.map User     (Parser.s "user" </> Parser.int)
+    , Parser.map Notifs   (Parser.s "notifs")
+    , Parser.map Chats    (Parser.s "chat")
     , Parser.map Retreive (Parser.s "retreive" </> Parser.int </> Parser.int)
+    , Parser.map Confirm  (Parser.s "confirm" </> Parser.int </> Parser.int)
     ]
 
 urlToRoute : Url -> Route
@@ -208,6 +220,7 @@ type Msg
   | ReceiveDiscutionRefresh (Result Http.Error (DataAlert Discution))
   | SendMessageForm (Form.Msg ConfirmAlert)
   | AccountRetrievalForm (Form.Msg (Result String String))
+  | AccountConfirmationForm (Form.Msg (Result String String))
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -257,11 +270,21 @@ update msg model =
             accountRetrievalForm = Just
               (requestAccountRetrievalForm a b)
           in
-          ( { model | route = newRoute, access = Anonymous
-              { amodel | accountRetrievalForm = accountRetrievalForm }
-            }
-          , Cmd.none
-          )
+            ( { model | route = newRoute, access = Anonymous
+                { amodel | accountRetrievalForm = accountRetrievalForm }
+              }
+            , Cmd.none
+            )
+        Confirm a b ->
+          let
+            accountConfirmationForm = Just
+              (requestAccountConfirmationForm a b)
+          in
+            ( { model | route = newRoute, access = Anonymous
+                { amodel | accountConfirmationForm = accountConfirmationForm }
+              }
+            , Cmd.none
+            )
         _ ->
           ({ model | route = newRoute }, Cmd.none)
 
@@ -865,6 +888,13 @@ requestAccountRetrievalForm a b =
   |> Form.passwordField "confirm"
 
 
+-- confirm account
+
+requestAccountConfirmationForm : Int -> Int -> Form (Result String String)
+requestAccountConfirmationForm a b =
+  Form.form resultMessageDecoder (OnSubmit "confirm account") "http://localhost/control/account_confirmation.php" [("a", String.fromInt a), ("b", String.fromInt b)]
+
+
 -- user details
 
 type alias UserDetails =
@@ -960,6 +990,16 @@ view model =
         [ Alert.view model
         , amodel.accountRetrievalForm
           |> Maybe.map (Form.view >> Html.map AccountRetrievalForm)
+          |> Maybe.withDefault (div [] [])
+        ]
+      }
+
+    (Anonymous amodel, Confirm a b) ->
+      { title = "matcha - retreive password"
+      , body =
+        [ Alert.view model
+        , amodel.accountConfirmationForm
+          |> Maybe.map (Form.view >> Html.map AccountConfirmationForm)
           |> Maybe.withDefault (div [] [])
         ]
       }
