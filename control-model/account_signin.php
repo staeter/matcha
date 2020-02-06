@@ -6,15 +6,27 @@ error_log("[POST] account_signin.php: " . $result);
 
 
 echo '{
-  "result" : "Success",
-  "message" : "Welcome!"
+  "data" : {
+    "pseudo" : "Joney",
+    "picture" : "/data/joneysPick.png"
+  },
+  "alert" : {
+    "color" : "DarkGreen",
+    "message" : "Welcome!"
+  }
 }'
 
 // pseudo password
 /*
 {
-  "result" : "Success" or "Failure",
-  "message" : "This is a message I want the user to see",
+  "data" : {
+    "pseudo" : "Joney",
+    "picture" : "/data/joneysPick.png"
+  },
+  "alert" : {
+    "color" : "DarkGreen",
+    "message" : "Welcome!"
+  }
 }
 */
 
