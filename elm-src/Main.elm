@@ -1,4 +1,4 @@
-module Mainb exposing (..)
+module Main exposing (..)
 
 
 -- imports
