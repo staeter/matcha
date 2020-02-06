@@ -17,7 +17,14 @@
   <script>
   var app = Elm.Main.init({
     node: document.getElementById('elm'),
-    flags: null
+    flags:  <?php
+              if (/*no user signed in*/ false) {
+                ?>null<?php
+              }
+              else {
+                ?>{ pseudo: "LeroyJenkins", picture: "/data/leroyspick.jpg" }<?php
+              }
+            ?>
   });
   </script>
 </div>
