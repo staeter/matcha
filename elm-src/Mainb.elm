@@ -44,8 +44,10 @@ type Access
   | Anonymous AModel
 
 type alias LModel =
-  { -- feed
-    filtersForm : Maybe FiltersForm
+  { pseudo : String
+  , picture : String
+  -- feed
+  , filtersForm : Maybe FiltersForm
   , feedContent : List Profile
   , feedPageNumber : Int
   , feedPageAmount : Int
@@ -64,7 +66,7 @@ type alias LModel =
   }
 
 type alias AModel =
-  { signinForm : Form (Result String String)
+  { signinForm : Form (DataAlert { pseudo: String, picture: String })
   , signupForm : Form (Result String String)
   -- retreive
   , accountRetrievalForm : Maybe (Form (Result String String))
@@ -75,13 +77,18 @@ type alias AModel =
 
 -- init
 
-init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
+init : Maybe { pseudo : String, picture : String } -> Url -> Nav.Key -> (Model, Cmd Msg)
 init flags url key =
-  let route = urlToRoute url in
+  let route = urlToRoute (url |> Debug.log "url") |> Debug.log "route" in
   ( { route = route
     , key = key
     , alert = Nothing
-    , access = anonymousAccessInit route
+    , access =
+        case flags of
+          Nothing ->
+            anonymousAccessInit route
+          Just { pseudo, picture } ->
+            loggedAccessInit pseudo picture
     }
   , Cmd.none
   )
@@ -108,9 +115,11 @@ anonymousAccessInit route =
       , accountConfirmationForm = Nothing
       }
 
-loggedAccessInit : Access
-loggedAccessInit = Logged
-  { filtersForm = Nothing
+loggedAccessInit : String -> String -> Access
+loggedAccessInit pseudo picture = Logged
+  { pseudo = pseudo
+  , picture = picture
+  , filtersForm = Nothing
   , feedContent = []
   , feedPageNumber = 0
   , feedPageAmount = 0
@@ -202,7 +211,7 @@ type Msg
   | ExternalLinkClicked String
   | UrlChange Url
   | Tick Time.Posix
-  | SigninForm (Form.Msg (Result String String))
+  | SigninForm (Form.Msg (DataAlert { pseudo: String, picture: String }))
   | SignupForm (Form.Msg (Result String String))
   | SignoutForm  (Form.Msg (Result String String))
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
@@ -233,6 +242,10 @@ update msg model =
     (Logged _, _, InternalLinkClicked url) ->
       let newRoute = urlToRoute url in
       case newRoute of
+        Home ->
+          ( model
+          , requestFeedInit ReceiveFeedInit
+          )
         User id ->
           ( model
           , Cmd.batch
@@ -317,13 +330,29 @@ update msg model =
       let
         (newForm, formCmd, response) = Form.update formMsg amodel.signinForm
       in
-        case response of
-          Just result ->
-            signinFormResultHandler result model formCmd
-          Nothing ->
-            ( { model | access = Anonymous { amodel | signinForm = newForm } }
-            , formCmd |> Cmd.map SigninForm
-            )
+      case response of
+        Nothing ->
+          ( { model | access = Anonymous { amodel | signinForm = newForm } }
+          , formCmd |> Cmd.map SigninForm
+          )
+        Just result ->
+          case toWebResultDataAlert result of
+            AvData { pseudo, picture } alert ->
+              ( { model | access = loggedAccessInit pseudo picture }
+                |> Alert.put alert
+              , Cmd.batch
+                [ Nav.pushUrl model.key "/"
+                , formCmd |> Cmd.map SigninForm
+                ]
+              )
+            NoData alert ->
+              ( model |> Alert.put alert
+              , formCmd |> Cmd.map SigninForm
+              )
+            Error error ->
+              ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+              , formCmd |> Cmd.map SigninForm
+              )
 
     (Anonymous amodel, Signup, SignupForm formMsg) ->
       let
@@ -428,53 +457,49 @@ update msg model =
         ( model, Cmd.none )
 
     (Logged lmodel, _, ReceiveLikeUpdate result) ->
-      case result of
-        Ok { data, alert } ->
-          case data of
-            Just (id, newLikeStatus) ->
-              ( { model | alert = alert , access = Logged
-                  { lmodel
-                      | feedContent = lmodel.feedContent |> List.map
-                          (\profile ->
-                            if profile.id == id
-                            then { profile | liked = newLikeStatus }
-                            else profile
-                          )
-                      , userDetails = lmodel.userDetails |> Maybe.map
-                          (\usrd->
-                            if usrd.id == id
-                            then { usrd | liked = newLikeStatus }
-                            else usrd
-                          )
-                  }
-                }
-              , Cmd.none
-              )
-            Nothing ->
-              ( model |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you like/unlike this persone. It could be because your account isn't complete.")
-              , Cmd.none
-              )
-        Err error ->
+      case toWebResultDataAlert result of
+        AvData (id, newLikeStatus) alert ->
+          ( { model | alert = alert , access = Logged
+              { lmodel
+                  | feedContent = lmodel.feedContent |> List.map
+                      (\profile ->
+                        if profile.id == id
+                        then { profile | liked = newLikeStatus }
+                        else profile
+                      )
+                  , userDetails = lmodel.userDetails |> Maybe.map
+                      (\usrd->
+                        if usrd.id == id
+                        then { usrd | liked = newLikeStatus }
+                        else usrd
+                      )
+              }
+            }
+          , Cmd.none
+          )
+        NoData alert ->
+          ( model |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you like/unlike this persone. It could be because your account isn't complete.")
+          , Cmd.none
+          )
+        Error error ->
           ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
           , Cmd.none
           )
 
     (Logged lmodel, _, ReceiveUserDetails result) ->
-      case result of
-        Ok { data, alert } ->
-          case data of
-            Just userDetails ->
-              ( { model | alert = alert , access = Logged
-                  { lmodel | userDetails = Just userDetails }
-                }
-              , Cmd.none
-              )
-            Nothing ->
-              ( { model | access = Logged { lmodel | userDetails = Nothing } }
-                |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
-              , Cmd.none
-              )
-        Err error ->
+      case toWebResultDataAlert result of
+        AvData userDetails alert ->
+          ( { model | alert = alert , access = Logged
+              { lmodel | userDetails = Just userDetails }
+            }
+          , Cmd.none
+          )
+        NoData alert ->
+          ( { model | access = Logged { lmodel | userDetails = Nothing } }
+            |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
+          , Cmd.none
+          )
+        Error error ->
           ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
           , Cmd.none
           )
@@ -483,38 +508,34 @@ update msg model =
       (unreadNotifsAmountResultHandler result lmodel model, Cmd.none)
 
     (Logged lmodel, _, ReceiveNotifS result) ->
-      case result of
-        Ok { data, alert } ->
-          case data of
-            Just newNotifList ->
-              ( { model | alert = alert , access = Logged
-                  { lmodel | notifs = newNotifList }
-                }
-              , Cmd.none
-              )
-            Nothing ->
-              ( model |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
-              , Cmd.none
-              )
-        Err error ->
+      case toWebResultDataAlert result of
+        AvData newNotifList alert ->
+          ( { model | alert = alert , access = Logged
+              { lmodel | notifs = newNotifList }
+            }
+          , Cmd.none
+          )
+        NoData alert ->
+          ( model |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
+          , Cmd.none
+          )
+        Error error ->
           ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
           , Cmd.none
           )
 
     (Logged lmodel, _, ReceiveChats result) ->
-      case result of
-        Ok { data, alert } ->
-          case data of
-            Just chatList ->
-              ( { model | access = Logged { lmodel | chats = chatList } }
-                  |> Alert.put alert
-              , Cmd.none
-              )
-            Nothing ->
-              ( model |> Alert.put alert
-              , Cmd.none
-              )
-        Err error ->
+      case toWebResultDataAlert result of
+        AvData chatList alert ->
+          ( { model | access = Logged { lmodel | chats = chatList } }
+              |> Alert.put alert
+          , Cmd.none
+          )
+        NoData alert ->
+          ( model |> Alert.put alert
+          , Cmd.none
+          )
+        Error error ->
           ( model |> Alert.put (Just (Alert.serverNotReachedAlert error))
           , Cmd.none
           )
@@ -536,19 +557,22 @@ update msg model =
           )
 
     (Logged lmodel, _, ReceiveDiscutionRefresh result) ->
-      case result of
-        Ok { data, alert } ->
-          ( { model | alert = alert , access = Logged
+      case toWebResultDataAlert result of
+        AvData newDiscution alert ->
+          ( { model | access = Logged
               { lmodel | discution =
-                  Maybe.map2
-                    (\ new old -> { new | sendMessageForm = old.sendMessageForm } )
-                    data
+                  Maybe.map
+                    (\ oldDiscution -> { newDiscution | sendMessageForm = oldDiscution.sendMessageForm } )
                     lmodel.discution
               }
-            }
+            } |> Alert.put alert
           , Cmd.none
           )
-        Err error ->
+        NoData alert ->
+          ( model |> Alert.put alert
+          , Cmd.none
+          )
+        Error error ->
           ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
           , Cmd.none
           )
@@ -573,6 +597,22 @@ update msg model =
         ) lmodel.discution
 
     _ -> ( model, Cmd.none )
+
+
+type WebResultDataAlert data
+  = AvData data (Maybe Alert)
+  | NoData (Maybe Alert)
+  | Error Http.Error
+
+toWebResultDataAlert : Result Http.Error (DataAlert a) -> WebResultDataAlert a
+toWebResultDataAlert result =
+  case result of
+    Ok { data, alert } ->
+      case data of
+        Just val -> AvData val alert
+        Nothing -> NoData alert
+    Err error -> Error error
+
 
 sendMessageFormResultHandler result discution lmodel model =
   case result of
@@ -613,25 +653,6 @@ unreadNotifsAmountResultHandler result lmodel model =
             (model |> (Alert.put << Just) (Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount")))
     Err error ->
       model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
-
-signinFormResultHandler result model cmd =
-  case result of
-    Ok (Ok message) ->
-      ( { model | access = loggedAccessInit } |> (Alert.put << Just) (Alert.successAlert message)
-      , Cmd.batch
-        [ Nav.pushUrl model.key "/"
-        , cmd |> Cmd.map SigninForm
-        , requestFeedInit ReceiveFeedInit
-        ]
-      )
-    Ok (Err message) ->
-      ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
-      , cmd |> Cmd.map SigninForm
-      )
-    Err error ->
-      ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
-      , cmd |> Cmd.map SigninForm
-      )
 
 signupFormResultHandler result model cmd =
   case result of
@@ -793,11 +814,17 @@ confirmAlertDecoder =
 
 -- account
 
-signinFormInit : Form (Result String String)
+signinFormInit : Form (DataAlert { pseudo: String, picture: String })
 signinFormInit =
-  Form.form resultMessageDecoder (OnSubmit "Signin") "http://localhost/control/account_signin.php" []
+  Form.form (dataAlertDecoder signinDecoder) (OnSubmit "Signin") "http://localhost/control/account_signin.php" []
   |> Form.textField "pseudo"
   |> Form.passwordField "password"
+
+signinDecoder : Decoder { pseudo: String, picture: String }
+signinDecoder =
+  Field.require "pseudo" Decode.string <| \pseudo ->
+  Field.require "picture" Decode.string <| \picture ->
+  Decode.succeed ({ pseudo = pseudo, picture = picture })
 
 signupFormInit : Form (Result String String)
 signupFormInit =
@@ -1238,7 +1265,7 @@ anonymousAccess_sub amodel =
 
 -- main
 
-main : Program () Model Msg
+main : Program (Maybe { pseudo : String, picture : String }) Model Msg
 main =
   Browser.application
     { init = init
