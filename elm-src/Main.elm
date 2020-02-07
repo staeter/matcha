@@ -65,6 +65,7 @@ type alias LModel =
   , discution : Maybe Discution
   -- settings
   , updatePasswordForm : Form (Result String String)
+  , updateSettingsForm : Maybe (Form (Result String String))
   }
 
 type alias AModel =
@@ -81,59 +82,81 @@ type alias AModel =
 
 init : Maybe { pseudo : String, picture : String } -> Url -> Nav.Key -> (Model, Cmd Msg)
 init flags url key =
-  let route = urlToRoute (url |> Debug.log "url") |> Debug.log "route" in
-  ( { route = route
-    , key = key
-    , alert = Nothing
-    , access =
-        case flags of
-          Nothing ->
-            anonymousAccessInit route
-          Just { pseudo, picture } ->
-            loggedAccessInit pseudo picture
-    }
-  , Cmd.none
-  )
+  let
+    route = urlToRoute url
+    accessCmd =
+      case flags of
+        Nothing ->
+          anonymousAccessInit route
+        Just { pseudo, picture } ->
+          loggedAccessInit route pseudo picture
+  in
+    accessCmd
+    |> Tuple.mapFirst
+        (\ access ->
+          { route = route
+            , key = key
+            , alert = Nothing
+            , access = access
+            }
+        )
 
-anonymousAccessInit : Route -> Access
+anonymousAccessInit : Route -> (Access, Cmd Msg)
 anonymousAccessInit route =
-  case route of
-    Retreive a b -> Anonymous
-      { signinForm = signinFormInit
-      , signupForm = signupFormInit
-      , accountRetrievalForm = Just (requestAccountRetrievalForm a b)
-      , accountConfirmationForm = Nothing
-      }
-    Confirm a b -> Anonymous
-      { signinForm = signinFormInit
-      , signupForm = signupFormInit
-      , accountRetrievalForm = Nothing
-      , accountConfirmationForm = Just (requestAccountConfirmationForm a b)
-      }
-    _ -> Anonymous
-      { signinForm = signinFormInit
-      , signupForm = signupFormInit
-      , accountRetrievalForm = Nothing
-      , accountConfirmationForm = Nothing
-      }
+  ( case route of
+      Retreive a b -> Anonymous
+        { signinForm = signinFormInit
+        , signupForm = signupFormInit
+        , accountRetrievalForm = Just (requestAccountRetrievalForm a b)
+        , accountConfirmationForm = Nothing
+        }
+      Confirm a b -> Anonymous
+        { signinForm = signinFormInit
+        , signupForm = signupFormInit
+        , accountRetrievalForm = Nothing
+        , accountConfirmationForm = Just (requestAccountConfirmationForm a b)
+        }
+      _ -> Anonymous
+        { signinForm = signinFormInit
+        , signupForm = signupFormInit
+        , accountRetrievalForm = Nothing
+        , accountConfirmationForm = Nothing
+        }
+  , Cmd.none )
 
-loggedAccessInit : String -> String -> Access
-loggedAccessInit pseudo picture = Logged
-  { pseudo = pseudo
-  , picture = picture
-  , filtersForm = Nothing
-  , feedContent = []
-  , feedPageNumber = 0
-  , feedPageAmount = 0
-  , feedElemAmount = 0
-  , userDetails = Nothing
-  , unreadNotifsAmount = 0
-  , notifs = []
-  , signoutForm = signoutFormInit
-  , chats = []
-  , discution = Nothing
-  , updatePasswordForm = requestUpdatePasswordForm
-  }
+loggedAccessInit : Route -> String -> String -> (Access, Cmd Msg)
+loggedAccessInit route pseudo picture =
+  ( Logged
+      { pseudo = pseudo
+      , picture = picture
+      , filtersForm = Nothing
+      , feedContent = []
+      , feedPageNumber = 0
+      , feedPageAmount = 0
+      , feedElemAmount = 0
+      , userDetails = Nothing
+      , unreadNotifsAmount = 0
+      , notifs = []
+      , signoutForm = signoutFormInit
+      , chats = []
+      , discution = Nothing
+      , updatePasswordForm = requestUpdatePasswordForm
+      , updateSettingsForm = Nothing
+      }
+  , case route of
+      Home ->
+        requestFeedInit ReceiveFeedInit |> Debug.log "send request FeedInit"
+      User id ->
+        requestUserDetails id ReceiveUserDetails
+      Notifs ->
+        requestNotifs ReceiveNotifS
+      Chats ->
+        requestChats ReceiveChats
+      Settings ->
+        requestCurrentSettings ReceiveCurrentSettings |> Debug.log "send request CurrentSettings"
+      _ ->
+        Cmd.none
+  )
 
 
 -- decoders
@@ -236,6 +259,8 @@ type Msg
   | SendMessageForm (Form.Msg ConfirmAlert)
   | AccountRetrievalForm (Form.Msg (Result String String))
   | AccountConfirmationForm (Form.Msg (Result String String))
+  | ReceiveCurrentSettings (Result Http.Error (DataAlert CurrentSettings))
+  | UpdateSettingsForm (Form.Msg (Result String String))
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -246,44 +271,42 @@ update msg model =
       )
 
     (Logged _, _, InternalLinkClicked url) ->
-      let newRoute = urlToRoute url in
-      case newRoute of
-        Home ->
-          ( model
-          , requestFeedInit ReceiveFeedInit
-          )
-        User id ->
-          ( model
-          , Cmd.batch
-              [ requestUserDetails id ReceiveUserDetails
-              , Nav.pushUrl model.key (Url.toString url)
-              ]
-          )
-        Notifs ->
-          ( model
-          , Cmd.batch
-              [ requestNotifs ReceiveNotifS
-              , Nav.pushUrl model.key (Url.toString url)
-              ]
-          )
-        Chats ->
-          ( model
-          , Cmd.batch
-              [ requestChats ReceiveChats
-              , Nav.pushUrl model.key (Url.toString url)
-              ]
-          )
-        _ ->
-          ( model
-          , Nav.pushUrl model.key (Url.toString url)
-          )
+      ( model
+      , Nav.pushUrl model.key (Url.toString url)
+      )
 
     (Logged _, _, ExternalLinkClicked href) ->
       (model, Nav.load href)
 
+    (Logged lmodel, _, UrlChange url) ->
+      let newRoute = urlToRoute url in
+      case newRoute |> Debug.log "urlChange" of
+        Home ->
+          ( { model | route = newRoute }
+          , requestFeedInit ReceiveFeedInit |> Debug.log "send request FeedInit"
+          )
+        User id ->
+          ( { model | route = newRoute }
+          , requestUserDetails id ReceiveUserDetails
+          )
+        Notifs ->
+          ( { model | route = newRoute }
+          , requestNotifs ReceiveNotifS
+          )
+        Chats ->
+          ( { model | route = newRoute }
+          , requestChats ReceiveChats
+          )
+        Settings ->
+          ( { model | route = newRoute }
+          , requestCurrentSettings ReceiveCurrentSettings |> Debug.log "send request CurrentSettings"
+          )
+        _ ->
+          ({ model | route = newRoute }, Cmd.none)
+
     (Anonymous amodel, _, UrlChange url) ->
       let newRoute = urlToRoute url in
-      case newRoute of
+      case newRoute |> Debug.log "urlChange" of
         Retreive a b ->
           let
             accountRetrievalForm = Just
@@ -306,9 +329,6 @@ update msg model =
             )
         _ ->
           ({ model | route = newRoute }, Cmd.none)
-
-    (_, _, UrlChange url) ->
-      ({ model | route = urlToRoute url }, Cmd.none)
 
     (Logged lmodel, Notifs, Tick _) ->
       ( model
@@ -344,7 +364,10 @@ update msg model =
         Just result ->
           case toWebResultDataAlert result of
             AvData { pseudo, picture } alert ->
-              ( { model | access = loggedAccessInit pseudo picture }
+              ( { model | access =
+                    loggedAccessInit model.route pseudo picture
+                    |> Tuple.first
+                }
                 |> Alert.put alert
               , Cmd.batch
                 [ Nav.pushUrl model.key "/"
@@ -615,6 +638,53 @@ update msg model =
             , formCmd |> Cmd.map UpdatePasswordForm
             )
 
+    (Logged lmodel, _, ReceiveCurrentSettings result) ->
+      case toWebResultDataAlert result of
+        AvData currentSettings alert ->
+          ( { model | access = Logged
+              { lmodel | updateSettingsForm =
+                (Just << updateSettingsFormInit) (currentSettings |> Debug.log "receive request")
+              }
+            } |> Alert.put alert
+          , Cmd.none
+          )
+        NoData alert ->
+          ( model |> Alert.put alert
+          , Cmd.none
+          )
+        Error error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
+
+    (Logged lmodel, _, UpdateSettingsForm formMsg) ->
+      case lmodel.updateSettingsForm of
+        Nothing -> ( model, Cmd.none )
+        Just updateSettingsForm ->
+          let
+            (newForm, formCmd, response) = Form.update formMsg updateSettingsForm
+          in
+            case response of
+              Just (Ok (Ok message)) ->
+                ( { model | access = Logged { lmodel | updateSettingsForm = Just newForm } }
+                  |> (Alert.put << Just) (Alert.successAlert message)
+                , formCmd |> Cmd.map UpdateSettingsForm
+                )
+              Just (Ok (Err message)) ->
+                ( { model | access = Logged { lmodel | updateSettingsForm = Just newForm } }
+                  |> (Alert.put << Just) (Alert.invalidImputAlert message)
+                , formCmd |> Cmd.map UpdateSettingsForm
+                )
+              Just (Err error) ->
+                ( { model | access = Logged { lmodel | updateSettingsForm = Just newForm } }
+                    |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+                , formCmd |> Cmd.map UpdateSettingsForm
+                )
+              Nothing ->
+                ( { model | access = Logged { lmodel | updateSettingsForm = Just newForm } }
+                , formCmd |> Cmd.map UpdateSettingsForm
+                )
+
     _ -> ( model, Cmd.none )
 
 
@@ -694,7 +764,10 @@ signoutFormResultHandler : Result Http.Error (Result String String) -> Model -> 
 signoutFormResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
-      ( { model | access = anonymousAccessInit model.route }  |> (Alert.put << Just) (Alert.successAlert message)
+      ( { model | access =
+            anonymousAccessInit model.route
+            |> Tuple.first
+        } |> (Alert.put << Just) (Alert.successAlert message)
       , Cmd.batch
         [ Nav.pushUrl model.key "/"
         , cmd |> Cmd.map SignoutForm
@@ -741,6 +814,87 @@ updatePasswordResultHandler result lmodel model cmd =
         |> (Alert.put << Just << Alert.serverNotReachedAlert) error
       , cmd |> Cmd.map UpdatePasswordForm
       )
+
+
+-- settings
+
+type alias CurrentSettings =
+  { pseudo : String
+  , first_name : String
+  , last_name : String
+  , email : String
+  , gender : Gender
+  , orientation : Orientation
+  , biography : String
+  , birth : String
+  , pictures : List String
+  , popularity_score : Int
+  , tags : List String
+  }
+
+requestCurrentSettings : (Result Http.Error (DataAlert CurrentSettings) -> msg) -> Cmd msg
+requestCurrentSettings toMsg =
+  Http.post
+      { url = "http://localhost/control/settings_current.php"
+      , body = emptyBody
+      , expect = Http.expectJson toMsg (dataAlertDecoder currentSettingsDecoder)
+      }
+
+currentSettingsDecoder : Decoder CurrentSettings
+currentSettingsDecoder =
+  Field.require "pseudo" Decode.string <| \pseudo ->
+  Field.require "first_name" Decode.string <| \first_name ->
+  Field.require "last_name" Decode.string <| \last_name ->
+  Field.require "email" Decode.string <| \email ->
+  Field.require "gender" genderDecoder <| \gender ->
+  Field.require "orientation" orientationDecoder <| \orientation ->
+  Field.require "biography" Decode.string <| \biography ->
+  Field.require "birth" Decode.string <| \birth ->
+  Field.require "pictures" (Decode.list Decode.string) <| \pictures ->
+  Field.require "popularity_score" Decode.int <| \popularity_score ->
+  Field.require "tags" (Decode.list Decode.string) <| \tags ->
+
+  Decode.succeed
+    { pseudo = pseudo
+    , first_name = first_name
+    , last_name = last_name
+    , email = email
+    , gender = gender
+    , orientation = orientation
+    , biography = biography
+    , birth = birth
+    , pictures = pictures
+    , popularity_score = popularity_score
+    , tags = tags
+    }
+
+updateSettingsFormInit : CurrentSettings -> Form (Result String String)
+updateSettingsFormInit currentSettings =
+  let
+    pseudoFieldModeltmp = defaultTextFieldModel "pseudo"
+    pseudoFieldModel = { pseudoFieldModeltmp | value = currentSettings.pseudo }
+
+    firstNameFieldModeltmp = defaultTextFieldModel "first_name"
+    firstNameFieldModel = { firstNameFieldModeltmp | value = currentSettings.first_name }
+
+    lastNameFieldModeltmp = defaultTextFieldModel "last_name"
+    lastNameFieldModel = { lastNameFieldModeltmp | value = currentSettings.last_name }
+
+    emailFieldModeltmp = defaultTextFieldModel "email"
+    emailFieldModel = { emailFieldModeltmp | value = currentSettings.email }
+
+    biographyFieldModeltmp = defaultTextFieldModel "biography"
+    biographyFieldModel = { biographyFieldModeltmp | value = currentSettings.biography }
+  in
+  Form.form resultMessageDecoder (OnSubmit "update settings") "http://localhost/control/settings_update.php" []
+  |> (Form.add << Text) pseudoFieldModel
+  |> (Form.add << Text) firstNameFieldModel
+  |> (Form.add << Text) lastNameFieldModel
+  |> (Form.add << Text) emailFieldModel
+  |> Form.dropdownField "gender" ["Man", "Woman"]
+  |> Form.dropdownField "orientation" ["Homosexual", "Bisexual", "Heterosexual"]
+  |> (Form.add << Text) biographyFieldModel
+  |> Form.multiInputField "Tags" currentSettings.tags
 
 
 -- update password
@@ -1135,6 +1289,9 @@ view model =
       , body =
         [ viewHeader lmodel
         , Alert.view model
+        , lmodel.updateSettingsForm
+          |> Maybe.map (Form.view >> Html.map UpdateSettingsForm)
+          |> Maybe.withDefault (div [] [])
         , Form.view lmodel.updatePasswordForm |> Html.map UpdatePasswordForm
         ]
       }
@@ -1204,6 +1361,7 @@ viewHeader lmodel =
       [ a [ href "/" ] [ text "home" ]
       , a [ href "/chat" ] [ text "chat" ]
       , a [ href "/notifs" ] [ text (String.fromInt lmodel.unreadNotifsAmount)]
+      , a [ href "/settings" ] [ text "settings" ]
       , Form.view lmodel.signoutForm |> Html.map SignoutForm
       ]
 
