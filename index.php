@@ -3,13 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Main</title>
-  <!-- <link rel="stylesheet" href="whatever-you-want.css"> -->
+  <link rel="stylesheet" href="/css/multi-input.css">
+  <link rel="stylesheet" href="/css/header.css">
   <script src="/index.js"></script>
-  <style media="screen">
-    body {
-      margin: 0;
-    }
-  </style>
 </head>
 
 <body>

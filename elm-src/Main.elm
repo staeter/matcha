@@ -1242,7 +1242,7 @@ view model =
     (Logged lmodel, Home) ->
       { title = "matcha - home"
       , body =
-        [ viewHeader lmodel
+        [ viewHeader model.route lmodel
         , Alert.view model
         , Maybe.map Form.view lmodel.filtersForm
           |> Maybe.map (Html.map FiltersForm)
@@ -1258,7 +1258,7 @@ view model =
             |> Maybe.withDefault "Loading..."
           )
       , body =
-          [ viewHeader lmodel
+          [ viewHeader model.route lmodel
           , lmodel.userDetails
             |> Maybe.map viewUserDetails
             |> Maybe.withDefault ( text "Loading..." )
@@ -1268,7 +1268,7 @@ view model =
     (Logged lmodel, Notifs) ->
       { title = "matcha - notifications"
       , body =
-        [ viewHeader lmodel
+        [ viewHeader model.route lmodel
         , Alert.view model
         , viewNotifs lmodel.notifs
         ]
@@ -1277,7 +1277,7 @@ view model =
     (Logged lmodel, Chats) ->
       { title = "matcha - notifications"
       , body =
-        [ viewHeader lmodel
+        [ viewHeader model.route lmodel
         , Alert.view model
         , viewChats lmodel.chats
         , viewDiscution lmodel.discution
@@ -1287,7 +1287,7 @@ view model =
     (Logged lmodel, Settings) ->
       { title = "matcha - notifications"
       , body =
-        [ viewHeader lmodel
+        [ viewHeader model.route lmodel
         , Alert.view model
         , lmodel.updateSettingsForm
           |> Maybe.map (Form.view >> Html.map UpdateSettingsForm)
@@ -1355,14 +1355,40 @@ viewNotif notif =
       , text notif.date
       ]
 
-viewHeader : LModel -> Html Msg
-viewHeader lmodel =
-  div []
-      [ a [ href "/" ] [ text "home" ]
-      , a [ href "/chat" ] [ text "chat" ]
-      , a [ href "/notifs" ] [ text (String.fromInt lmodel.unreadNotifsAmount)]
-      , a [ href "/settings" ] [ text "settings" ]
-      , Form.view lmodel.signoutForm |> Html.map SignoutForm
+viewHeader : Route -> LModel -> Html Msg
+viewHeader route lmodel =
+  div [ class "header" ]
+      [ div [class "header-right" ]
+            [ a [ href "/"
+                , if route == Home
+                  then class "active"
+                  else class ""
+                ] [ text "home" ]
+            , a [ href "/chat"
+                , if route == Chats
+                  then class "active"
+                  else class ""
+                ] [ text "chat" ]
+            , a [ href "/notifs"
+                , if route == Notifs
+                  then class "active"
+                  else class ""
+                ]
+                [ text ( "notifs ("
+                          ++ (String.fromInt lmodel.unreadNotifsAmount)
+                          ++ ")"
+                       )
+                ]
+            , a [ href "/settings"
+                , if route == Settings
+                  then class "active"
+                  else class ""
+                ] [ text "settings" ]
+            , a [ href "/signout"
+                , style "color" "DarkRed"
+                ] [ text "signout" ]
+            -- , Form.view lmodel.signoutForm |> Html.map SignoutForm
+            ]
       ]
 
 viewUserDetails : UserDetails -> Html Msg
