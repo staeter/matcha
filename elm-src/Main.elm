@@ -63,6 +63,8 @@ type alias LModel =
   -- chat
   , chats : List Chat
   , discution : Maybe Discution
+  -- settings
+  , updatePasswordForm : Form (Result String String)
   }
 
 type alias AModel =
@@ -130,6 +132,7 @@ loggedAccessInit pseudo picture = Logged
   , signoutForm = signoutFormInit
   , chats = []
   , discution = Nothing
+  , updatePasswordForm = requestUpdatePasswordForm
   }
 
 
@@ -182,6 +185,7 @@ type Route
   | Chats
   | Retreive Int Int
   | Confirm Int Int
+  | Settings
   | Unknown
 
 routeParser : Parser.Parser (Route -> a) a
@@ -195,6 +199,7 @@ routeParser =
     , Parser.map Chats    (Parser.s "chat")
     , Parser.map Retreive (Parser.s "retreive" </> Parser.int </> Parser.int)
     , Parser.map Confirm  (Parser.s "confirm" </> Parser.int </> Parser.int)
+    , Parser.map Settings (Parser.s "settings")
     ]
 
 urlToRoute : Url -> Route
@@ -213,7 +218,8 @@ type Msg
   | Tick Time.Posix
   | SigninForm (Form.Msg (DataAlert { pseudo: String, picture: String }))
   | SignupForm (Form.Msg (Result String String))
-  | SignoutForm  (Form.Msg (Result String String))
+  | SignoutForm (Form.Msg (Result String String))
+  | UpdatePasswordForm (Form.Msg (Result String String))
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
   | FiltersForm FiltersFormMsg
   | FeedNav Int
@@ -593,8 +599,21 @@ update msg model =
                   |> setSendMessageForm newForm discution lmodel
                 , formCmd |> Cmd.map SendMessageForm
                 )
-
         ) lmodel.discution
+
+    (Logged lmodel, _, UpdatePasswordForm formMsg) ->
+      let
+        (newForm, formCmd, response) = Form.update formMsg lmodel.updatePasswordForm
+      in
+        case response of
+          Just result ->
+            updatePasswordResultHandler result { lmodel | updatePasswordForm = newForm } model formCmd
+          Nothing ->
+            ( { model | access = Logged
+                  { lmodel | updatePasswordForm = newForm }
+              }
+            , formCmd |> Cmd.map UpdatePasswordForm
+            )
 
     _ -> ( model, Cmd.none )
 
@@ -612,7 +631,6 @@ toWebResultDataAlert result =
         Just val -> AvData val alert
         Nothing -> NoData alert
     Err error -> Error error
-
 
 sendMessageFormResultHandler result discution lmodel model =
   case result of
@@ -705,6 +723,34 @@ retreiveAccountResultHandler result model cmd =
       ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
       , cmd |> Cmd.map AccountRetrievalForm
       )
+
+updatePasswordResultHandler result lmodel model cmd =
+  case result of
+    Ok (Ok message) ->
+      ( { model | access = Logged lmodel }
+        |> (Alert.put << Just << Alert.successAlert) message
+      , cmd |> Cmd.map UpdatePasswordForm
+      )
+    Ok (Err message) ->
+      ( { model | access = Logged lmodel }
+        |> (Alert.put << Just << Alert.invalidImputAlert) message
+      , cmd |> Cmd.map UpdatePasswordForm
+      )
+    Err error ->
+      ( { model | access = Logged lmodel }
+        |> (Alert.put << Just << Alert.serverNotReachedAlert) error
+      , cmd |> Cmd.map UpdatePasswordForm
+      )
+
+
+-- update password
+
+requestUpdatePasswordForm : Form (Result String String)
+requestUpdatePasswordForm =
+  Form.form resultMessageDecoder (OnSubmit "update password") "http://localhost/control/password_update.php" []
+  |> Form.passwordField "oldpw"
+  |> Form.passwordField "newpw"
+  |> Form.passwordField "confirm"
 
 
 -- chat
@@ -1081,6 +1127,15 @@ view model =
         , Alert.view model
         , viewChats lmodel.chats
         , viewDiscution lmodel.discution
+        ]
+      }
+
+    (Logged lmodel, Settings) ->
+      { title = "matcha - notifications"
+      , body =
+        [ viewHeader lmodel
+        , Alert.view model
+        , Form.view lmodel.updatePasswordForm |> Html.map UpdatePasswordForm
         ]
       }
 
