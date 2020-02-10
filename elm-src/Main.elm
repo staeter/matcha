@@ -58,8 +58,6 @@ type alias LModel =
   , unreadNotifsAmount : Int
   -- notifs
   , notifs : List Notif
-  -- signout
-  , signoutForm : Form (Result String String)
   -- chat
   , chats : List Chat
   , discution : Maybe Discution
@@ -137,7 +135,6 @@ loggedAccessInit route pseudo picture =
       , userDetails = Nothing
       , unreadNotifsAmount = 0
       , notifs = []
-      , signoutForm = signoutFormInit
       , chats = []
       , discution = Nothing
       , updatePasswordForm = requestUpdatePasswordForm
@@ -241,7 +238,8 @@ type Msg
   | Tick Time.Posix
   | SigninForm (Form.Msg (DataAlert { pseudo: String, picture: String }))
   | SignupForm (Form.Msg (Result String String))
-  | SignoutForm (Form.Msg (Result String String))
+  | Signout
+  | ReceiveSignoutUpdate (Result Http.Error (Result String String))
   | UpdatePasswordForm (Form.Msg (Result String String))
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
   | FiltersForm FiltersFormMsg
@@ -410,17 +408,26 @@ update msg model =
                 , formCmd |> Cmd.map AccountRetrievalForm
                 )
 
-    (Logged lmodel, _, SignoutForm formMsg) ->
-      let
-        (newForm, formCmd, response) = Form.update formMsg lmodel.signoutForm
-      in
-        case response of
-          Just result ->
-            signoutFormResultHandler result model formCmd
-          Nothing ->
-            ( { model | access = Logged { lmodel | signoutForm = newForm } }
-            , formCmd |> Cmd.map SignoutForm
-            )
+    (Logged lmodel, _, Signout) ->
+      (model, requestSignout)
+
+    (Logged lmodel, _, ReceiveSignoutUpdate response) ->
+      case response of
+        Ok (Ok message) ->
+          ( { model | access =
+                anonymousAccessInit model.route
+                |> Tuple.first
+            } |> (Alert.put << Just) (Alert.successAlert message)
+          , Nav.pushUrl model.key "/"
+          )
+        Ok (Err message) ->
+          ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
+          , Cmd.none
+          )
+        Err error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
 
     (Logged lmodel, _, ReceiveFeedInit result) ->
       case result of
@@ -760,28 +767,6 @@ signupFormResultHandler result model cmd =
       , cmd |> Cmd.map SignupForm
       )
 
-signoutFormResultHandler : Result Http.Error (Result String String) -> Model -> Cmd (Form.Msg (Result String String)) -> (Model, Cmd Msg)
-signoutFormResultHandler result model cmd =
-  case result of
-    Ok (Ok message) ->
-      ( { model | access =
-            anonymousAccessInit model.route
-            |> Tuple.first
-        } |> (Alert.put << Just) (Alert.successAlert message)
-      , Cmd.batch
-        [ Nav.pushUrl model.key "/"
-        , cmd |> Cmd.map SignoutForm
-        ]
-      )
-    Ok (Err message) ->
-      ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
-      , cmd |> Cmd.map SignoutForm
-      )
-    Err error ->
-      ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
-      , cmd |> Cmd.map SignoutForm
-      )
-
 retreiveAccountResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
@@ -1036,9 +1021,13 @@ signupFormInit =
   |> Form.passwordField "password"
   |> Form.passwordField "confirm"
 
-signoutFormInit : Form (Result String String)
-signoutFormInit =
-    Form.form resultMessageDecoder (OnSubmit "signout") "http://localhost/control/account_signout.php" []
+requestSignout : Cmd Msg
+requestSignout =
+  Http.post
+      { url = "http://localhost/control/account_signout.php"
+      , body = emptyBody
+      , expect = Http.expectJson ReceiveSignoutUpdate resultMessageDecoder
+      }
 
 
 -- notifs amount
@@ -1384,7 +1373,7 @@ viewHeader route lmodel =
                   then class "active"
                   else class ""
                 ] [ text "settings" ]
-            , a [ href "/signout"
+            , a [ onClick Signout
                 , style "color" "DarkRed"
                 ] [ text "signout" ]
             -- , Form.view lmodel.signoutForm |> Html.map SignoutForm
