@@ -22,12 +22,14 @@ import Array exposing (..)
 import Time exposing (..)
 
 
+
 -- modules
 
 import Alert exposing (..)
 import Form exposing (..)
 import Feed exposing (..)
 import BasicValues exposing (..)
+import ZipList exposing (..)
 
 
 -- model
@@ -64,6 +66,7 @@ type alias LModel =
   -- settings
   , updatePasswordForm : Form (Result String String)
   , updateSettingsForm : Maybe (Form (Result String String))
+  , currentSettings : Maybe CurrentSettings
   }
 
 type alias AModel =
@@ -139,6 +142,7 @@ loggedAccessInit route pseudo picture =
       , discution = Nothing
       , updatePasswordForm = requestUpdatePasswordForm
       , updateSettingsForm = Nothing
+      , currentSettings = Nothing
       }
   , case route of
       Home ->
@@ -206,6 +210,7 @@ type Route
   | Retreive Int Int
   | Confirm Int Int
   | Settings
+  | Test
   | Unknown
 
 routeParser : Parser.Parser (Route -> a) a
@@ -220,6 +225,7 @@ routeParser =
     , Parser.map Retreive (Parser.s "retreive" </> Parser.int </> Parser.int)
     , Parser.map Confirm  (Parser.s "confirm" </> Parser.int </> Parser.int)
     , Parser.map Settings (Parser.s "settings")
+    , Parser.map Test (Parser.s "test")
     ]
 
 urlToRoute : Url -> Route
@@ -259,6 +265,7 @@ type Msg
   | AccountConfirmationForm (Form.Msg (Result String String))
   | ReceiveCurrentSettings (Result Http.Error (DataAlert CurrentSettings))
   | UpdateSettingsForm (Form.Msg (Result String String))
+  | SelectImage Int
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -649,8 +656,10 @@ update msg model =
       case toWebResultDataAlert result of
         AvData currentSettings alert ->
           ( { model | access = Logged
-              { lmodel | updateSettingsForm =
-                (Just << updateSettingsFormInit) (currentSettings |> Debug.log "receive request")
+              { lmodel
+                | currentSettings = Just currentSettings
+                , updateSettingsForm =
+                  (Just << updateSettingsFormInit) currentSettings
               }
             } |> Alert.put alert
           , Cmd.none
@@ -661,6 +670,16 @@ update msg model =
           )
         Error error ->
           ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
+
+    (Logged lmodel, Settings, SelectImage index) ->
+      case lmodel.currentSettings of
+        Nothing -> (model, Cmd.none)
+        Just currentSettings ->
+          ( { model | access = Logged { lmodel | currentSettings = Just { currentSettings |
+              pictures = ZipList.goTo index currentSettings.pictures
+            } } }
           , Cmd.none
           )
 
@@ -812,7 +831,7 @@ type alias CurrentSettings =
   , orientation : Orientation
   , biography : String
   , birth : String
-  , pictures : List String
+  , pictures : ZipList (Int, String)
   , popularity_score : Int
   , tags : List String
   }
@@ -835,7 +854,7 @@ currentSettingsDecoder =
   Field.require "orientation" orientationDecoder <| \orientation ->
   Field.require "biography" Decode.string <| \biography ->
   Field.require "birth" Decode.string <| \birth ->
-  Field.require "pictures" (Decode.list Decode.string) <| \pictures ->
+  Field.require "pictures" (Decode.list pictureDecoder) <| \pictures ->
   Field.require "popularity_score" Decode.int <| \popularity_score ->
   Field.require "tags" (Decode.list Decode.string) <| \tags ->
 
@@ -848,10 +867,17 @@ currentSettingsDecoder =
     , orientation = orientation
     , biography = biography
     , birth = birth
-    , pictures = pictures
+    , pictures = ZipList.fromList pictures
     , popularity_score = popularity_score
     , tags = tags
     }
+
+pictureDecoder : Decoder (Int, String)
+pictureDecoder =
+  Field.require "id" Decode.int <| \id ->
+  Field.require "path" Decode.string <| \path ->
+  Decode.succeed (id, path)
+
 
 updateSettingsFormInit : CurrentSettings -> Form (Result String String)
 updateSettingsFormInit currentSettings =
@@ -1175,6 +1201,7 @@ userDetailsDecoder =
 view : Model -> Browser.Document Msg
 view model =
   case (model.access, model.route) of
+
     (Anonymous amodel, Signin) ->
       { title = "matcha - signin"
       , body =
@@ -1278,6 +1305,9 @@ view model =
       , body =
         [ viewHeader model.route lmodel
         , Alert.view model
+        , lmodel.currentSettings
+          |> Maybe.map (\cs-> div [] [ viewGalery cs.pictures ])
+          |> Maybe.withDefault (div [] [])
         , lmodel.updateSettingsForm
           |> Maybe.map (Form.view >> Html.map UpdateSettingsForm)
           |> Maybe.withDefault (div [] [])
@@ -1473,6 +1503,48 @@ viewFeed lmodel =
         , viewFeedPageNav lmodel
         ]
 
+viewGalery : ZipList (Int, String) -> Html Msg
+viewGalery pictures =
+  let maybeIndexSelected = ZipList.currentIndex pictures in
+  case maybeIndexSelected of
+    Nothing -> div [] []
+    Just indexSelected ->
+      div [ class "w"]
+          [ div [ class "ts" ]
+                ( pictures
+                  |> ZipList.toList
+                  |> List.indexedMap
+                    (\ index pict ->
+                      if index < 5
+                      then viewGaleryElem
+                          (indexSelected < 5 && indexSelected == index)
+                          index pict
+                      else []
+                    )
+                  |> List.concat
+                )
+          ]
+
+viewGaleryElem : Bool -> Int -> (Int, String) -> List (Html Msg)
+viewGaleryElem checked index (id, pict) =
+  [ input [ Html.Attributes.id ("c" ++ String.fromInt(index + 1))
+          , Html.Attributes.class "c"
+          , Html.Attributes.type_ "radio"
+          , Html.Attributes.name "ts"
+          , Html.Attributes.checked checked
+          , onClick (SelectImage index)
+          ] []
+  , label [ Html.Attributes.class "t"
+          , Html.Attributes.for ("c" ++ String.fromInt(index + 1))
+          , Html.Attributes.attribute "style"
+              ( if checked
+                then "--w: 100%; --l: 0"
+                else "--w: 20%; --l: " ++ String.fromInt(20 * index) ++ "%"
+              )
+          ]
+          [ img [ Html.Attributes.src pict ] []
+          ]
+  ]
 
 -- subscriptions
 
