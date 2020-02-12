@@ -7,7 +7,7 @@ module ZipList exposing
     , forward, backward
     , currentIndex, isValidIndex
     , jumpForward, jumpBackward
-    , goTo
+    , goTo, zipListDecoder
     )
 
 {-| A `ZipList` is a collection which can be moved forward/backward and that exposes a single current element
@@ -35,6 +35,7 @@ module ZipList exposing
 -}
 
 import Maybe
+import Json.Decode as Decode exposing (Decoder, list, decodeString, map)
 
 
 {-| A collection data type that can be moved forward/backward and that exposes a current element (see the `current` function)
@@ -220,3 +221,8 @@ indexedMap func ziplist =
           (\ indexAf elemAf -> func (index + 1 + indexAf) elemAf )
           after
         )
+
+zipListDecoder : Decoder a -> Decoder (ZipList a)
+zipListDecoder decoderA =
+  Decode.list decoderA
+  |> Decode.map fromList

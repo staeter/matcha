@@ -21,6 +21,8 @@ import Http exposing (..)
 import Array exposing (..)
 import Time exposing (..)
 
+import File exposing (File)
+import File.Select as Select
 
 
 -- modules
@@ -66,7 +68,7 @@ type alias LModel =
   -- settings
   , updatePasswordForm : Form (Result String String)
   , updateSettingsForm : Maybe (Form (Result String String))
-  , currentSettings : Maybe CurrentSettings
+  , pictures : Maybe (ZipList (Int, String))
   }
 
 type alias AModel =
@@ -142,7 +144,7 @@ loggedAccessInit route pseudo picture =
       , discution = Nothing
       , updatePasswordForm = requestUpdatePasswordForm
       , updateSettingsForm = Nothing
-      , currentSettings = Nothing
+      , pictures = Nothing
       }
   , case route of
       Home ->
@@ -266,6 +268,10 @@ type Msg
   | ReceiveCurrentSettings (Result Http.Error (DataAlert CurrentSettings))
   | UpdateSettingsForm (Form.Msg (Result String String))
   | SelectImage Int
+  | RemovePicture
+  | ReceivePicturesUpdate (Result Http.Error (DataAlert (ZipList (Int, String))))
+  | SelectReplacementPicture
+  | ReplacePicture File
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -657,7 +663,7 @@ update msg model =
         AvData currentSettings alert ->
           ( { model | access = Logged
               { lmodel
-                | currentSettings = Just currentSettings
+                | pictures = Just currentSettings.pictures
                 , updateSettingsForm =
                   (Just << updateSettingsFormInit) currentSettings
               }
@@ -674,12 +680,12 @@ update msg model =
           )
 
     (Logged lmodel, Settings, SelectImage index) ->
-      case lmodel.currentSettings of
+      case lmodel.pictures of
         Nothing -> (model, Cmd.none)
-        Just currentSettings ->
-          ( { model | access = Logged { lmodel | currentSettings = Just { currentSettings |
-              pictures = ZipList.goTo index currentSettings.pictures
-            } } }
+        Just pictures ->
+          ( { model | access = Logged { lmodel | pictures = Just
+              (ZipList.goTo index pictures)
+            } }
           , Cmd.none
           )
 
@@ -710,6 +716,36 @@ update msg model =
                 ( { model | access = Logged { lmodel | updateSettingsForm = Just newForm } }
                 , formCmd |> Cmd.map UpdateSettingsForm
                 )
+
+    (Logged lmodel, Settings, RemovePicture) ->
+      lmodel.pictures
+      |> Maybe.map (\p-> (model, removePicture p ReceivePicturesUpdate))
+      |> Maybe.withDefault (model, Cmd.none)
+
+    (Logged lmodel, Settings, SelectReplacementPicture) ->
+      (model, Select.file ["image/png", "image/jpg"] ReplacePicture)
+
+    (Logged lmodel, Settings, ReplacePicture file) ->
+      lmodel.pictures
+      |> Maybe.map (\p-> (model, replacePicture p file ReceivePicturesUpdate))
+      |> Maybe.withDefault (model, Cmd.none)
+
+    (Logged lmodel, _, ReceivePicturesUpdate response) ->
+      case toWebResultDataAlert response of
+        AvData newPictures alert ->
+          ( { model | access = Logged
+              { lmodel | pictures = Just newPictures }
+            } |> Alert.put alert
+          , Cmd.none
+          )
+        NoData alert ->
+          ( model |> Alert.put alert
+          , Cmd.none
+          )
+        Error error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
 
     _ -> ( model, Cmd.none )
 
@@ -907,6 +943,40 @@ updateSettingsFormInit currentSettings =
   |> (Form.add << Text) biographyFieldModel
   |> Form.multiInputField "Tags" currentSettings.tags
 
+removePicture :  ZipList (Int, String) -> (Result Http.Error (DataAlert (ZipList (Int, String))) -> Msg) -> Cmd Msg
+removePicture pictures toMsg =
+  let
+    maybeId =  pictures
+          |> ZipList.current
+          |> Maybe.map Tuple.first
+  in
+  case maybeId of
+    Nothing -> Cmd.none
+    Just id ->
+      Http.post
+        { url = "http://localhost/control/picture_remove.php"
+        , body = multipartBody [stringPart "id" (String.fromInt id)]
+        , expect = Http.expectJson toMsg (dataAlertDecoder (zipListDecoder pictureDecoder))
+        }
+
+replacePicture : ZipList (Int, String) -> File -> (Result Http.Error (DataAlert (ZipList (Int, String))) -> Msg) -> Cmd Msg
+replacePicture pictures pictureFile toMsg =
+  let
+    maybeId =  pictures
+          |> ZipList.current
+          |> Maybe.map Tuple.first
+  in
+  case maybeId of
+    Nothing -> Cmd.none
+    Just id ->
+      Http.post
+        { url = "http://localhost/control/picture_replace.php"
+        , body = multipartBody
+                  [ stringPart "id" (String.fromInt id)
+                  , filePart "pictureFile" pictureFile
+                  ]
+        , expect = Http.expectJson toMsg (dataAlertDecoder (zipListDecoder pictureDecoder))
+        }
 
 -- update password
 
@@ -1305,9 +1375,19 @@ view model =
       , body =
         [ viewHeader model.route lmodel
         , Alert.view model
-        , lmodel.currentSettings
-          |> Maybe.map (\cs-> div [] [ viewGalery cs.pictures ])
+        , lmodel.pictures
+          |> Maybe.map (\p-> div [] [ viewGalery p ])
           |> Maybe.withDefault (div [] [])
+        , button  [ onClick RemovePicture
+                  , style "background-color" "DarkRed"
+                  , style "color" "White"
+                  ]
+                  [ text "remove selected image" ]
+        , button  [ onClick SelectReplacementPicture
+                  , style "background-color" "DarkGrey"
+                  , style "color" "White"
+                  ]
+                  [ text "replace selected image" ]
         , lmodel.updateSettingsForm
           |> Maybe.map (Form.view >> Html.map UpdateSettingsForm)
           |> Maybe.withDefault (div [] [])
