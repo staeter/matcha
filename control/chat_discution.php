@@ -13,7 +13,7 @@ $row = $usr->get_all_messages_between_two_user($_POST['id']);
 $row2 = $usr->get_all_details_of_this_id($_POST['id']);
 
 //print_r($row);
-//"'.$row2['last_log'].'"
+
 $string = '{
   "data" : {
     "id" : '.$_POST['id'].',
@@ -25,7 +25,7 @@ $string = '{
 foreach ($row as $key => $value) {
     // code...
 
-    if ($row[$key]['msg_read'] == true)
+    if ($row[$key]['readed'] == true)
       $readed = 'true';
     else
       $readed = 'false';
