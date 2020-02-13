@@ -8,8 +8,12 @@ $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot'
 
 $usr = unserialize($_SESSION['user']);
 
+
+
 // fonction qui recupere toutes les notifs de tel ID_user
 $row = $usr->get_all_notif_of_user_connected();
+//var_dump($row);
+
 if (empty($row))
 {
   echo '{
@@ -19,13 +23,11 @@ if (empty($row))
 		"message": "There is no notification for u sorry !"
 	}
 }';
-            return;
+  return;
 }
 else
+{
 //print_r($row);
-
-
-
 $string = '{
     "data" : [
       ';
@@ -52,17 +54,13 @@ foreach ($row as $key => $value) {
 
 function enleve_virgule($string)
 {
-
-
-
-    $nbchar = strlen($string);
-
+  $nbchar = strlen($string);
   $string = substr($string, 0, -10);
 
   $endofstring = '],
   "alert" : {
     "color" : "DarkGreen",
-    "message" : "account notifs alert"
+    "message" : "There the list of your notifications"
   }
   }';
 
@@ -85,11 +83,13 @@ function enleve_virgule($string)
 
 //    echo $string1;
 
-  }
+}
 
 enleve_virgule($string);
 
 
+
+}
 // mtn j affiche le msg formaté en json
 
 // ok mtn methode fait comme les autres pour formater en message json

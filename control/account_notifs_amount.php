@@ -11,7 +11,6 @@ $usr = unserialize($_SESSION['user']);
 
 $count = $usr->get_count_notif_user_connected();
 
-//echo $count;
 
 
 echo '{

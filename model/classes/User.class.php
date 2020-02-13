@@ -575,7 +575,7 @@
 		// liked OK
 		// match OK mais pas encore utiliser
 
-	// fonction qui notif quand like & unlike 	
+	// fonction qui notif quand like & unlike
 		// profile viewed OK mais pas encore utiliser
 		// new message OK
 		// dislike OK
@@ -620,7 +620,7 @@
 		{
 			$query = ('SELECT *  FROM `notifications` WHERE id_user = :id');
 				// ORDER BY date DESC');
-			$this->_db->query($query, array(':id' => $this->_pseudo));
+			$this->_db->query($query, array(':id' => $this->_id));
 			$row = $this->_db->fetchAll();
 			if ($row === false) {
 				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
@@ -630,13 +630,11 @@
 
 		public function get_count_notif_user_connected()
 		{
-			$query = ('SELECT *  FROM `notifications` WHERE id_user = :id');
+			$query = ('SELECT *  FROM `notifications` WHERE id_user = :id AND readed = :readed');
 				// ORDER BY date DESC');
-			$this->_db->query($query, array(':id' => $this->_pseudo));
+			$this->_db->query($query, array(':id' => $this->_id, ':readed' => false));
 			$row = $this->_db->rowCount();
-
 			return $row;
-
 		}
 
 		// profile viewed

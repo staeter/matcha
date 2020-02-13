@@ -40,7 +40,7 @@ echo '{
   "gender" : "Man",
   "orientation" : "Bisexual",
   "biography" : "'.$row['biography'].'",
-  "birth" : "01-01-1970",
+  "birth" : "'.$row['birth'].'",
   "pictures" :
     [ { "id" : 1,
         "path" : "https://images.unsplash.com/photo-1537886079430-486164575c54?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=4c747db3353a34b312d05786f47930d3&auto=format&fit=crop&w=600&q=60"

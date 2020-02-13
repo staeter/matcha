@@ -138,8 +138,8 @@ foreach ($arraytoconvertinJson as $key => $value) {
   {
         "id" : '.$arraytoconvertinJson[$key]['id_user_receiving'].',
         "pseudo" : "'.$ret['pseudo'].'",
-        "picture" : "/data/joneysPick.png",
-        "last_log" : "'.$ret['last_log'].'",
+        "picture" : "/Pictures/def.jpg",
+        "last_log" : "Now",
         "last_message" : "'.$raw_message[$key]['content'].'",
         "unread" : '.$unread.'
       },
