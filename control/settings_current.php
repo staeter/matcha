@@ -39,7 +39,7 @@ echo '{
   "email" : "'.$row['email'].'",
   "gender" : "Man",
   "orientation" : "Bisexual",
-  "biography" : "Im good",
+  "biography" : "'.$row['biography'].'",
   "birth" : "01-01-1970",
   "pictures" :
     [ { "id" : 1,
