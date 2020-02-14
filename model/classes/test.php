@@ -25,18 +25,9 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
   try {
     $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
 
-  //  $id = 41;
+    $id = 3;
 
-
-
-    $pw = 'sosa';
-    //$newpw = 'skssk12&skskksksoa';
-//User::send_account_retrieval
-
-
-
-
-   $usr = new User('sosa', hash_password($pw), $db);
+ $usr = new User($id, $db);
 //   $row = $usr->get_all_details();
 //     $row2 = $usr->get_pref_mail_notifications();
 //   print_r($row1);
@@ -65,9 +56,14 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 // print_r($jsonmsg);
 //
 
-$row = $usr->get_all_messages_between_two_user(12);
+//$row = $usr->get_all_messages_between_two_user(12);
 
-print_r($row);
+//print_r($row);
+if ($usr->set_all_notif_readed())
+  echo 'ok';
+else {
+  echo "ko";
+}
 
 
     //$usr = new User('sosa', hash_password('sosa'), $db);

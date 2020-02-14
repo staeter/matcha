@@ -612,6 +612,12 @@
 			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
 		}
 
+		public function set_all_notif_readed()
+		{
+			$query = 'UPDATE `notifications` SET readed = :val WHERE `id_user` = :id';
+			$this->_db->query($query, array(':val' => true, ':id' => $this->_id));
+		}
+
 
 												//GET
 

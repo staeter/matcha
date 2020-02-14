@@ -77,6 +77,14 @@ function enleve_virgule($string)
     //
   //   $string1 .= $findestring;
   $string .= $endofstring;
+
+
+  //fonction pour set les notifs a $readed
+
+
+
+
+  // retour string formaté json
   echo $string;
 
 
@@ -84,7 +92,7 @@ function enleve_virgule($string)
 //    echo $string1;
 
 }
-
+$usr->set_all_notif_readed();
 enleve_virgule($string);
 
 
