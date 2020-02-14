@@ -6,16 +6,17 @@ CREATE TABLE IF NOT EXISTS `user` (
   `firstname` VARCHAR(64) NOT NULL,
   `lastname` VARCHAR(64) NOT NULL,
 
-  `gender` INT UNSIGNED,
-  `orientation` INT UNSIGNED,
+  `gender` BOOLEAN DEFAULT false,
+  `orientation` INT UNSIGNED DEFAULT 0,
   `biography` TEXT,
   `birth` DATE,
 
   `last_localisation` VARCHAR(64),
+  `real_last_localisation`VARCHAR(64),
   `last_log` DATETIME DEFAULT NOW(),
   `is_loged` BOOLEAN DEFAULT false,
 
-  `popularity_score` INT,
+  `popularity_score` INT DEFAULT 50,
 
   `pref_mail_notifications` BOOLEAN DEFAULT true,
 

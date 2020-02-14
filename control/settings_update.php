@@ -57,11 +57,31 @@ if (!(is_empty($_POST['email'])))
 }
 if (!(is_empty($_POST['gender'])))
 {
-  $usr->set_gender($_POST['gender']);
+
+  // 0 is for women
+  // 1 for men
+
+  if ($_POST['gender'] == 'Male')
+    $gender = 1;
+  else {
+    $gender = 0;
+  }
+  $usr->set_gender($gender);
 }
 
 if (!(is_empty($_POST['orientation'])))
 {
+  // 0 = bisexual
+  // 1 = Heterosexual
+  // 2 = Homosexual
+
+  if ($_POST['orientation'] == 'Heterosexual')
+    $orientatation = 1;
+  else if ($_POST['orientatation'] == 'Homosexual')
+    $orientatation = 2;
+  else {
+    $orientatation = 0;
+  }
   $usr->set_sexuality_orientation($_POST['orientation']);
 }
 
@@ -75,6 +95,12 @@ if (!(is_empty($_POST['birth'])))
 {
   $usr->set_birthdate($POST['birth']);
 }
+
+
+echo '{
+  "result" : "Success",
+  "message" : "settings update success!"
+}';
 
 //if (!(is_empty($_POST['pictures'])))
 //{

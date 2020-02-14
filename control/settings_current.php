@@ -31,13 +31,24 @@ $row = $usr->get_all_details();
 //   }
 // }';
 
+
+////
+
+if ($row['gender'] == 0)
+  $gender = 'Man';
+else
+  $gender = 'woman';
+
+////
+
+
 echo '{
 "data" : {
   "pseudo" : "'.$row['pseudo'].'",
   "first_name" : "'.$row['firstname'].'",
   "last_name" : "'.$row['lastname'].'",
   "email" : "'.$row['email'].'",
-  "gender" : "Man",
+  "gender" : "Woman",
   "orientation" : "Bisexual",
   "biography" : "'.$row['biography'].'",
   "birth" : "'.$row['birth'].'",
@@ -58,8 +69,8 @@ echo '{
         "path" : "https://images.unsplash.com/photo-1537886464786-8a0d500b0da6?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=49984d393482456ea5484c3482cc52a9&auto=format&fit=crop&w=600&q=60"
       }
     ],
-  "popularity_score" : 100,
-  "tags" : ["tag", "lovetags"]
+  "popularity_score" : '.$row['popularity_score'].',
+  "tags" : []
 },
 "alert" : {
   "color" : "DarkBlue",

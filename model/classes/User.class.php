@@ -372,7 +372,7 @@
 		{
 		  $query = ('UPDATE user SET orientation = :orientation WHERE id_user = :id');
 		  $this->_db->query($query, array(':orientation' => $datatoinsert, ':id' => $this->_id));
-		  $this->_db->execute();
+
 
 		}
 
@@ -380,7 +380,7 @@
 		{
 		  $query = ('UPDATE user SET biography = :bio WHERE id_user = :id');
 		  $this->_db->query($query, array(':bio' => $datatoinsert, ':id' => $this->_id));
-		  $this->_db->execute();
+
 		}
 
 		public function set_last_log()
@@ -396,28 +396,28 @@
 		{
 			$query = ('UPDATE user SET birth = :data WHERE id_user = :id');
 		 	$this->_db->query($query, array(':data' => $data, ':id' => $this->_id));
-		 	$this->_db->execute();
+
 		}
 
 		public function set_popularity_score($value)
 		{
 			$query = ('UPDATE user SET popularity_score = :value WHERE id_user = :id');
 		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
-		 	$this->_db->execute();
+
 		}
 
 		public function set_first_name($value)
 		{
 			$query = ('UPDATE user SET firstname = :value WHERE id_user = :id');
 		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
-		 	$this->_db->execute();
+
 		}
 
 		public function set_last_name($value)
 		{
 			$query = ('UPDATE user SET lastname = :value WHERE id_user = :id');
 		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
-		 	$this->_db->execute();
+		 	
 		}
 
 
