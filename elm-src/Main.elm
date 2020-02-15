@@ -69,7 +69,9 @@ type alias LModel =
   , chats : List Chat
   , discution : Maybe Discution
   -- settings
-  , updatePasswordForm : Form (Result String String)
+  , pwUpdateOld : String
+  , pwUpdateNew : String
+  , pwUpdateConfirm : String
   , updateSettingsForm : Maybe (Form (Result String String))
   , pictures : Maybe (ZipList (Int, String))
   }
@@ -171,7 +173,9 @@ loggedAccessInit route pseudo picture =
       , notifs = []
       , chats = []
       , discution = Nothing
-      , updatePasswordForm = requestUpdatePasswordForm
+      , pwUpdateOld = ""
+      , pwUpdateNew = ""
+      , pwUpdateConfirm = ""
       , updateSettingsForm = Nothing
       , pictures = Nothing
       }
@@ -292,8 +296,13 @@ type Msg
   -- signout
   | Signout
   | ReceiveSignoutUpdate (Result Http.Error (Result String String))
+  -- password update
+  | InputPwUpdateOld String
+  | InputPwUpdateNew String
+  | InputPwUpdateConfirm String
+  | SubmitPwUpdate
+  | ResultPwUpdate (Result Http.Error (Result String String))
   -- other
-  | UpdatePasswordForm (Form.Msg (Result String String))
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
   | FiltersForm FiltersFormMsg
   | FeedNav Int
@@ -488,7 +497,7 @@ update msg model =
       , Cmd.none
       )
 
-    (Anonymous amodel, Signin, SubmitSignup) ->
+    (Anonymous amodel, Signup, SubmitSignup) ->
       ( model
       , submitSignup amodel
       )
@@ -505,6 +514,50 @@ update msg model =
           )
         Err error ->
           ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
+
+    (Logged lmodel, Settings, InputPwUpdateOld oldpw) ->
+      ( { model | access = Logged { lmodel |
+          pwUpdateOld = oldpw
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, InputPwUpdateNew newpw) ->
+      ( { model | access = Logged { lmodel |
+          pwUpdateNew = newpw
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, InputPwUpdateConfirm confirmpw) ->
+      ( { model | access = Logged { lmodel |
+          pwUpdateConfirm = confirmpw
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, SubmitPwUpdate) ->
+      ( model
+      , submitPwUpdate lmodel
+      )
+
+    (Logged lmodel, _, ResultPwUpdate result) ->
+      case result of
+        Ok (Ok message) ->
+          ( model
+            |> (Alert.put << Just << Alert.successAlert) message
+          , Cmd.none
+          )
+        Ok (Err message) ->
+          ( model
+            |> (Alert.put << Just << Alert.invalidImputAlert) message
+          , Cmd.none
+          )
+        Err error ->
+          ( model
+            |> (Alert.put << Just << Alert.serverNotReachedAlert) error
           , Cmd.none
           )
 
@@ -746,20 +799,6 @@ update msg model =
                 )
         ) lmodel.discution
 
-    (Logged lmodel, _, UpdatePasswordForm formMsg) ->
-      let
-        (newForm, formCmd, response) = Form.update formMsg lmodel.updatePasswordForm
-      in
-        case response of
-          Just result ->
-            updatePasswordResultHandler result { lmodel | updatePasswordForm = newForm } model formCmd
-          Nothing ->
-            ( { model | access = Logged
-                  { lmodel | updatePasswordForm = newForm }
-              }
-            , formCmd |> Cmd.map UpdatePasswordForm
-            )
-
     (Logged lmodel, _, ReceiveCurrentSettings result) ->
       case toWebResultDataAlert result of
         AvData currentSettings alert ->
@@ -921,24 +960,6 @@ retreiveAccountResultHandler result model cmd =
       , cmd |> Cmd.map AccountRetrievalForm
       )
 
-updatePasswordResultHandler result lmodel model cmd =
-  case result of
-    Ok (Ok message) ->
-      ( { model | access = Logged lmodel }
-        |> (Alert.put << Just << Alert.successAlert) message
-      , cmd |> Cmd.map UpdatePasswordForm
-      )
-    Ok (Err message) ->
-      ( { model | access = Logged lmodel }
-        |> (Alert.put << Just << Alert.invalidImputAlert) message
-      , cmd |> Cmd.map UpdatePasswordForm
-      )
-    Err error ->
-      ( { model | access = Logged lmodel }
-        |> (Alert.put << Just << Alert.serverNotReachedAlert) error
-      , cmd |> Cmd.map UpdatePasswordForm
-      )
-
 
 -- settings
 
@@ -1064,12 +1085,24 @@ replacePicture pictures pictureFile toMsg =
 
 -- update password
 
-requestUpdatePasswordForm : Form (Result String String)
-requestUpdatePasswordForm =
-  Form.form resultMessageDecoder (OnSubmit "update password") "http://localhost/control/password_update.php" []
-  |> Form.passwordField "oldpw"
-  |> Form.passwordField "newpw"
-  |> Form.passwordField "confirm"
+type alias PwUpdateModel a =
+  { a
+  | pwUpdateOld : String
+  , pwUpdateNew : String
+  , pwUpdateConfirm : String
+  }
+
+submitPwUpdate : PwUpdateModel a -> Cmd Msg
+submitPwUpdate model =
+  Http.post
+      { url = "http://localhost/control/password_update.php"
+      , body = multipartBody
+                [ stringPart "oldpw" model.pwUpdateOld
+                , stringPart "newpw" model.pwUpdateNew
+                , stringPart "confirm" model.pwUpdateConfirm
+                ]
+      , expect = Http.expectJson ResultPwUpdate resultMessageDecoder
+      }
 
 
 -- chat
@@ -1519,7 +1552,8 @@ view model =
         , lmodel.updateSettingsForm
           |> Maybe.map (Form.view >> Html.map UpdateSettingsForm)
           |> Maybe.withDefault (div [] [])
-        , Form.view lmodel.updatePasswordForm |> Html.map UpdatePasswordForm
+        , viewPwUpdate lmodel
+          |> El.layout []
         ]
       }
 
@@ -1815,6 +1849,56 @@ signupView model =
             |> El.el  [ padding 32
                       , centerX
                       ]
+          ]
+
+viewPwUpdate : PwUpdateModel a -> Element Msg
+viewPwUpdate model =
+  column  [ spacing 32
+          , centerX
+          ]
+          [ Inp.currentPassword
+                [ onEnter SubmitPwUpdate
+                , padding 8
+                ]
+                { onChange = InputPwUpdateOld
+                , text = model.pwUpdateOld
+                , placeholder = Inp.placeholder [] (El.text "current password") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "old : ")
+                , show = False
+                }
+          , Inp.newPassword
+                [ onEnter SubmitPwUpdate
+                , padding 8
+                ]
+                { onChange = InputPwUpdateNew
+                , text = model.pwUpdateNew
+                , placeholder = Inp.placeholder [] (El.text "new password") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "new : ")
+                , show = False
+                }
+          , Inp.newPassword
+                [ onEnter SubmitPwUpdate
+                , padding 8
+                ]
+                { onChange = InputPwUpdateConfirm
+                , text = model.pwUpdateConfirm
+                , placeholder = Inp.placeholder [] (El.text "confirm new password") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "confirm : ")
+                , show = False
+                }
+          , Inp.button
+                [ padding 0
+                , centerX
+                ]
+                { onPress = Just SubmitPwUpdate
+                , label = El.text "update password"
+                }
           ]
 
 viewProfile : Profile -> Html Msg
