@@ -25,6 +25,7 @@ import File exposing (File)
 import File.Select as Select  exposing (..)
 
 import Element as El exposing (..)
+import Element.Input as Inp exposing (..)
 
 
 -- modules
@@ -74,7 +75,10 @@ type alias LModel =
   }
 
 type alias AModel =
-  { signinForm : Form (DataAlert { pseudo: String, picture: String })
+  { -- signin
+    signinPseudo : String
+  , signinPassword : String
+  -- signup
   , signupForm : Form (Result String String)
   -- retreive
   , accountRetrievalForm : Maybe (Form (Result String String))
@@ -110,19 +114,22 @@ anonymousAccessInit : Route -> (Access, Cmd Msg)
 anonymousAccessInit route =
   ( case route of
       Retreive a b -> Anonymous
-        { signinForm = signinFormInit
+        { signinPseudo = ""
+        , signinPassword = ""
         , signupForm = signupFormInit
         , accountRetrievalForm = Just (requestAccountRetrievalForm a b)
         , accountConfirmationForm = Nothing
         }
       Confirm a b -> Anonymous
-        { signinForm = signinFormInit
+        { signinPseudo = ""
+        , signinPassword = ""
         , signupForm = signupFormInit
         , accountRetrievalForm = Nothing
         , accountConfirmationForm = Just (requestAccountConfirmationForm a b)
         }
       _ -> Anonymous
-        { signinForm = signinFormInit
+        { signinPseudo = ""
+        , signinPassword = ""
         , signupForm = signupFormInit
         , accountRetrievalForm = Nothing
         , accountConfirmationForm = Nothing
@@ -246,7 +253,10 @@ type Msg
   | ExternalLinkClicked String
   | UrlChange Url
   | Tick Time.Posix
-  | SigninForm (Form.Msg (DataAlert { pseudo: String, picture: String }))
+  | InputSigninPseudo String
+  | InputSigninPassword String
+  | SubmitSignin
+  | ResultSignin (Result Http.Error (DataAlert { pseudo: String, picture: String }))
   | SignupForm (Form.Msg (Result String String))
   | Signout
   | ReceiveSignoutUpdate (Result Http.Error (Result String String))
@@ -365,36 +375,43 @@ update msg model =
     (Logged lmodel, _, Tick _) ->
       (model, requestUnreadNotifsAmount)
 
-    (Anonymous amodel, Signin, SigninForm formMsg) ->
-      let
-        (newForm, formCmd, response) = Form.update formMsg amodel.signinForm
-      in
-      case response of
-        Nothing ->
-          ( { model | access = Anonymous { amodel | signinForm = newForm } }
-          , formCmd |> Cmd.map SigninForm
+    (Anonymous amodel, Signin, InputSigninPseudo pseudo) ->
+      ( { model | access = Anonymous { amodel |
+          signinPseudo = pseudo
+        }}
+      , Cmd.none
+      )
+
+    (Anonymous amodel, Signin, InputSigninPassword password) ->
+      ( { model | access = Anonymous { amodel |
+          signinPassword = password
+        }}
+      , Cmd.none
+      )
+
+    (Anonymous amodel, Signin, SubmitSignin) ->
+      ( model
+      , submitSignin amodel.signinPseudo amodel.signinPassword
+      )
+
+    (Anonymous amodel, _, ResultSignin result) ->
+      case toWebResultDataAlert result of
+        AvData { pseudo, picture } alert ->
+          ( { model | access =
+                loggedAccessInit model.route pseudo picture
+                |> Tuple.first
+            }
+            |> Alert.put alert
+          , Nav.pushUrl model.key "/"
           )
-        Just result ->
-          case toWebResultDataAlert result of
-            AvData { pseudo, picture } alert ->
-              ( { model | access =
-                    loggedAccessInit model.route pseudo picture
-                    |> Tuple.first
-                }
-                |> Alert.put alert
-              , Cmd.batch
-                [ Nav.pushUrl model.key "/"
-                , formCmd |> Cmd.map SigninForm
-                ]
-              )
-            NoData alert ->
-              ( model |> Alert.put alert
-              , formCmd |> Cmd.map SigninForm
-              )
-            Error error ->
-              ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
-              , formCmd |> Cmd.map SigninForm
-              )
+        NoData alert ->
+          ( model |> Alert.put alert
+          , Cmd.none
+          )
+        Error error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
 
     (Anonymous amodel, Signup, SignupForm formMsg) ->
       let
@@ -1097,11 +1114,16 @@ confirmAlertDecoder =
 
 -- account
 
-signinFormInit : Form (DataAlert { pseudo: String, picture: String })
-signinFormInit =
-  Form.form (dataAlertDecoder signinDecoder) (OnSubmit "Signin") "http://localhost/control/account_signin.php" []
-  |> Form.textField "pseudo"
-  |> Form.passwordField "password"
+submitSignin : String -> String -> Cmd Msg
+submitSignin pseudo password =
+  Http.post
+      { url = "http://localhost/control/account_signin.php"
+      , body = multipartBody
+                [ stringPart "pseudo" pseudo
+                , stringPart "password" password
+                ]
+      , expect = Http.expectJson ResultSignin (dataAlertDecoder signinDecoder)
+      }
 
 signinDecoder : Decoder { pseudo: String, picture: String }
 signinDecoder =
@@ -1277,9 +1299,34 @@ view model =
     (Anonymous amodel, Signin) ->
       { title = "matcha - signin"
       , body =
-        [ Alert.view model
-        , signinView amodel
-        ]
+        column  [ centerX
+                , centerY
+                ]
+                [ Alert.view model
+                  |> El.html
+                , signinView amodel
+                , column  [ centerX
+                          , centerY
+                          , padding 50
+                          ]
+                          [ a [ href "/retreive" ]
+                              [ Html.text "You forgot yout password?" ]
+                            |> El.html
+                            |> El.el  [ centerX
+                                      , centerY
+                                      , padding 5
+                                      ]
+                          , a [ href "/signup" ]
+                              [ Html.text "You don't have any account?" ]
+                            |> El.html
+                            |> El.el  [ centerX
+                                      , centerY
+                                      , padding 5
+                                      ]
+                          ]
+                ]
+        |> El.layout []
+        |> List.singleton
       }
 
     (Anonymous amodel, Signup) ->
@@ -1394,12 +1441,14 @@ view model =
         , lmodel.pictures
           |> Maybe.map (\p-> div [] [ viewGalery p ])
           |> Maybe.withDefault (div [] [])
-        , button  [ onClick RemovePicture
+        , Html.button
+                  [ onClick RemovePicture
                   , style "background-color" "DarkRed"
                   , style "color" "White"
                   ]
                   [ Html.text "remove selected image" ]
-        , button  [ onClick SelectReplacementPicture
+        , Html.button
+                  [ onClick SelectReplacementPicture
                   , style "background-color" "DarkGrey"
                   , style "color" "White"
                   ]
@@ -1537,13 +1586,57 @@ genderToString gender =
     Man -> "man"
     Woman -> "woman"
 
-signinView : AModel -> Html Msg
+onEnter : msg -> El.Attribute msg
+onEnter msg =
+  Decode.field "key" Decode.string
+  |> Decode.andThen
+      (\key ->
+          if key == "Enter" then
+            Decode.succeed msg
+
+          else
+            Decode.fail "Not the enter key"
+      )
+  |> Html.Events.on "keyup"
+  |> El.htmlAttribute
+
+
+signinView : AModel -> Element Msg
 signinView amodel =
-  Html.div []
-            [ Form.view amodel.signinForm |> Html.map SigninForm
-            , a [ href "/signup" ]
-                [ Html.text "You don't have any account?" ]
-            ]
+  column  [ spacing 5 ]
+          [ Inp.username
+                [ onEnter SubmitSignin
+                , padding 5
+                ]
+                { onChange = InputSigninPseudo
+                , text = amodel.signinPseudo
+                , placeholder = Inp.placeholder [] (El.text"pseudo") |> Just
+                , label = labelLeft
+                            [ centerY
+                            ]
+                            (El.text "pseudo : ")
+                }
+          , Inp.currentPassword
+                [ onEnter SubmitSignin
+                , padding 5
+                ]
+                { onChange = InputSigninPassword
+                , text = amodel.signinPassword
+                , placeholder = Inp.placeholder [] (El.text "password") |> Just
+                , label = labelLeft
+                            [ centerY
+                            ]
+                            (El.text "password : ")
+                , show = False
+                }
+          , Inp.button
+                [ padding 0
+                , centerX
+                ]
+                { onPress = Just SubmitSignin
+                , label = El.text "Signin"
+                }
+          ]
 
 signupView : AModel -> Html Msg
 signupView amodel =
@@ -1567,19 +1660,20 @@ viewProfile profile =
 
 viewLikeButton : Int -> Bool -> Html Msg
 viewLikeButton id isLiked =
-  button [ onClick (Like id)
-         , if isLiked
-           then style "background-color" "red"
-           else style "background-color" "white"
-         ]
-         [ Html.text "Like" ]
+  Html.button
+          [ onClick (Like id)
+          , if isLiked
+            then style "background-color" "red"
+            else style "background-color" "white"
+          ]
+          [ Html.text "Like" ]
 
 viewFeedPageNav : Feed a -> Html Msg
 viewFeedPageNav lmodel =
   div []
     ( List.range 1 lmodel.feedPageAmount
     |> List.map (\ pageNr ->
-                    button [ onClick (FeedNav (pageNr - 1))
+                    Html.button [ onClick (FeedNav (pageNr - 1))
                            , if pageNr - 1 == lmodel.feedPageNumber
                              then style "background-color" "lightblue"
                              else style "background-color" "white"
@@ -1654,8 +1748,7 @@ subscriptions model =
 
 anonymousAccess_sub : AModel -> Sub Msg
 anonymousAccess_sub amodel =
-  [ Form.subscriptions amodel.signinForm |> Sub.map SigninForm
-  , Form.subscriptions amodel.signupForm |> Sub.map SignupForm
+  [ Form.subscriptions amodel.signupForm |> Sub.map SignupForm
   ] |> Sub.batch
 
 
