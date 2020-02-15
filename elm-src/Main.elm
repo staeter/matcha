@@ -4,34 +4,36 @@ module Main exposing (..)
 -- imports
 
 import Browser exposing (application, UrlRequest)
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
+import Html  exposing (..)
+import Html.Attributes  exposing (..)
+import Html.Events  exposing (..)
 
-import Url exposing (..)
-import Url.Parser as Parser exposing (..)
-import Url.Parser.Query as PQuery exposing (..)
-import Browser.Navigation as Nav exposing (..)
+import Url  exposing (..)
+import Url.Parser as Parser  exposing (..)
+import Url.Parser.Query as PQuery  exposing (..)
+import Browser.Navigation as Nav  exposing (..)
 
-import Json.Decode as Decode exposing (..)
-import Json.Decode.Field as Field exposing (..)
+import Json.Decode as Decode  exposing (..)
+import Json.Decode.Field as Field  exposing (..)
 
-import Http exposing (..)
+import Http  exposing (..)
 
-import Array exposing (..)
-import Time exposing (..)
+import Array  exposing (..)
+import Time  exposing (..)
 
 import File exposing (File)
-import File.Select as Select
+import File.Select as Select  exposing (..)
+
+import Element as El exposing (..)
 
 
 -- modules
 
-import Alert exposing (..)
-import Form exposing (..)
-import Feed exposing (..)
+import Alert  exposing (..)
+import Form  exposing (..)
+import Feed  exposing (..)
 import BasicValues exposing (..)
-import ZipList exposing (..)
+import ZipList  exposing (..)
 
 
 -- model
@@ -864,7 +866,7 @@ type alias CurrentSettings =
   , last_name : String
   , email : String
   , gender : Gender
-  , orientation : Orientation
+  , orientation : BasicValues.Orientation
   , biography : String
   , birth : String
   , pictures : ZipList (Int, String)
@@ -1215,7 +1217,7 @@ type alias UserDetails =
   , first_name : String
   , last_name : String
   , gender : Gender
-  , orientation : Orientation
+  , orientation : BasicValues.Orientation
   , biography : String
   , birth : String
   , last_log : LastLog
@@ -1291,9 +1293,9 @@ view model =
     (Anonymous _, Home) ->
       { title = "matcha - home"
       , body =
-        [ text "Welcome to Matcha. The best site too meet your future love!"
-        , br [] [], a [ href "/signin" ] [ text "Signin" ]
-        , text " or ", a [ href "/signup" ] [ text "Signup" ]
+        [ Html.text "Welcome to Matcha. The best site too meet your future love!"
+        , br [] [], a [ href "/signin" ] [ Html.text "Signin" ]
+        , Html.text " or ", a [ href "/signup" ] [ Html.text "Signup" ]
         ]
       }
 
@@ -1320,9 +1322,23 @@ view model =
     (Anonymous _, _) ->
       { title = "matcha - 404 page not found"
       , body =
-        [ text "You seem lost", br [] []
-        , a [ href "/signin" ] [ text "go to signin" ]
-        ]
+        column  [ centerX
+                , centerY
+                ]
+                [ El.el [ padding 5
+                        , centerX
+                        ]
+                        ( El.text "You seem lost" )
+                , El.el [ padding 5
+                        , centerX
+                        ]
+                        ( a [ href "/signin" ]
+                            [ Html.text "go to signin" ]
+                          |> El.html
+                        )
+                ]
+        |> El.layout []
+        |> List.singleton
       }
 
     (Logged lmodel, Home) ->
@@ -1332,7 +1348,7 @@ view model =
         , Alert.view model
         , Maybe.map Form.view lmodel.filtersForm
           |> Maybe.map (Html.map FiltersForm)
-          |> Maybe.withDefault (text "Loading...")
+          |> Maybe.withDefault (Html.text "Loading...")
         , viewFeed lmodel
         ]
       }
@@ -1347,7 +1363,7 @@ view model =
           [ viewHeader model.route lmodel
           , lmodel.userDetails
             |> Maybe.map viewUserDetails
-            |> Maybe.withDefault ( text "Loading..." )
+            |> Maybe.withDefault ( Html.text "Loading..." )
           ]
       }
 
@@ -1382,12 +1398,12 @@ view model =
                   , style "background-color" "DarkRed"
                   , style "color" "White"
                   ]
-                  [ text "remove selected image" ]
+                  [ Html.text "remove selected image" ]
         , button  [ onClick SelectReplacementPicture
                   , style "background-color" "DarkGrey"
                   , style "color" "White"
                   ]
-                  [ text "replace selected image" ]
+                  [ Html.text "replace selected image" ]
         , lmodel.updateSettingsForm
           |> Maybe.map (Form.view >> Html.map UpdateSettingsForm)
           |> Maybe.withDefault (div [] [])
@@ -1398,8 +1414,8 @@ view model =
     (Logged _, _) ->
       { title = "matcha - 404 page not found"
       , body =
-        [ text "You seem lost", br [] []
-        , a [ href "/" ] [ text "go back home" ]
+        [ Html.text "You seem lost", br [] []
+        , a [ href "/" ] [ Html.text "go back home" ]
         ]
       }
 
@@ -1415,7 +1431,7 @@ viewChat chat =
       , onClick (AccessDiscution chat.id)
       ]
       [ img [ src chat.picture ] []
-      , text chat.pseudo
+      , Html.text chat.pseudo
       ]
 
 viewDiscution : Maybe Discution -> Html Msg
@@ -1428,7 +1444,7 @@ viewDiscution maybeDiscution =
             , (Form.view discution.sendMessageForm |> Html.map SendMessageForm)
             ]
       )
-  |> Maybe.withDefault (div [] [ text "Loading..." ])
+  |> Maybe.withDefault (div [] [ Html.text "Loading..." ])
 
 viewMessage : Message -> Html Msg
 viewMessage message =
@@ -1436,7 +1452,7 @@ viewMessage message =
         then style "background-color" "LightBlue"
         else style "background-color" "LightGrey"
       ]
-      [ text message.content
+      [ Html.text message.content
       ]
 
 viewNotifs : List Notif -> Html Msg
@@ -1449,9 +1465,9 @@ viewNotif notif =
         then style "background-color" "LightBlue"
         else style "background-color" "White"
       ]
-      [ text notif.content
+      [ Html.text notif.content
       , br [] []
-      , text notif.date
+      , Html.text notif.date
       ]
 
 viewHeader : Route -> LModel -> Html Msg
@@ -1462,18 +1478,18 @@ viewHeader route lmodel =
                 , if route == Home
                   then class "active"
                   else class ""
-                ] [ text "home" ]
+                ] [ Html.text "home" ]
             , a [ href "/chat"
                 , if route == Chats
                   then class "active"
                   else class ""
-                ] [ text "chat" ]
+                ] [ Html.text "chat" ]
             , a [ href "/notifs"
                 , if route == Notifs
                   then class "active"
                   else class ""
                 ]
-                [ text ( "notifs ("
+                [ Html.text ( "notifs ("
                           ++ (String.fromInt lmodel.unreadNotifsAmount)
                           ++ ")"
                        )
@@ -1482,10 +1498,10 @@ viewHeader route lmodel =
                 , if route == Settings
                   then class "active"
                   else class ""
-                ] [ text "settings" ]
+                ] [ Html.text "settings" ]
             , a [ onClick Signout
                 , style "color" "DarkRed"
-                ] [ text "signout" ]
+                ] [ Html.text "signout" ]
             -- , Form.view lmodel.signoutForm |> Html.map SignoutForm
             ]
       ]
@@ -1498,17 +1514,17 @@ viewUserDetails userDetails =
               (\p-> img [ src p ] [])
               userDetails.pictures
           )
-      , h2 [] [ text userDetails.pseudo ]
-      , h3 [] [ text (userDetails.first_name ++ " " ++ userDetails.last_name) ]
-      , text (orientationToString userDetails.orientation ++ " " ++ genderToString userDetails.gender )
-      , text userDetails.birth
+      , h2 [] [ Html.text userDetails.pseudo ]
+      , h3 [] [ Html.text (userDetails.first_name ++ " " ++ userDetails.last_name) ]
+      , Html.text (orientationToString userDetails.orientation ++ " " ++ genderToString userDetails.gender )
+      , Html.text userDetails.birth
       , br [] []
-      , text userDetails.biography
+      , Html.text userDetails.biography
       , br [] []
       , viewLikeButton userDetails.id userDetails.liked
       ]
 
-orientationToString : Orientation -> String
+orientationToString : BasicValues.Orientation -> String
 orientationToString orientation =
   case orientation of
     Heterosexual -> "heterosexual"
@@ -1526,7 +1542,7 @@ signinView amodel =
   Html.div []
             [ Form.view amodel.signinForm |> Html.map SigninForm
             , a [ href "/signup" ]
-                [ text "You don't have any account?" ]
+                [ Html.text "You don't have any account?" ]
             ]
 
 signupView : AModel -> Html Msg
@@ -1534,7 +1550,7 @@ signupView amodel =
   Html.div []
             [ Form.view amodel.signupForm |> Html.map SignupForm
             , a [ href "/signin" ]
-                [ text "You alredy have an account?" ]
+                [ Html.text "You alredy have an account?" ]
             ]
 
 viewProfile : Profile -> Html Msg
@@ -1543,9 +1559,9 @@ viewProfile profile =
       [ img [ src profile.picture ] []
       , br [] []
       , a [ href ("/user/" ++ (String.fromInt profile.id)) ]
-          [ text profile.pseudo ]
+          [ Html.text profile.pseudo ]
       , br [] []
-      , div [] (List.map text profile.tags)
+      , div [] (List.map Html.text profile.tags)
       , viewLikeButton profile.id profile.liked
       ]
 
@@ -1556,7 +1572,7 @@ viewLikeButton id isLiked =
            then style "background-color" "red"
            else style "background-color" "white"
          ]
-         [ text "Like" ]
+         [ Html.text "Like" ]
 
 viewFeedPageNav : Feed a -> Html Msg
 viewFeedPageNav lmodel =
@@ -1568,7 +1584,7 @@ viewFeedPageNav lmodel =
                              then style "background-color" "lightblue"
                              else style "background-color" "white"
                            ]
-                           [ text (String.fromInt pageNr) ]
+                           [ Html.text (String.fromInt pageNr) ]
                 )
     )
 
@@ -1576,7 +1592,7 @@ viewFeed : Feed a -> Html Msg
 viewFeed lmodel =
   if List.isEmpty lmodel.feedContent
   then
-    text "Loading content..."
+    Html.text "Loading content..."
   else
     div []
         [ div [] ( List.map viewProfile lmodel.feedContent )

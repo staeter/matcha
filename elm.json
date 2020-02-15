@@ -19,6 +19,7 @@
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
             "larribas/elm-multi-input": "2.0.0",
+            "mdgriffith/elm-ui": "1.1.5",
             "webbhuset/elm-json-decode": "1.0.2"
         },
         "indirect": {
