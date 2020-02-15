@@ -79,7 +79,12 @@ type alias AModel =
     signinPseudo : String
   , signinPassword : String
   -- signup
-  , signupForm : Form (Result String String)
+  , signupPseudo : String
+  , signupLastname : String
+  , signupFirstname : String
+  , signupEmail : String
+  , signupPassword : String
+  , signupConfirm : String
   -- retreive
   , accountRetrievalForm : Maybe (Form (Result String String))
   -- confirm
@@ -116,21 +121,36 @@ anonymousAccessInit route =
       Retreive a b -> Anonymous
         { signinPseudo = ""
         , signinPassword = ""
-        , signupForm = signupFormInit
+        , signupPseudo = ""
+        , signupLastname = ""
+        , signupFirstname = ""
+        , signupEmail = ""
+        , signupPassword = ""
+        , signupConfirm = ""
         , accountRetrievalForm = Just (requestAccountRetrievalForm a b)
         , accountConfirmationForm = Nothing
         }
       Confirm a b -> Anonymous
         { signinPseudo = ""
         , signinPassword = ""
-        , signupForm = signupFormInit
+        , signupPseudo = ""
+        , signupLastname = ""
+        , signupFirstname = ""
+        , signupEmail = ""
+        , signupPassword = ""
+        , signupConfirm = ""
         , accountRetrievalForm = Nothing
         , accountConfirmationForm = Just (requestAccountConfirmationForm a b)
         }
       _ -> Anonymous
         { signinPseudo = ""
         , signinPassword = ""
-        , signupForm = signupFormInit
+        , signupPseudo = ""
+        , signupLastname = ""
+        , signupFirstname = ""
+        , signupEmail = ""
+        , signupPassword = ""
+        , signupConfirm = ""
         , accountRetrievalForm = Nothing
         , accountConfirmationForm = Nothing
         }
@@ -249,17 +269,30 @@ urlToRoute url =
 
 type Msg
   = NoOp
+  -- url
   | InternalLinkClicked Url
   | ExternalLinkClicked String
   | UrlChange Url
+  -- time
   | Tick Time.Posix
+  -- signin
   | InputSigninPseudo String
   | InputSigninPassword String
   | SubmitSignin
   | ResultSignin (Result Http.Error (DataAlert { pseudo: String, picture: String }))
-  | SignupForm (Form.Msg (Result String String))
+  -- signup
+  | InputSignupPseudo String
+  | InputSignupLastname String
+  | InputSignupFirstname String
+  | InputSignupEmail String
+  | InputSignupPassword String
+  | InputSignupConfirm String
+  | SubmitSignup
+  | ResultSignup (Result Http.Error (Result String String))
+  -- signout
   | Signout
   | ReceiveSignoutUpdate (Result Http.Error (Result String String))
+  -- other
   | UpdatePasswordForm (Form.Msg (Result String String))
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
   | FiltersForm FiltersFormMsg
@@ -391,7 +424,7 @@ update msg model =
 
     (Anonymous amodel, Signin, SubmitSignin) ->
       ( model
-      , submitSignin amodel.signinPseudo amodel.signinPassword
+      , submitSignin amodel
       )
 
     (Anonymous amodel, _, ResultSignin result) ->
@@ -413,17 +446,67 @@ update msg model =
           , Cmd.none
           )
 
-    (Anonymous amodel, Signup, SignupForm formMsg) ->
-      let
-        (newForm, formCmd, response) = Form.update formMsg amodel.signupForm
-      in
-        case response of
-          Just result ->
-            signupFormResultHandler result model formCmd
-          Nothing ->
-            ( { model | access = Anonymous { amodel | signupForm = newForm } }
-            , formCmd |> Cmd.map SignupForm
-            )
+    (Anonymous amodel, Signup, InputSignupPseudo pseudo) ->
+      ( { model | access = Anonymous { amodel |
+          signupPseudo = pseudo
+        }}
+      , Cmd.none
+      )
+
+    (Anonymous amodel, Signup, InputSignupLastname lastname) ->
+      ( { model | access = Anonymous { amodel |
+          signupLastname = lastname
+        }}
+      , Cmd.none
+      )
+
+    (Anonymous amodel, Signup, InputSignupFirstname firstname) ->
+      ( { model | access = Anonymous { amodel |
+          signupFirstname = firstname
+        }}
+      , Cmd.none
+      )
+
+    (Anonymous amodel, Signup, InputSignupEmail email) ->
+      ( { model | access = Anonymous { amodel |
+          signupEmail = email
+        }}
+      , Cmd.none
+      )
+
+    (Anonymous amodel, Signup, InputSignupPassword password) ->
+      ( { model | access = Anonymous { amodel |
+          signupPassword = password
+        }}
+      , Cmd.none
+      )
+
+    (Anonymous amodel, Signup, InputSignupConfirm pwConfirmation) ->
+      ( { model | access = Anonymous { amodel |
+          signupConfirm = pwConfirmation
+        }}
+      , Cmd.none
+      )
+
+    (Anonymous amodel, Signin, SubmitSignup) ->
+      ( model
+      , submitSignup amodel
+      )
+
+    (Anonymous amodel, _, ResultSignup result) ->
+      case result of
+        Ok (Ok message) ->
+          ( model |> (Alert.put << Just) (Alert.successAlert message)
+          , Nav.pushUrl model.key "/signin"
+          )
+        Ok (Err message) ->
+          ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
+          , Cmd.none
+          )
+        Err error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
 
     (Anonymous amodel, _, AccountRetrievalForm formMsg) ->
       case amodel.accountRetrievalForm of
@@ -823,24 +906,6 @@ unreadNotifsAmountResultHandler result lmodel model =
     Err error ->
       model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
 
-signupFormResultHandler result model cmd =
-  case result of
-    Ok (Ok message) ->
-      ( model |> (Alert.put << Just) (Alert.successAlert message)
-      , Cmd.batch
-        [ Nav.pushUrl model.key "/signin"
-        , cmd |> Cmd.map SignupForm
-        ]
-      )
-    Ok (Err message) ->
-      ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
-      , cmd |> Cmd.map SignupForm
-      )
-    Err error ->
-      ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
-      , cmd |> Cmd.map SignupForm
-      )
-
 retreiveAccountResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
@@ -1114,13 +1179,19 @@ confirmAlertDecoder =
 
 -- account
 
-submitSignin : String -> String -> Cmd Msg
-submitSignin pseudo password =
+type alias SigninModel a =
+  { a
+  | signinPseudo : String
+  , signinPassword : String
+  }
+
+submitSignin : SigninModel a -> Cmd Msg
+submitSignin model =
   Http.post
       { url = "http://localhost/control/account_signin.php"
       , body = multipartBody
-                [ stringPart "pseudo" pseudo
-                , stringPart "password" password
+                [ stringPart "pseudo" model.signinPseudo
+                , stringPart "password" model.signinPassword
                 ]
       , expect = Http.expectJson ResultSignin (dataAlertDecoder signinDecoder)
       }
@@ -1131,15 +1202,30 @@ signinDecoder =
   Field.require "picture" Decode.string <| \picture ->
   Decode.succeed ({ pseudo = pseudo, picture = picture })
 
-signupFormInit : Form (Result String String)
-signupFormInit =
-  Form.form resultMessageDecoder (OnSubmit "Signup") "http://localhost/control/account_signup.php" []
-  |> Form.textField "pseudo"
-  |> Form.textField "lastname"
-  |> Form.textField "firstname"
-  |> Form.textField "email"
-  |> Form.passwordField "password"
-  |> Form.passwordField "confirm"
+type alias SignupModel a =
+  { a
+  | signupPseudo : String
+  , signupLastname : String
+  , signupFirstname : String
+  , signupEmail : String
+  , signupPassword : String
+  , signupConfirm : String
+  }
+
+submitSignup : SignupModel a -> Cmd Msg
+submitSignup model =
+  Http.post
+      { url = "http://localhost/control/account_signup.php"
+      , body = multipartBody
+                [ stringPart "pseudo" model.signupPseudo
+                , stringPart "lastname" model.signupLastname
+                , stringPart "firstname" model.signupFirstname
+                , stringPart "email" model.signupEmail
+                , stringPart "password" model.signupPassword
+                , stringPart "confirm" model.signupConfirm
+                ]
+      , expect = Http.expectJson ResultSignup resultMessageDecoder
+      }
 
 requestSignout : Cmd Msg
 requestSignout =
@@ -1299,34 +1385,10 @@ view model =
     (Anonymous amodel, Signin) ->
       { title = "matcha - signin"
       , body =
-        column  [ centerX
-                , centerY
-                ]
-                [ Alert.view model
-                  |> El.html
-                , signinView amodel
-                , column  [ centerX
-                          , centerY
-                          , padding 50
-                          ]
-                          [ a [ href "/retreive" ]
-                              [ Html.text "You forgot yout password?" ]
-                            |> El.html
-                            |> El.el  [ centerX
-                                      , centerY
-                                      , padding 5
-                                      ]
-                          , a [ href "/signup" ]
-                              [ Html.text "You don't have any account?" ]
-                            |> El.html
-                            |> El.el  [ centerX
-                                      , centerY
-                                      , padding 5
-                                      ]
-                          ]
-                ]
-        |> El.layout []
-        |> List.singleton
+        [ Alert.view model
+        , signinView amodel
+          |> El.layout []
+        ]
       }
 
     (Anonymous amodel, Signup) ->
@@ -1334,6 +1396,7 @@ view model =
       , body =
         [ Alert.view model
         , signupView amodel
+          |> El.layout []
         ]
       }
 
@@ -1601,15 +1664,18 @@ onEnter msg =
   |> El.htmlAttribute
 
 
-signinView : AModel -> Element Msg
-signinView amodel =
-  column  [ spacing 5 ]
+signinView : SigninModel a -> Element Msg
+signinView model =
+  column  [ spacing 32
+          , centerX
+          , centerY
+          ]
           [ Inp.username
                 [ onEnter SubmitSignin
-                , padding 5
+                , padding 8
                 ]
                 { onChange = InputSigninPseudo
-                , text = amodel.signinPseudo
+                , text = model.signinPseudo
                 , placeholder = Inp.placeholder [] (El.text"pseudo") |> Just
                 , label = labelLeft
                             [ centerY
@@ -1618,10 +1684,10 @@ signinView amodel =
                 }
           , Inp.currentPassword
                 [ onEnter SubmitSignin
-                , padding 5
+                , padding 8
                 ]
                 { onChange = InputSigninPassword
-                , text = amodel.signinPassword
+                , text = model.signinPassword
                 , placeholder = Inp.placeholder [] (El.text "password") |> Just
                 , label = labelLeft
                             [ centerY
@@ -1636,15 +1702,120 @@ signinView amodel =
                 { onPress = Just SubmitSignin
                 , label = El.text "Signin"
                 }
+          , a [ href "/retreive" ]
+              [ Html.text "You forgot yout password?" ]
+            |> El.html
+            |> El.el  [ centerX
+                      , centerY
+                      , paddingEach
+                          { top = 32
+                          , right = 32
+                          , left = 32
+                          , bottom = 2
+                          }
+                      ]
+          , a [ href "/signup" ]
+              [ Html.text "You don't have any account?" ]
+            |> El.html
+            |> El.el  [ centerX
+                      , centerY
+                      , paddingEach
+                          { top = 2
+                          , right = 32
+                          , left = 32
+                          , bottom = 32
+                          }
+                      ]
           ]
 
-signupView : AModel -> Html Msg
-signupView amodel =
-  Html.div []
-            [ Form.view amodel.signupForm |> Html.map SignupForm
-            , a [ href "/signin" ]
-                [ Html.text "You alredy have an account?" ]
-            ]
+signupView : SignupModel a -> Element Msg
+signupView model =
+  column  [ spacing 32
+          , centerX
+          , centerY
+          ]
+          [ Inp.username
+                [ onEnter SubmitSignup
+                , padding 8
+                ]
+                { onChange = InputSignupPseudo
+                , text = model.signupPseudo
+                , placeholder = Inp.placeholder [] (El.text "pseudo") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "pseudo : ")
+                }
+          , Inp.text
+                [ onEnter SubmitSignup
+                , padding 8
+                ]
+                { onChange = InputSignupLastname
+                , text = model.signupLastname
+                , placeholder = Inp.placeholder [] (El.text "lastname") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "lastname : ")
+                }
+          , Inp.text
+                [ onEnter SubmitSignup
+                , padding 8
+                ]
+                { onChange = InputSignupFirstname
+                , text = model.signupFirstname
+                , placeholder = Inp.placeholder [] (El.text "firstname") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "firstname : ")
+                }
+          , Inp.email
+                [ onEnter SubmitSignup
+                , padding 8
+                ]
+                { onChange = InputSignupEmail
+                , text = model.signupEmail
+                , placeholder = Inp.placeholder [] (El.text "email") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "email : ")
+                }
+          , Inp.newPassword
+                [ onEnter SubmitSignup
+                , padding 8
+                ]
+                { onChange = InputSignupPassword
+                , text = model.signupPassword
+                , placeholder = Inp.placeholder [] (El.text "password") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "password : ")
+                , show = False
+                }
+          , Inp.newPassword
+                [ onEnter SubmitSignup
+                , padding 8
+                ]
+                { onChange = InputSignupConfirm
+                , text = model.signupConfirm
+                , placeholder = Inp.placeholder [] (El.text "confirm") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "confirm : ")
+                , show = False
+                }
+          , Inp.button
+                [ padding 0
+                , centerX
+                ]
+                { onPress = Just SubmitSignup
+                , label = El.text "Signup"
+                }
+          , a [ href "/signin" ]
+              [ Html.text "You alredy have an account?" ]
+            |> El.html
+            |> El.el  [ padding 32
+                      , centerX
+                      ]
+          ]
 
 viewProfile : Profile -> Html Msg
 viewProfile profile =
@@ -1748,8 +1919,7 @@ subscriptions model =
 
 anonymousAccess_sub : AModel -> Sub Msg
 anonymousAccess_sub amodel =
-  [ Form.subscriptions amodel.signupForm |> Sub.map SignupForm
-  ] |> Sub.batch
+  Sub.none
 
 
 -- main
