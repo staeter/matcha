@@ -26,6 +26,9 @@ import File.Select as Select  exposing (..)
 
 import Element as El exposing (..)
 import Element.Input as Inp exposing (..)
+import Element.Background as Background exposing (..)
+import Element.Events as Ev exposing (..)
+import Element.Font as Font exposing (..)
 
 
 -- modules
@@ -1534,25 +1537,14 @@ view model =
       , body =
         [ viewHeader model.route lmodel
         , Alert.view model
-        , lmodel.pictures
-          |> Maybe.map (\p-> div [] [ viewGalery p ])
-          |> Maybe.withDefault (div [] [])
-        , Html.button
-                  [ onClick RemovePicture
-                  , style "background-color" "DarkRed"
-                  , style "color" "White"
-                  ]
-                  [ Html.text "remove selected image" ]
-        , Html.button
-                  [ onClick SelectReplacementPicture
-                  , style "background-color" "DarkGrey"
-                  , style "color" "White"
-                  ]
-                  [ Html.text "replace selected image" ]
-        , lmodel.updateSettingsForm
-          |> Maybe.map (Form.view >> Html.map UpdateSettingsForm)
-          |> Maybe.withDefault (div [] [])
-        , viewPwUpdate lmodel
+        , wrappedRow []
+            [ viewPictUpdate lmodel
+            , lmodel.updateSettingsForm
+              |> Maybe.map (Form.view >> Html.map UpdateSettingsForm)
+              |> Maybe.withDefault (div [] [])
+              |> El.html
+            , viewPwUpdate lmodel
+            ]
           |> El.layout []
         ]
       }
@@ -1565,6 +1557,41 @@ view model =
         ]
       }
 
+type alias PictUpdateModel a =
+  { a
+  | pictures : Maybe (ZipList (Int, String))
+  }
+
+viewPictUpdate : PictUpdateModel a -> Element Msg
+viewPictUpdate model =
+  column
+      [ spacing 32
+      , centerX
+      ]
+      [ model.pictures
+        |> Maybe.map (\p-> div [] [ viewGalery p ])
+        |> Maybe.withDefault (div [] [])
+        |> El.html
+      , Inp.button
+          [ padding 8
+          , centerX
+          , Background.color (rgb 139 0 0)
+          , Font.color (rgb 255 255 255)
+          ]
+          { onPress = Just RemovePicture
+          , label = El.text "remove selected image"
+          }
+      , Inp.button
+          [ padding 8
+          , centerX
+          , Background.color (rgb 0 0 0)
+          , Font.color (rgb 255 255 255)
+          ]
+          { onPress = Just SelectReplacementPicture
+          , label = El.text "replace selected image"
+          }
+      ]
+
 viewChats : List Chat -> Html Msg
 viewChats chatList =
   div [] (List.map viewChat chatList)
@@ -1574,7 +1601,7 @@ viewChat chat =
   div [ if chat.unread
         then style "background-color" "LightBlue"
         else style "background-color" "White"
-      , onClick (AccessDiscution chat.id)
+      , Html.Events.onClick (AccessDiscution chat.id)
       ]
       [ img [ src chat.picture ] []
       , Html.text chat.pseudo
@@ -1645,7 +1672,7 @@ viewHeader route lmodel =
                   then class "active"
                   else class ""
                 ] [ Html.text "settings" ]
-            , a [ onClick Signout
+            , a [ Html.Events.onClick Signout
                 , style "color" "DarkRed"
                 ] [ Html.text "signout" ]
             -- , Form.view lmodel.signoutForm |> Html.map SignoutForm
@@ -1916,7 +1943,7 @@ viewProfile profile =
 viewLikeButton : Int -> Bool -> Html Msg
 viewLikeButton id isLiked =
   Html.button
-          [ onClick (Like id)
+          [ Html.Events.onClick (Like id)
           , if isLiked
             then style "background-color" "red"
             else style "background-color" "white"
@@ -1928,7 +1955,7 @@ viewFeedPageNav lmodel =
   div []
     ( List.range 1 lmodel.feedPageAmount
     |> List.map (\ pageNr ->
-                    Html.button [ onClick (FeedNav (pageNr - 1))
+                    Html.button [ Html.Events.onClick (FeedNav (pageNr - 1))
                            , if pageNr - 1 == lmodel.feedPageNumber
                              then style "background-color" "lightblue"
                              else style "background-color" "white"
@@ -1977,7 +2004,7 @@ viewGaleryElem checked index (id, pict) =
           , Html.Attributes.type_ "radio"
           , Html.Attributes.name "ts"
           , Html.Attributes.checked checked
-          , onClick (SelectImage index)
+          , Html.Events.onClick (SelectImage index)
           ] []
   , label [ Html.Attributes.class "t"
           , Html.Attributes.for ("c" ++ String.fromInt(index + 1))
