@@ -1150,7 +1150,7 @@ submitSettings model =
                 ]
       , expect = Http.expectJson ResultPwUpdate resultMessageDecoder
       }
-      
+
 pictureDecoder : Decoder (Int, String)
 pictureDecoder =
   Field.require "id" Decode.int <| \id ->
@@ -1643,10 +1643,38 @@ view model =
       , body =
         [ viewHeader model.route lmodel
         , Alert.view model
-        , wrappedRow []
-            [ viewPictUpdate lmodel
-            , settingsView lmodel
-            , viewPwUpdate lmodel
+        , wrappedRow
+            [ spaceEvenly
+            , El.width fill
+            , paddingXY 64 0
+            ]
+            [ el  [ paddingEach
+                      { top = 0
+                      , right = 32
+                      , bottom = 256
+                      , left = 32
+                      }
+                  , El.width (minimum 512 fill)
+                  ]
+                  (viewPictUpdate lmodel)
+            , el  [ paddingEach
+                      { top = 0
+                      , right = 32
+                      , bottom = 256
+                      , left = 32
+                      }
+                  , El.width (minimum 512 fill)
+                  ]
+                  (settingsView lmodel)
+            , el  [ paddingEach
+                      { top = 0
+                      , right = 32
+                      , bottom = 256
+                      , left = 32
+                      }
+                  , El.width (minimum 512 fill)
+                  ]
+                  (viewPwUpdate lmodel)
             ]
           |> El.layout []
         ]
@@ -2114,7 +2142,7 @@ settingsView model =
                 , centerX
                 ]
                 { onPress = Just SubmitSettings
-                , label = El.text "Signup"
+                , label = El.text "update core settings"
                 }
           ]
 
