@@ -7,7 +7,7 @@ module ZipList exposing
     , forward, backward
     , currentIndex, isValidIndex
     , jumpForward, jumpBackward
-    , goTo, zipListDecoder
+    , goTo, goToFirst, zipListDecoder
     , map, indexedMap
     , selectedMap, indexedSelectedMap
     , removeCurrent, insert
@@ -39,7 +39,7 @@ module ZipList exposing
 
 import Maybe
 import Json.Decode as Decode exposing (Decoder, list, decodeString, map)
-
+import MyList exposing (indexedAny)
 
 {-| A collection data type that can be moved forward/backward and that exposes a current element (see the `current` function)
 -}
@@ -217,6 +217,17 @@ goTo newIndex ziplist =
       jumpForward delta ziplist
     Negatif ->
       jumpBackward (abs delta) ziplist
+
+goToFirst : (a -> Bool) -> ZipList a -> ZipList a
+goToFirst condition ziplist =
+  let
+    list = toList ziplist
+    index = MyList.indexedAny condition list
+  in
+    index
+    |> Maybe.map (\ i -> goTo i ziplist )
+    |> Maybe.withDefault ziplist
+
 
 map : (a -> b) -> ZipList a -> ZipList b
 map func ziplist =

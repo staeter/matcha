@@ -72,11 +72,19 @@ type alias LModel =
   -- chat
   , chats : List Chat
   , discution : Maybe Discution
-  -- settings
+  -- pwUpdate
   , pwUpdateOld : String
   , pwUpdateNew : String
   , pwUpdateConfirm : String
-  , updateSettingsForm : Maybe (Form (Result String String))
+  -- settings
+  , settingsPseudo : String
+  , settingsFirstname : String
+  , settingsLastname : String
+  , settingsEmail : String
+  , settingsGender : ZipList (Gender, String)
+  , settingsOrientation : ZipList (BasicValues.Orientation, String)
+  , settingsBiography : String
+  -- pictures settings
   , pictures : Maybe (ZipList (Int, String))
   }
 
@@ -180,7 +188,13 @@ loggedAccessInit route pseudo picture =
       , pwUpdateOld = ""
       , pwUpdateNew = ""
       , pwUpdateConfirm = ""
-      , updateSettingsForm = Nothing
+      , settingsPseudo = ""
+      , settingsFirstname = ""
+      , settingsLastname = ""
+      , settingsEmail = ""
+      , settingsGender = ZipList.fromList genderList
+      , settingsOrientation = ZipList.fromList orientationList
+      , settingsBiography = ""
       , pictures = Nothing
       }
   , case route of
@@ -298,14 +312,30 @@ type Msg
   | SubmitSignup
   | ResultSignup (Result Http.Error (Result String String))
   -- signout
-  | Signout
-  | ReceiveSignoutUpdate (Result Http.Error (Result String String))
+  | SubmitSignout
+  | ResultSignout (Result Http.Error (Result String String))
   -- password update
   | InputPwUpdateOld String
   | InputPwUpdateNew String
   | InputPwUpdateConfirm String
   | SubmitPwUpdate
   | ResultPwUpdate (Result Http.Error (Result String String))
+  -- settings
+  | InputSettingsPseudo String
+  | InputSettingsFirstname String
+  | InputSettingsLastname String
+  | InputSettingsEmail String
+  | InputSettingsGender (ZipList (Gender, String))
+  | InputSettingsOrientation (ZipList (BasicValues.Orientation, String))
+  | InputSettingsBiography String
+  | SubmitSettings
+  | ResultSettings (Result Http.Error (Result String String))
+  -- user pictures update
+  | SelectImage Int
+  | RemovePicture
+  | SelectReplacementPicture
+  | ReplacePicture File
+  | ReceivePicturesUpdate (Result Http.Error (DataAlert (ZipList (Int, String))))
   -- other
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
   | FiltersForm FiltersFormMsg
@@ -324,16 +354,13 @@ type Msg
   | AccountRetrievalForm (Form.Msg (Result String String))
   | AccountConfirmationForm (Form.Msg (Result String String))
   | ReceiveCurrentSettings (Result Http.Error (DataAlert CurrentSettings))
-  | UpdateSettingsForm (Form.Msg (Result String String))
-  | SelectImage Int
-  | RemovePicture
-  | ReceivePicturesUpdate (Result Http.Error (DataAlert (ZipList (Int, String))))
-  | SelectReplacementPicture
-  | ReplacePicture File
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case (model.access, model.route, msg) of
+
+    -- url
+
     (Anonymous amodel, _, InternalLinkClicked url) ->
       ( model
       , Nav.pushUrl model.key (Url.toString url)
@@ -399,6 +426,9 @@ update msg model =
         _ ->
           ({ model | route = newRoute }, Cmd.none)
 
+
+    -- time
+
     (Logged lmodel, Notifs, Tick _) ->
       ( model
       , Cmd.batch
@@ -420,6 +450,9 @@ update msg model =
 
     (Logged lmodel, _, Tick _) ->
       (model, requestUnreadNotifsAmount)
+
+
+    -- signin
 
     (Anonymous amodel, Signin, InputSigninPseudo pseudo) ->
       ( { model | access = Anonymous { amodel |
@@ -458,6 +491,9 @@ update msg model =
           ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
           , Cmd.none
           )
+
+
+    -- signup
 
     (Anonymous amodel, Signup, InputSignupPseudo pseudo) ->
       ( { model | access = Anonymous { amodel |
@@ -521,6 +557,9 @@ update msg model =
           , Cmd.none
           )
 
+
+    -- password update
+
     (Logged lmodel, Settings, InputPwUpdateOld oldpw) ->
       ( { model | access = Logged { lmodel |
           pwUpdateOld = oldpw
@@ -565,6 +604,81 @@ update msg model =
           , Cmd.none
           )
 
+
+    -- general settings
+
+    (Logged lmodel, Settings, InputSettingsPseudo pseudo) ->
+      ( { model | access = Logged { lmodel |
+          settingsPseudo = pseudo
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, InputSettingsLastname lastname) ->
+      ( { model | access = Logged { lmodel |
+          settingsLastname = lastname
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, InputSettingsFirstname firstname) ->
+      ( { model | access = Logged { lmodel |
+          settingsFirstname = firstname
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, InputSettingsEmail email) ->
+      ( { model | access = Logged { lmodel |
+          settingsEmail = email
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, InputSettingsGender selection) ->
+      ( { model | access = Logged { lmodel |
+          settingsGender = selection
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, InputSettingsOrientation selection) ->
+      ( { model | access = Logged { lmodel |
+          settingsOrientation = selection
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, InputSettingsBiography bio) ->
+      ( { model | access = Logged { lmodel |
+          settingsBiography = bio
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, SubmitSettings) ->
+      ( model
+      , submitSettings lmodel
+      )
+
+    (Logged lmodel, _, ResultSettings result) ->
+      case result of
+        Ok (Ok message) ->
+          ( model |> (Alert.put << Just) (Alert.successAlert message)
+          , Cmd.none
+          )
+        Ok (Err message) ->
+          ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
+          , Cmd.none
+          )
+        Err error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
+
+
+    -- other
+
     (Anonymous amodel, _, AccountRetrievalForm formMsg) ->
       case amodel.accountRetrievalForm of
         Nothing -> ( model, Cmd.none )
@@ -580,10 +694,10 @@ update msg model =
                 , formCmd |> Cmd.map AccountRetrievalForm
                 )
 
-    (Logged lmodel, _, Signout) ->
+    (Logged lmodel, _, SubmitSignout) ->
       (model, requestSignout)
 
-    (Logged lmodel, _, ReceiveSignoutUpdate response) ->
+    (Logged lmodel, _, ResultSignout response) ->
       case response of
         Ok (Ok message) ->
           ( { model | access =
@@ -809,8 +923,17 @@ update msg model =
           ( { model | access = Logged
               { lmodel
                 | pictures = Just currentSettings.pictures
-                , updateSettingsForm =
-                  (Just << updateSettingsFormInit) currentSettings
+                , settingsPseudo = currentSettings.pseudo
+                , settingsFirstname = currentSettings.first_name
+                , settingsLastname = currentSettings.last_name
+                , settingsEmail = currentSettings.email
+                , settingsGender =
+                    ZipList.fromList genderList
+                    |> ZipList.goToFirst (\ elem -> currentSettings.gender == Tuple.first elem )
+                , settingsOrientation =
+                    ZipList.fromList orientationList
+                    |> ZipList.goToFirst (\ elem -> currentSettings.orientation == Tuple.first elem )
+                , settingsBiography = currentSettings.biography
               }
             } |> Alert.put alert
           , Cmd.none
@@ -833,34 +956,6 @@ update msg model =
             } }
           , Cmd.none
           )
-
-    (Logged lmodel, _, UpdateSettingsForm formMsg) ->
-      case lmodel.updateSettingsForm of
-        Nothing -> ( model, Cmd.none )
-        Just updateSettingsForm ->
-          let
-            (newForm, formCmd, response) = Form.update formMsg updateSettingsForm
-          in
-            case response of
-              Just (Ok (Ok message)) ->
-                ( { model | access = Logged { lmodel | updateSettingsForm = Just newForm } }
-                  |> (Alert.put << Just) (Alert.successAlert message)
-                , formCmd |> Cmd.map UpdateSettingsForm
-                )
-              Just (Ok (Err message)) ->
-                ( { model | access = Logged { lmodel | updateSettingsForm = Just newForm } }
-                  |> (Alert.put << Just) (Alert.invalidImputAlert message)
-                , formCmd |> Cmd.map UpdateSettingsForm
-                )
-              Just (Err error) ->
-                ( { model | access = Logged { lmodel | updateSettingsForm = Just newForm } }
-                    |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
-                , formCmd |> Cmd.map UpdateSettingsForm
-                )
-              Nothing ->
-                ( { model | access = Logged { lmodel | updateSettingsForm = Just newForm } }
-                , formCmd |> Cmd.map UpdateSettingsForm
-                )
 
     (Logged lmodel, Settings, RemovePicture) ->
       lmodel.pictures
@@ -1017,40 +1112,50 @@ currentSettingsDecoder =
     , tags = tags
     }
 
+type alias SettingsModel a =
+  { a
+  | settingsPseudo : String
+  , settingsFirstname : String
+  , settingsLastname : String
+  , settingsEmail : String
+  , settingsGender : ZipList (Gender, String)
+  , settingsOrientation : ZipList (BasicValues.Orientation, String)
+  , settingsBiography : String
+  }
+
+submitSettings : SettingsModel a -> Cmd Msg
+submitSettings model =
+  Http.post
+      { url = "http://localhost/control/settings_update.php"
+      , body = multipartBody
+                [ stringPart "pseudo" model.settingsPseudo
+                , stringPart "first_name" model.settingsFirstname
+                , stringPart "last_name" model.settingsLastname
+                , stringPart "email" model.settingsEmail
+                , stringPart
+                    "gender"
+                    ( ZipList.current model.settingsGender
+                      |> Maybe.withDefault (Woman, "")
+                      |> Tuple.first
+                      |> genderToString
+                    )
+                , stringPart
+                    "orientation"
+                    ( ZipList.current model.settingsOrientation
+                      |> Maybe.withDefault (Bisexual, "")
+                      |> Tuple.first
+                      |> orientationToString
+                    )
+                , stringPart "biography" model.settingsBiography
+                ]
+      , expect = Http.expectJson ResultPwUpdate resultMessageDecoder
+      }
+      
 pictureDecoder : Decoder (Int, String)
 pictureDecoder =
   Field.require "id" Decode.int <| \id ->
   Field.require "path" Decode.string <| \path ->
   Decode.succeed (id, path)
-
-
-updateSettingsFormInit : CurrentSettings -> Form (Result String String)
-updateSettingsFormInit currentSettings =
-  let
-    pseudoFieldModeltmp = defaultTextFieldModel "pseudo"
-    pseudoFieldModel = { pseudoFieldModeltmp | value = currentSettings.pseudo }
-
-    firstNameFieldModeltmp = defaultTextFieldModel "first_name"
-    firstNameFieldModel = { firstNameFieldModeltmp | value = currentSettings.first_name }
-
-    lastNameFieldModeltmp = defaultTextFieldModel "last_name"
-    lastNameFieldModel = { lastNameFieldModeltmp | value = currentSettings.last_name }
-
-    emailFieldModeltmp = defaultTextFieldModel "email"
-    emailFieldModel = { emailFieldModeltmp | value = currentSettings.email }
-
-    biographyFieldModeltmp = defaultTextFieldModel "biography"
-    biographyFieldModel = { biographyFieldModeltmp | value = currentSettings.biography }
-  in
-  Form.form resultMessageDecoder (OnSubmit "update settings") "http://localhost/control/settings_update.php" []
-  |> (Form.add << Text) pseudoFieldModel
-  |> (Form.add << Text) firstNameFieldModel
-  |> (Form.add << Text) lastNameFieldModel
-  |> (Form.add << Text) emailFieldModel
-  -- |> Form.dropdownField "gender" ["Man", "Woman"]
-  -- |> Form.dropdownField "orientation" ["Homosexual", "Bisexual", "Heterosexual"]
-  |> (Form.add << Text) biographyFieldModel
-  |> Form.multiInputField "Tags" currentSettings.tags
 
 removePicture :  ZipList (Int, String) -> (Result Http.Error (DataAlert (ZipList (Int, String))) -> Msg) -> Cmd Msg
 removePicture pictures toMsg =
@@ -1269,7 +1374,7 @@ requestSignout =
   Http.post
       { url = "http://localhost/control/account_signout.php"
       , body = emptyBody
-      , expect = Http.expectJson ReceiveSignoutUpdate resultMessageDecoder
+      , expect = Http.expectJson ResultSignout resultMessageDecoder
       }
 
 
@@ -1540,10 +1645,7 @@ view model =
         , Alert.view model
         , wrappedRow []
             [ viewPictUpdate lmodel
-            , lmodel.updateSettingsForm
-              |> Maybe.map (Form.view >> Html.map UpdateSettingsForm)
-              |> Maybe.withDefault (div [] [])
-              |> El.html
+            , settingsView lmodel
             , viewPwUpdate lmodel
             ]
           |> El.layout []
@@ -1673,7 +1775,7 @@ viewHeader route lmodel =
                   then class "active"
                   else class ""
                 ] [ Html.text "settings" ]
-            , a [ Html.Events.onClick Signout
+            , a [ Html.Events.onClick SubmitSignout
                 , style "color" "DarkRed"
                 ] [ Html.text "signout" ]
             -- , Form.view lmodel.signoutForm |> Html.map SignoutForm
@@ -1926,6 +2028,93 @@ viewPwUpdate model =
                 ]
                 { onPress = Just SubmitPwUpdate
                 , label = El.text "update password"
+                }
+          ]
+
+settingsView : SettingsModel a -> Element Msg
+settingsView model =
+  column  [ spacing 32
+          , centerX
+          , centerY
+          ]
+          [ Inp.username
+                [ onEnter SubmitSettings
+                , padding 8
+                ]
+                { onChange = InputSettingsPseudo
+                , text = model.settingsPseudo
+                , placeholder = Inp.placeholder [] (El.text "Your pseudo") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "pseudo : ")
+                }
+          , Inp.text
+                [ onEnter SubmitSettings
+                , padding 8
+                ]
+                { onChange = InputSettingsLastname
+                , text = model.settingsLastname
+                , placeholder = Inp.placeholder [] (El.text "Your lastname") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "lastname : ")
+                }
+          , Inp.text
+                [ onEnter SubmitSettings
+                , padding 8
+                ]
+                { onChange = InputSettingsFirstname
+                , text = model.settingsFirstname
+                , placeholder = Inp.placeholder [] (El.text "Your firstname") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "firstname : ")
+                }
+          , Inp.email
+                [ onEnter SubmitSettings
+                , padding 8
+                ]
+                { onChange = InputSettingsEmail
+                , text = model.settingsEmail
+                , placeholder = Inp.placeholder [] (El.text "Your email") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "email : ")
+                }
+          , El.el
+                [ onEnter SubmitSettings
+                , padding 8
+                ]
+                ( dropdown [] model.settingsGender InputSettingsGender
+                  |> El.html
+                )
+          , El.el
+                [ onEnter SubmitSettings
+                , padding 8
+                ]
+                ( dropdown [] model.settingsOrientation InputSettingsOrientation
+                  |> El.html
+                )
+          , Inp.multiline
+                [ onEnter SubmitSettings
+                , padding 8
+                ]
+                { onChange = InputSettingsBiography
+                , text = model.settingsBiography
+                , placeholder = Inp.placeholder [] (El.text "Your biography") |> Just
+                , label = labelAbove
+                            [ centerY
+                            , El.alignLeft
+                            ]
+                            (El.text "biography : ")
+                , spellcheck = True
+                }
+          , Inp.button
+                [ padding 0
+                , centerX
+                ]
+                { onPress = Just SubmitSettings
+                , label = El.text "Signup"
                 }
           ]
 

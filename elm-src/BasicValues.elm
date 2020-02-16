@@ -11,10 +11,36 @@ type Gender
   = Man
   | Woman
 
+genderToString : Gender -> String
+genderToString gender =
+  case gender of
+    Man -> "Man"
+    Woman -> "Woman"
+
+genderList : List (Gender, String)
+genderList =
+  [ (Man, "man")
+  , (Woman, "woman")
+  ]
+
 type Orientation
   = Homosexual
   | Bisexual
   | Heterosexual
+
+orientationToString : Orientation -> String
+orientationToString orientaion =
+  case orientaion of
+    Homosexual -> "Homosexual"
+    Bisexual -> "Bisexual"
+    Heterosexual -> "Heterosexual"
+
+orientationList : List (Orientation, String)
+orientationList =
+  [ (Homosexual, "homosexual")
+  , (Bisexual, "bisexual")
+  , (Heterosexual, "heterosexual")
+  ]
 
 lastLogDecoder : Decoder LastLog
 lastLogDecoder =
