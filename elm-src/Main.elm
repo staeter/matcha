@@ -29,6 +29,7 @@ import Element.Input as Inp exposing (..)
 import Element.Background as Background exposing (..)
 import Element.Events as Ev exposing (..)
 import Element.Font as Font exposing (..)
+import Element.Border as Border exposing (..)
 
 
 -- modules
@@ -1646,12 +1647,12 @@ view model =
         , wrappedRow
             [ spaceEvenly
             , El.width fill
-            , paddingXY 64 0
+            , padding 64
             ]
             [ el  [ paddingEach
                       { top = 0
                       , right = 32
-                      , bottom = 256
+                      , bottom = 128
                       , left = 32
                       }
                   , El.width (minimum 512 fill)
@@ -1660,7 +1661,7 @@ view model =
             , el  [ paddingEach
                       { top = 0
                       , right = 32
-                      , bottom = 256
+                      , bottom = 128
                       , left = 32
                       }
                   , El.width (minimum 512 fill)
@@ -1669,7 +1670,7 @@ view model =
             , el  [ paddingEach
                       { top = 0
                       , right = 32
-                      , bottom = 256
+                      , bottom = 128
                       , left = 32
                       }
                   , El.width (minimum 512 fill)
@@ -1698,26 +1699,27 @@ viewPictUpdate model =
   column
       [ spacing 32
       , centerX
+      , Border.shadow
+          { offset = (0.0, 0.0)
+          , size = 0.0
+          , blur = 100.0
+          , color = rgba 0 0 0 0.2
+          }
+      , paddingXY 16 64
       ]
-      [ model.pictures
-        |> Maybe.map (\p-> div [] [ viewGalery p ])
-        |> Maybe.withDefault (div [] [])
-        |> El.html
+      [ el  [ centerX ]
+            ( model.pictures
+              |> Maybe.map (\p-> div [] [ viewGalery p ])
+              |> Maybe.withDefault (div [] [])
+              |> El.html
+            )
       , Inp.button
-          [ padding 8
-          , centerX
-          , Background.color (rgb 139 0 0)
-          , Font.color (rgb 255 255 255)
-          ]
+          [ centerX ]
           { onPress = Just RemovePicture
           , label = El.text "remove selected image"
           }
       , Inp.button
-          [ padding 8
-          , centerX
-          , Background.color (rgb 0 0 139)
-          , Font.color (rgb 255 255 255)
-          ]
+          [ centerX ]
           { onPress = Just SelectReplacementPicture
           , label = El.text "replace selected image"
           }
@@ -2011,8 +2013,15 @@ signupView model =
 
 viewPwUpdate : PwUpdateModel a -> Element Msg
 viewPwUpdate model =
-  column  [ spacing 32
+  column  [ spacing 16
           , centerX
+          , Border.shadow
+              { offset = (0.0, 0.0)
+              , size = 0.0
+              , blur = 100.0
+              , color = rgba 0 0 0 0.2
+              }
+          , padding 64
           ]
           [ Inp.currentPassword
                 [ onEnter SubmitPwUpdate
@@ -2061,9 +2070,15 @@ viewPwUpdate model =
 
 settingsView : SettingsModel a -> Element Msg
 settingsView model =
-  column  [ spacing 32
+  column  [ spacing 16
           , centerX
-          , centerY
+          , Border.shadow
+              { offset = (0.0, 0.0)
+              , size = 0.0
+              , blur = 100.0
+              , color = rgba 0 0 0 0.2
+              }
+          , padding 64
           ]
           [ Inp.username
                 [ onEnter SubmitSettings
