@@ -37,7 +37,8 @@ import Alert  exposing (..)
 import Form  exposing (..)
 import Feed  exposing (..)
 import BasicValues exposing (..)
-import ZipList  exposing (..)
+import ZipList exposing (..)
+import Dropdown exposing (..)
 
 
 -- model
@@ -1046,8 +1047,8 @@ updateSettingsFormInit currentSettings =
   |> (Form.add << Text) firstNameFieldModel
   |> (Form.add << Text) lastNameFieldModel
   |> (Form.add << Text) emailFieldModel
-  |> Form.dropdownField "gender" ["Man", "Woman"]
-  |> Form.dropdownField "orientation" ["Homosexual", "Bisexual", "Heterosexual"]
+  -- |> Form.dropdownField "gender" ["Man", "Woman"]
+  -- |> Form.dropdownField "orientation" ["Homosexual", "Bisexual", "Heterosexual"]
   |> (Form.add << Text) biographyFieldModel
   |> Form.multiInputField "Tags" currentSettings.tags
 
@@ -1584,7 +1585,7 @@ viewPictUpdate model =
       , Inp.button
           [ padding 8
           , centerX
-          , Background.color (rgb 0 0 0)
+          , Background.color (rgb 0 0 139)
           , Font.color (rgb 255 255 255)
           ]
           { onPress = Just SelectReplacementPicture

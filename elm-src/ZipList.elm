@@ -8,6 +8,9 @@ module ZipList exposing
     , currentIndex, isValidIndex
     , jumpForward, jumpBackward
     , goTo, zipListDecoder
+    , map, indexedMap
+    , selectedMap, indexedSelectedMap
+    , removeCurrent, insert
     )
 
 {-| A `ZipList` is a collection which can be moved forward/backward and that exposes a single current element
@@ -74,6 +77,26 @@ current zipList =
 
         Zipper _ elem _ ->
             Just elem
+
+removeCurrent : ZipList a -> ZipList a
+removeCurrent ziplist =
+  case ziplist of
+    Empty -> Empty
+    Zipper before elem after ->
+      case (before, after) of
+        (_, head :: queue) ->
+          Zipper before head queue
+        (head :: queue, []) ->
+          Zipper queue head []
+        ([], []) ->
+          Empty
+
+insert : a -> ZipList a -> ZipList a
+insert newElem ziplist =
+  case ziplist of
+    Empty -> Zipper [] newElem []
+    Zipper before elem after ->
+      Zipper before newElem (elem :: after)
 
 
 {-| Move forward a `ZipList`
@@ -219,6 +242,33 @@ indexedMap func ziplist =
         (func index elem)
         (List.indexedMap
           (\ indexAf elemAf -> func (index + 1 + indexAf) elemAf )
+          after
+        )
+
+selectedMap : (Bool -> a -> b) -> ZipList a -> ZipList b
+selectedMap func ziplist =
+  case ziplist of
+    Empty -> Empty
+    Zipper before elem after ->
+      Zipper
+        (List.map (func False) before)
+        (func True elem)
+        (List.map (func False) after)
+
+indexedSelectedMap : (Int -> Bool -> a -> b) -> ZipList a -> ZipList b
+indexedSelectedMap func ziplist =
+  case ziplist of
+    Empty -> Empty
+    Zipper before elem after ->
+      let index = List.length before in
+      Zipper
+        (List.indexedMap
+          (\ indexBe elemBe -> func (index - 1 - indexBe) False elemBe )
+            before
+        )
+        (func index True elem)
+        (List.indexedMap
+          (\ indexAf elemAf -> func (index + 1 + indexAf) False elemAf )
           after
         )
 

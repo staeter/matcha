@@ -13,7 +13,7 @@ import Html.Events exposing (..)
 
 import SingleSlider as SS exposing (..)
 import DoubleSlider as DS exposing (..)
-import Dropdown as Dropd exposing (..)
+-- import Dropdown as Dropd exposing (..)
 import MultiInput as MultInput exposing (..)
 
 import Regex exposing (Regex)
@@ -34,7 +34,7 @@ type Field
   | Password TextFieldModel
   | DoubleSlider DoubleSliderFieldModel
   | SingleSlider SingleSliderFieldModel
-  | Dropdown DropdownFieldModel
+  -- | Dropdown DropdownFieldModel
   | Checkbox CheckboxFieldModel
   | Number NumberFieldModel
   | MultiInput MultiInputFieldModel
@@ -57,32 +57,32 @@ type alias CheckboxFieldModel =
   , text : String
   }
 
-type alias DropdownFieldModel =
-  { label : String
-  , value : Maybe String
-  , options : Dropd.Options InputMsg
-  }
+-- type alias DropdownFieldModel =
+--   { label : String
+--   , value : Maybe String
+--   , options : Dropd.Options InputMsg
+--   }
 
-defaultDropdownFieldModel : String -> List String -> DropdownFieldModel
-defaultDropdownFieldModel label options =
-  let
-    defaultOptions =
-      Dropd.defaultOptions DropdownMsg
-  in
-    { label = label
-    , value = List.head options
-    , options =
-        { items = options |> List.map
-            (\str ->
-                { value = str
-                , text = str
-                , enabled = True
-                }
-            )
-        , emptyItem = Nothing
-        , onChange = DropdownMsg
-        }
-    }
+-- defaultDropdownFieldModel : String -> List String -> DropdownFieldModel
+-- defaultDropdownFieldModel label options =
+--   let
+--     defaultOptions =
+--       Dropd.defaultOptions DropdownMsg
+--   in
+--     { label = label
+--     , value = List.head options
+--     , options =
+--         { items = options |> List.map
+--             (\str ->
+--                 { value = str
+--                 , text = str
+--                 , enabled = True
+--                 }
+--             )
+--         , emptyItem = Nothing
+--         , onChange = DropdownMsg
+--         }
+--     }
 
 type alias SingleSliderFieldModel =
   { label : String
@@ -172,9 +172,9 @@ singleSliderField : String -> (Float, Float) -> Form a -> Form a
 singleSliderField label (min, max) myForm =
   add (defaultSingleSliderFieldModel label (min, max) |> SingleSlider) myForm
 
-dropdownField : String -> List String -> Form a -> Form a
-dropdownField label options myForm =
-  add (defaultDropdownFieldModel label options |> Dropdown) myForm
+-- dropdownField : String -> List String -> Form a -> Form a
+-- dropdownField label options myForm =
+--   add (defaultDropdownFieldModel label options |> Dropdown) myForm
 
 checkboxField : String -> Bool -> String -> Form a -> Form a
 checkboxField label checked text myForm =
@@ -219,7 +219,7 @@ type InputMsg
   | DoubleSliderLowMsg Float
   | DoubleSliderHighMsg Float
   | SingleSliderMsg Float
-  | DropdownMsg (Maybe String)
+  -- | DropdownMsg (Maybe String)
   | CheckboxMsg Bool
   | NumberMsg Int
   | MultiInputMsg MultInput.Msg
@@ -282,9 +282,9 @@ updateField msg myField =
       ( SingleSlider { model | value = SS.update newVal model.value }
       , Cmd.none )
 
-    (Dropdown model, DropdownMsg newVal) ->
-      ( Dropdown { model | value = newVal }
-      , Cmd.none )
+    -- (Dropdown model, DropdownMsg newVal) ->
+    --   ( Dropdown { model | value = newVal }
+    --   , Cmd.none )
 
     (Checkbox model, CheckboxMsg newVal) ->
       (Checkbox { model | value = newVal }, Cmd.none)
@@ -337,11 +337,11 @@ httpPostFieldBodyPart myField =
       |> String.fromFloat
       |> Http.stringPart model.label
       |> List.singleton
-    Dropdown model ->
-      model.value
-      |> Maybe.map
-        (\val -> stringPart model.label val |> List.singleton)
-      |> Maybe.withDefault []
+    -- Dropdown model ->
+    --   model.value
+    --   |> Maybe.map
+    --     (\val -> stringPart model.label val |> List.singleton)
+    --   |> Maybe.withDefault []
     Checkbox model ->
       if model.value
       then Http.stringPart model.label "True" |> List.singleton
@@ -417,9 +417,9 @@ view_field id myField =
       SS.view model.value
       |> Html.map (Input id)
 
-    Dropdown model ->
-      Dropd.dropdown model.options [] model.value
-      |> Html.map (Input id)
+    -- Dropdown model ->
+    --   Dropd.dropdown model.options [] model.value
+    --   |> Html.map (Input id)
 
     Checkbox model ->
       div []
