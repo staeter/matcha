@@ -33,6 +33,8 @@ import Element.Border as Border exposing (..)
 
 import MultiInput exposing (..)
 
+-- import RemoteData exposing (..)
+
 
 -- modules
 
@@ -349,11 +351,13 @@ type Msg
   | SubmitSettings
   | ResultSettings (Result Http.Error (Result String String))
   -- user pictures update
-  | SelectImage Int
+  | SelectImage (ZipList (Int, String))
   | RemovePicture
   | SelectReplacementPicture
   | ReplacePicture File
   | ReceivePicturesUpdate (Result Http.Error (DataAlert (ZipList (Int, String))))
+  -- user details
+  | InputUserDetailsSelectImage (ZipList (String, String))
   -- other
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
   | FiltersForm FiltersFormMsg
@@ -1013,12 +1017,12 @@ update msg model =
           , Cmd.none
           )
 
-    (Logged lmodel, Settings, SelectImage index) ->
+    (Logged lmodel, Settings, SelectImage newZipList) ->
       case lmodel.pictures of
         Nothing -> (model, Cmd.none)
         Just pictures ->
           ( { model | access = Logged { lmodel | pictures = Just
-              (ZipList.goTo index pictures)
+              newZipList
             } }
           , Cmd.none
           )
@@ -1050,6 +1054,16 @@ update msg model =
           )
         Error error ->
           ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
+
+    (Logged lmodel, User _, InputUserDetailsSelectImage newZipList) ->
+      case lmodel.userDetails of
+        Nothing -> (model, Cmd.none)
+        Just userDetails ->
+          ( { model | access = Logged { lmodel | userDetails = Just { userDetails |
+              pictures = newZipList
+            } } }
           , Cmd.none
           )
 
@@ -1551,7 +1565,7 @@ type alias UserDetails =
   , biography : String
   , birth : String
   , last_log : LastLog
-  , pictures : List String
+  , pictures : ZipList (String, String)
   , popularity_score : Int
   , tags : List String
   , liked : Bool
@@ -1592,6 +1606,8 @@ userDetailsDecoder =
     , birth = birth
     , last_log = last_log
     , pictures = pictures
+                  |> List.map (\ elem -> ("", elem) )
+                  |> ZipList.fromList
     , popularity_score = popularity_score
     , tags = tags
     , liked = liked
@@ -1797,7 +1813,7 @@ viewPictUpdate model =
       ]
       [ el  [ centerX ]
             ( model.pictures
-              |> Maybe.map (\p-> div [] [ viewGalery p ])
+              |> Maybe.map (\p-> div [] [ viewGalery SelectImage p ])
               |> Maybe.withDefault (div [] [])
               |> El.html
             )
@@ -1903,11 +1919,8 @@ viewHeader route lmodel =
 viewUserDetails : UserDetails -> Html Msg
 viewUserDetails userDetails =
   div []
-      [ div []
-          ( List.map
-              (\p-> img [ src p ] [])
-              userDetails.pictures
-          )
+      [ userDetails.pictures
+        |> viewGalery InputUserDetailsSelectImage
       , h2 [] [ Html.text userDetails.pseudo ]
       , h3 [] [ Html.text (userDetails.first_name ++ " " ++ userDetails.last_name) ]
       , Html.text (orientationToString userDetails.orientation ++ " " ++ genderToString userDetails.gender )
@@ -2337,36 +2350,31 @@ viewFeed lmodel =
         , viewFeedPageNav lmodel
         ]
 
-viewGalery : ZipList (Int, String) -> Html Msg
-viewGalery pictures =
-  let maybeIndexSelected = ZipList.currentIndex pictures in
-  case maybeIndexSelected of
-    Nothing -> div [] []
-    Just indexSelected ->
-      div [ class "w"]
-          [ div [ class "ts" ]
-                ( pictures
-                  |> ZipList.toList
-                  |> List.indexedMap
-                    (\ index pict ->
-                      if index < 5
-                      then viewGaleryElem
-                          (indexSelected < 5 && indexSelected == index)
-                          index pict
-                      else []
+viewGalery : (ZipList (a, String) -> Msg) -> ZipList (a, String) -> Html Msg
+viewGalery toMsg pictures =
+  div [ class "w"]
+      [ div [ class "ts" ]
+            ( pictures
+              |> ZipList.indexedSelectedMap
+                    ( viewGaleryElem
+                        (\ index ->
+                            ZipList.goTo index pictures
+                            |> toMsg
+                        )
                     )
-                  |> List.concat
-                )
-          ]
+              |> ZipList.toList
+              |> List.concat
+            )
+      ]
 
-viewGaleryElem : Bool -> Int -> (Int, String) -> List (Html Msg)
-viewGaleryElem checked index (id, pict) =
+viewGaleryElem : (Int -> Msg) -> Int -> Bool -> (a, String) -> List (Html Msg)
+viewGaleryElem toMsg index checked (_, pict) =
   [ input [ Html.Attributes.id ("c" ++ String.fromInt(index + 1))
           , Html.Attributes.class "c"
           , Html.Attributes.type_ "radio"
           , Html.Attributes.name "ts"
           , Html.Attributes.checked checked
-          , Html.Events.onClick (SelectImage index)
+          , Html.Events.onClick (toMsg index)
           ] []
   , label [ Html.Attributes.class "t"
           , Html.Attributes.for ("c" ++ String.fromInt(index + 1))
