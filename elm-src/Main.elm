@@ -105,6 +105,7 @@ type alias AModel =
   , signupPassword : String
   , signupConfirm : String
   -- retreive
+  , retreivalRequestEmail : String
   , accountRetrievalForm : Maybe (Form (Result String String))
   -- confirm
   , accountConfirmationForm : Maybe (Form (Result String String))
@@ -137,7 +138,7 @@ init flags url key =
 anonymousAccessInit : Route -> (Access, Cmd Msg)
 anonymousAccessInit route =
   ( case route of
-      Retreive a b -> Anonymous
+      RetreiveLink a b -> Anonymous
         { signinPseudo = ""
         , signinPassword = ""
         , signupPseudo = ""
@@ -146,6 +147,7 @@ anonymousAccessInit route =
         , signupEmail = ""
         , signupPassword = ""
         , signupConfirm = ""
+        , retreivalRequestEmail = ""
         , accountRetrievalForm = Just (requestAccountRetrievalForm a b)
         , accountConfirmationForm = Nothing
         }
@@ -158,6 +160,7 @@ anonymousAccessInit route =
         , signupEmail = ""
         , signupPassword = ""
         , signupConfirm = ""
+        , retreivalRequestEmail = ""
         , accountRetrievalForm = Nothing
         , accountConfirmationForm = Just (requestAccountConfirmationForm a b)
         }
@@ -170,6 +173,7 @@ anonymousAccessInit route =
         , signupEmail = ""
         , signupPassword = ""
         , signupConfirm = ""
+        , retreivalRequestEmail = ""
         , accountRetrievalForm = Nothing
         , accountConfirmationForm = Nothing
         }
@@ -267,7 +271,8 @@ type Route
   | User Int
   | Notifs
   | Chats
-  | Retreive Int Int
+  | Retreive
+  | RetreiveLink Int Int
   | Confirm Int Int
   | Settings
   | Test
@@ -282,7 +287,8 @@ routeParser =
     , Parser.map User     (Parser.s "user" </> Parser.int)
     , Parser.map Notifs   (Parser.s "notifs")
     , Parser.map Chats    (Parser.s "chat")
-    , Parser.map Retreive (Parser.s "retreive" </> Parser.int </> Parser.int)
+    , Parser.map Retreive (Parser.s "retreive")
+    , Parser.map RetreiveLink (Parser.s "retreive" </> Parser.int </> Parser.int)
     , Parser.map Confirm  (Parser.s "confirm" </> Parser.int </> Parser.int)
     , Parser.map Settings (Parser.s "settings")
     , Parser.map Test (Parser.s "test")
@@ -327,6 +333,10 @@ type Msg
   | InputPwUpdateConfirm String
   | SubmitPwUpdate
   | ResultPwUpdate (Result Http.Error (Result String String))
+  -- retreiveal request
+  | InputRetreivalRequestEmail String
+  | SubmitRetreivalRequest
+  | ResultRetreivalRequest (Result Http.Error (Result String String))
   -- settings
   | InputSettingsPseudo String
   | InputSettingsFirstname String
@@ -411,7 +421,7 @@ update msg model =
     (Anonymous amodel, _, UrlChange url) ->
       let newRoute = urlToRoute url in
       case newRoute |> Debug.log "urlChange" of
-        Retreive a b ->
+        RetreiveLink a b ->
           let
             accountRetrievalForm = Just
               (requestAccountRetrievalForm a b)
@@ -600,6 +610,39 @@ update msg model =
           ( model
             |> (Alert.put << Just << Alert.successAlert) message
           , Cmd.none
+          )
+        Ok (Err message) ->
+          ( model
+            |> (Alert.put << Just << Alert.invalidImputAlert) message
+          , Cmd.none
+          )
+        Err error ->
+          ( model
+            |> (Alert.put << Just << Alert.serverNotReachedAlert) error
+          , Cmd.none
+          )
+
+
+    -- request retreival
+
+    (Anonymous amodel, Retreive, InputRetreivalRequestEmail email) ->
+      ( { model | access = Anonymous { amodel |
+          retreivalRequestEmail = email
+        }}
+      , Cmd.none
+      )
+
+    (Anonymous amodel, Retreive, SubmitRetreivalRequest) ->
+      ( model
+      , submitRetreivalRequest amodel
+      )
+
+    (Anonymous amodel, _, ResultRetreivalRequest result) ->
+      case result of
+        Ok (Ok message) ->
+          ( model
+            |> (Alert.put << Just << Alert.successAlert) message
+          , Nav.pushUrl model.key "/signin"
           )
         Ok (Err message) ->
           ( model
@@ -1476,6 +1519,18 @@ requestAccountRetrievalForm a b =
   |> Form.passwordField "newpw"
   |> Form.passwordField "confirm"
 
+type alias RetreivalRequestModel a =
+  { a | retreivalRequestEmail : String }
+
+submitRetreivalRequest : RetreivalRequestModel a -> Cmd Msg
+submitRetreivalRequest model =
+  Http.post
+      { url = "http://localhost/control/password_retreival_request.php"
+      , body = multipartBody
+                [ stringPart "email" model.retreivalRequestEmail ]
+      , expect = Http.expectJson ResultRetreivalRequest resultMessageDecoder
+      }
+
 
 -- confirm account
 
@@ -1576,7 +1631,16 @@ view model =
         ]
       }
 
-    (Anonymous amodel, Retreive a b) ->
+    (Anonymous amodel, Retreive) ->
+      { title = "matcha - retreive password"
+      , body =
+        [ Alert.view model
+        , retreivealRequestView amodel
+          |> El.layout []
+        ]
+      }
+
+    (Anonymous amodel, RetreiveLink a b) ->
       { title = "matcha - retreive password"
       , body =
         [ Alert.view model
@@ -2090,6 +2154,38 @@ viewPwUpdate model =
                 { onPress = Just SubmitPwUpdate
                 , label = El.text "update password"
                 }
+          ]
+
+retreivealRequestView : RetreivalRequestModel a -> Element Msg
+retreivealRequestView model =
+  column  [ spacing 32
+          , centerX
+          , centerY
+          ]
+          [ Inp.email
+                [ onEnter SubmitRetreivalRequest
+                , padding 8
+                ]
+                { onChange = InputRetreivalRequestEmail
+                , text = model.retreivalRequestEmail
+                , placeholder = Inp.placeholder [] (El.text "email") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "email : ")
+                }
+          , Inp.button
+                [ padding 0
+                , centerX
+                ]
+                { onPress = Just SubmitRetreivalRequest
+                , label = El.text "retreive my account"
+                }
+          , a [ href "/signin" ]
+              [ Html.text "You remember your password?" ]
+            |> El.html
+            |> El.el  [ padding 32
+                      , centerX
+                      ]
           ]
 
 settingsView : SettingsModel a -> Element Msg
