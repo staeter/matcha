@@ -5,8 +5,8 @@ module Main exposing (..)
 
 import Browser exposing (application, UrlRequest)
 import Html  exposing (..)
-import Html.Attributes  exposing (..)
-import Html.Events  exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 
 import Url  exposing (..)
 import Url.Parser as Parser  exposing (..)
@@ -34,6 +34,11 @@ import Element.Border as Border exposing (..)
 import MultiInput exposing (..)
 
 import RemoteData exposing (RemoteData(..))
+
+import Bootstrap.CDN as CDN exposing (stylesheet)
+import Bootstrap.Card as Card exposing (..)
+import Bootstrap.Carousel as Carousel exposing (..)
+import Bootstrap.Carousel.Slide as Slide exposing (..)
 
 
 -- modules
@@ -357,7 +362,7 @@ type Msg
   | ReplacePicture File
   | ReceivePicturesUpdate (Result Http.Error (DataAlert (ZipList (Int, String))))
   -- user details
-  | InputUserDetailsSelectImage (ZipList (String, String))
+  | InputUserDetailsSelectImage Carousel.Msg
   -- other
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
   | FiltersForm FiltersFormMsg
@@ -1058,11 +1063,11 @@ update msg model =
           , Cmd.none
           )
 
-    (Logged lmodel, User _, InputUserDetailsSelectImage newZipList) ->
+    (Logged lmodel, User _, InputUserDetailsSelectImage carouselMsg) ->
       case lmodel.userDetails of
         Success userDetails ->
           ( { model | access = Logged { lmodel | userDetails = Success { userDetails |
-              pictures = newZipList
+              carouselState = Carousel.update carouselMsg userDetails.carouselState
             } } }
           , Cmd.none
           )
@@ -1566,7 +1571,8 @@ type alias UserDetails =
   , biography : String
   , birth : String
   , last_log : LastLog
-  , pictures : ZipList (String, String)
+  , pictures : List String
+  , carouselState : Carousel.State
   , popularity_score : Int
   , tags : List String
   , liked : Bool
@@ -1607,8 +1613,7 @@ userDetailsDecoder =
     , birth = birth
     , last_log = last_log
     , pictures = pictures
-                  |> List.map (\ elem -> ("", elem) )
-                  |> ZipList.fromList
+    , carouselState = Carousel.initialState
     , popularity_score = popularity_score
     , tags = tags
     , liked = liked
@@ -1720,8 +1725,9 @@ view model =
               Loading -> "Loading..."
           )
       , body =
-          [ viewHeader model.route lmodel
-            |> List.singleton
+          [ [ CDN.stylesheet
+            , viewHeader model.route lmodel
+            ]
           , case lmodel.userDetails of
               Success ud ->
                 [ Alert.view model
@@ -1943,8 +1949,10 @@ viewHeader route lmodel =
 viewUserDetails : UserDetails -> Html Msg
 viewUserDetails userDetails =
   div []
-      [ userDetails.pictures
-        |> viewGalery InputUserDetailsSelectImage
+      [ viewCarousel
+          userDetails.pictures
+          userDetails.carouselState
+          InputUserDetailsSelectImage
       , h2 [] [ Html.text userDetails.pseudo ]
       , h3 [] [ Html.text (userDetails.first_name ++ " " ++ userDetails.last_name) ]
       , Html.text (orientationToString userDetails.orientation ++ " " ++ genderToString userDetails.gender )
@@ -2411,6 +2419,38 @@ viewGaleryElem toMsg index checked (_, pict) =
           [ img [ Html.Attributes.src pict ] []
           ]
   ]
+
+viewCarousel : List String -> Carousel.State -> (Carousel.Msg -> Msg) -> Html Msg
+viewCarousel imgList state toMsg =
+  Carousel.config toMsg
+    [ Html.Attributes.style
+        "width" "256px"
+    , Html.Attributes.style
+        "height" "256px"
+    ]
+  |> Carousel.withControls
+  |> Carousel.withIndicators
+  |> Carousel.slides
+      ( imgList
+        |> List.map
+            (\ img ->
+              Slide.config
+                [ Html.Attributes.style
+                    "background-image" ("url(\"" ++ img ++ "\")")
+                , Html.Attributes.style
+                    "background-size" "cover"
+                , Html.Attributes.style
+                    "background-position" "50% 50%"
+                , Html.Attributes.style
+                    "background-repeat" "no-repeat"
+                , Html.Attributes.style
+                    "width" "256px"
+                , Html.Attributes.style
+                    "height" "256px"
+                ]
+                (Slide.customContent (div [] [])) )
+      )
+  |> Carousel.view state
 
 -- subscriptions
 
