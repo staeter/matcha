@@ -33,7 +33,7 @@ import Element.Border as Border exposing (..)
 
 import MultiInput exposing (..)
 
--- import RemoteData exposing (..)
+import RemoteData exposing (RemoteData(..))
 
 
 -- modules
@@ -69,7 +69,7 @@ type alias LModel =
   , feedPageAmount : Int
   , feedElemAmount : Int
   -- user
-  , userDetails : Maybe UserDetails
+  , userDetails : RemoteData String UserDetails
   -- header
   , unreadNotifsAmount : Int
   -- notifs
@@ -191,7 +191,7 @@ loggedAccessInit route pseudo picture =
       , feedPageNumber = 0
       , feedPageAmount = 0
       , feedElemAmount = 0
-      , userDetails = Nothing
+      , userDetails = NotAsked
       , unreadNotifsAmount = 0
       , notifs = []
       , chats = []
@@ -858,12 +858,13 @@ update msg model =
                         then { profile | liked = newLikeStatus }
                         else profile
                       )
-                  , userDetails = lmodel.userDetails |> Maybe.map
-                      (\usrd->
-                        if usrd.id == id
-                        then { usrd | liked = newLikeStatus }
-                        else usrd
-                      )
+                  , userDetails =
+                      case lmodel.userDetails of
+                        Success usrd ->
+                          if usrd.id == id
+                          then Success { usrd | liked = newLikeStatus }
+                          else Success usrd
+                        smthg -> smthg
               }
             }
           , Cmd.none
@@ -881,12 +882,12 @@ update msg model =
       case toWebResultDataAlert result of
         AvData userDetails alert ->
           ( { model | alert = alert , access = Logged
-              { lmodel | userDetails = Just userDetails }
+              { lmodel | userDetails = Success userDetails }
             }
           , Cmd.none
           )
         NoData alert ->
-          ( { model | access = Logged { lmodel | userDetails = Nothing } }
+          ( { model | access = Logged { lmodel | userDetails = RemoteData.Failure "Access denied" } }
             |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
           , Cmd.none
           )
@@ -1059,13 +1060,13 @@ update msg model =
 
     (Logged lmodel, User _, InputUserDetailsSelectImage newZipList) ->
       case lmodel.userDetails of
-        Nothing -> (model, Cmd.none)
-        Just userDetails ->
-          ( { model | access = Logged { lmodel | userDetails = Just { userDetails |
+        Success userDetails ->
+          ( { model | access = Logged { lmodel | userDetails = Success { userDetails |
               pictures = newZipList
             } } }
           , Cmd.none
           )
+        _ -> (model, Cmd.none)
 
     _ -> ( model, Cmd.none )
 
@@ -1712,16 +1713,39 @@ view model =
 
     (Logged lmodel, User id) ->
       { title = "matcha - " ++
-          ( lmodel.userDetails
-            |> Maybe.map (\ud -> ud.pseudo)
-            |> Maybe.withDefault "Loading..."
+          ( case lmodel.userDetails of
+              Success ud -> ud.pseudo
+              RemoteData.Failure err -> "error: " ++ err
+              NotAsked -> "Requesting..."
+              Loading -> "Loading..."
           )
       , body =
           [ viewHeader model.route lmodel
-          , lmodel.userDetails
-            |> Maybe.map viewUserDetails
-            |> Maybe.withDefault ( Html.text "Loading..." )
-          ]
+            |> List.singleton
+          , case lmodel.userDetails of
+              Success ud ->
+                [ Alert.view model
+                , viewUserDetails ud
+                ]
+              RemoteData.Failure err ->
+                model
+                |> (Alert.put << Just << Alert.invalidImputAlert)
+                    ("error: " ++ err)
+                |> Alert.view
+                |> List.singleton
+              NotAsked ->
+                model
+                |> (Alert.put << Just << Alert.invalidImputAlert)
+                    "Requesting our server. Please reload the page if it takes too long."
+                |> Alert.view
+                |> List.singleton
+              Loading ->
+                model
+                |> (Alert.put << Just << Alert.alert "DarkBlue")
+                    "Loading..."
+                |> Alert.view
+                |> List.singleton
+          ] |> List.concat
       }
 
     (Logged lmodel, Notifs) ->
