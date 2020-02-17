@@ -31,6 +31,8 @@ import Element.Events as Ev exposing (..)
 import Element.Font as Font exposing (..)
 import Element.Border as Border exposing (..)
 
+import MultiInput exposing (..)
+
 
 -- modules
 
@@ -85,6 +87,8 @@ type alias LModel =
   , settingsGender : ZipList (Gender, String)
   , settingsOrientation : ZipList (BasicValues.Orientation, String)
   , settingsBiography : String
+  , settingsTagsState : MultiInput.State
+  , settingsTagsItems : List String
   -- pictures settings
   , pictures : Maybe (ZipList (Int, String))
   }
@@ -196,6 +200,8 @@ loggedAccessInit route pseudo picture =
       , settingsGender = ZipList.fromList genderList
       , settingsOrientation = ZipList.fromList orientationList
       , settingsBiography = ""
+      , settingsTagsState = MultiInput.init "settings-tags"
+      , settingsTagsItems = []
       , pictures = Nothing
       }
   , case route of
@@ -329,6 +335,7 @@ type Msg
   | InputSettingsGender (ZipList (Gender, String))
   | InputSettingsOrientation (ZipList (BasicValues.Orientation, String))
   | InputSettingsBiography String
+  | InputSettingsTags MultiInput.Msg
   | SubmitSettings
   | ResultSettings (Result Http.Error (Result String String))
   -- user pictures update
@@ -657,6 +664,20 @@ update msg model =
       , Cmd.none
       )
 
+    (Logged lmodel, Settings, InputSettingsTags multInputMsg) ->
+      let
+        ( nextState, nextItems, nextCmd ) =
+            MultiInput.update
+              { separators = [ "\n", "\t", " ", "," ] }
+              multInputMsg lmodel.settingsTagsState lmodel.settingsTagsItems
+      in
+        ( { model | access = Logged { lmodel
+            | settingsTagsItems = nextItems
+            , settingsTagsState = nextState
+          } }
+        , nextCmd |> Cmd.map InputSettingsTags
+        )
+
     (Logged lmodel, Settings, SubmitSettings) ->
       ( model
       , submitSettings lmodel
@@ -935,6 +956,7 @@ update msg model =
                     ZipList.fromList orientationList
                     |> ZipList.goToFirst (\ elem -> currentSettings.orientation == Tuple.first elem )
                 , settingsBiography = currentSettings.biography
+                , settingsTagsItems = currentSettings.tags
               }
             } |> Alert.put alert
           , Cmd.none
@@ -1122,6 +1144,8 @@ type alias SettingsModel a =
   , settingsGender : ZipList (Gender, String)
   , settingsOrientation : ZipList (BasicValues.Orientation, String)
   , settingsBiography : String
+  , settingsTagsState : MultiInput.State
+  , settingsTagsItems : List String
   }
 
 submitSettings : SettingsModel a -> Cmd Msg
@@ -2152,6 +2176,15 @@ settingsView model =
                             (El.text "biography : ")
                 , spellcheck = True
                 }
+          , el  []
+                ( MultiInput.view
+                    { placeholder = "tags"
+                    , toOuterMsg = InputSettingsTags
+                    , isValid = matches "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    }
+                    [] model.settingsTagsItems model.settingsTagsState
+                  |> El.html
+                )
           , Inp.button
                 [ padding 0
                 , centerX
@@ -2257,13 +2290,12 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   case model.access of
     Anonymous amodel ->
-      anonymousAccess_sub amodel
+      Sub.none
     Logged lmodel ->
-      Time.every 3000 Tick
-
-anonymousAccess_sub : AModel -> Sub Msg
-anonymousAccess_sub amodel =
-  Sub.none
+      [ Time.every 3000 Tick
+      , MultiInput.subscriptions lmodel.settingsTagsState
+        |> Sub.map InputSettingsTags
+      ] |> Sub.batch
 
 
 -- main
