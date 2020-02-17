@@ -1,4 +1,17 @@
 <?php
+
+
+// echo '{
+//   "data" : {
+//     "pseudo" : "sosa",
+//     "picture" : "Pictures/default-profile-picture.jpg"
+//   },
+//   "alert" : {
+//     "color" : "DarkGreen",
+//     "message" : "Welcome!"
+//   }
+// }';
+
 session_start();
 require '../model/classes/User.class.php';
 require '../model/functions/hash_password.php';
@@ -6,23 +19,20 @@ require '../model/functions/hash_password.php';
 try {
   $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
   $usr = new User($_POST['pseudo'], hash_password($_POST['password']), $db);
-  if ($usr->is_validated_account())
-  {
 
+
+  if ($usr->is_validated_account())
       $x = 1;
+  else {
+    $x = 6;
   }
-  else
-  {
-			$x = 6;
-	}
-  if ($x = 1)
+  if ($x == 1)
   {
     $_SESSION['id'] = $usr->get_id();
     $_SESSION['pseudo'] = $usr->get_pseudo();
     $_SESSION['mail'] = $usr->get_email();
     $_SESSION['user'] = serialize($usr);
     $usr->set_log(true);
-
   }
 
 } catch (\Exception $e) {
@@ -39,56 +49,84 @@ try {
 
 if ($x == 1){
 
-      echo '{
-        "result" : "Success",
-        "message" : "Welcome !"
-      }';
+  echo '{
+    "data" : {
+      "pseudo" : "sosa",
+      "picture" : "Pictures/default-profile-picture.jpg"
+    },
+    "alert" : {
+      "color" : "DarkGreen",
+      "message" : "Welcome!"
+    }
+  }';
     }
 else if ($x == 2){
   echo '{
-    "result" : "Failure",
-    "message" : "Mot de passe and/or password doesnt match !"
+    "data" : {},
+    "alert" : {
+      "color" : "DarkRed",
+      "message" : "Password and user doesnt match"
+    }
   }';
 
 }
 else if ($x == 3)
 {
   echo '{
-    "result" : "Failure",
-    "message" : "Your pseudo doesnt exist!"
+    "data" : {},
+    "alert" : {
+      "color" : "DarkRed",
+      "message" : "Your pseudo doesnt exist!"
+    }
   }';
 
 }
 else if ($x == 4)
 {
   echo '{
-    "result" : "Failure",
-    "message" : "Votre password est invalide ! .'.$e->getMessage().'"
+    "data" : {},
+    "alert" : {
+      "color" : "DarkRed",
+      "message" : "Your password is invalid"
+    }
   }';
+
 
 }
 else if ($x == 5)
 {
   echo '{
-    "result" : "Failure",
-    "message" : "La connexion a la db a échoué ! .'.$e->getMessage().'"
+    "data" : {},
+    "alert" : {
+      "color" : "DarkRed",
+      "message" : "Connection with DB failed!"
+    }
   }';
+
 
 }
 else if ($x == 6)
 {
   echo '{
-    "result" : "Failure",
-    "message" : "Vous devez confirmer votre compte pour vous login"
+    "data" : {},
+    "alert" : {
+      "color" : "DarkRed",
+      "message" : "U must confirm ur account for login!"
+    }
   }';
+
 
 }
 
 else {
   echo '{
-    "result" : "Failure",
-    "message" : "probleme non determiné/gerer '.$e->getCode().'"
+    "data" : {},
+    "alert" : {
+      "color" : "DarkRed",
+      "message" : "Undefined problem occur, pls contact the admin"
+    }
   }';
+
 }
 
 

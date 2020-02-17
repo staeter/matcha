@@ -128,7 +128,7 @@ foreach ($arraytoconvertinJson as $key => $value) {
   //   echo '<br><br><br>';
   //     echo '<br><br><br>';
     //unread
-  if ($raw_message[$key]['msg_read'] == 0)
+  if ($raw_message[$key]['msg_read'] != 0)
     $unread = 'false';
   else
     $unread = 'true';
@@ -138,8 +138,8 @@ foreach ($arraytoconvertinJson as $key => $value) {
   {
         "id" : '.$arraytoconvertinJson[$key]['id_user_receiving'].',
         "pseudo" : "'.$ret['pseudo'].'",
-        "picture" : "/data/joneysPick.png",
-        "last_log" : "'.$ret['last_log'].'",
+        "picture" : "/Pictures/def.jpg",
+        "last_log" : "Now",
         "last_message" : "'.$raw_message[$key]['content'].'",
         "unread" : '.$unread.'
       },
@@ -152,6 +152,7 @@ $jsondata = substr($jsondata, 0, -4);
 // echo '<br><br>';
 
 $jsondata .= $findestring;
+
 echo $jsondata;
 
 

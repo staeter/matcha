@@ -8,7 +8,7 @@
   $x = 0;
 
 	try {
-		$usr = User::receive_account_verification_request($_POST['a'], $_POST['b'], $db);
+		$usr = User::receive_account_verification_request($_GET['a'], $_GET['b'], $db);
     $x = 1;
 
 	} catch (Exception $e) {
@@ -24,6 +24,7 @@
 		"message": "Votre compte à bien été vérfié."
 	}
 }';
+//header('Location: ../index.php ');
         }
     else if ($x == 0){
       echo '{
@@ -34,7 +35,7 @@
 		"message": "Un problème est arrivé dans la validation de votre compte !"
 	}
 }';
-
+//  header('Location: ../index.php ');
     }
 // a b
 /*

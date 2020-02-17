@@ -3,7 +3,7 @@
 
 # single page web app
 LoadModule rewrite_module modules/mod_rewrite.so
-<Directory "C:/WorkSpace/matcha">
+<Directory "/Applications/mampstack-5.6.40-0/apache2/htdocs">
 	RewriteEngine On
 	# set the base URL prefix
 	RewriteBase /

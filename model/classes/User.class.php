@@ -372,7 +372,7 @@
 		{
 		  $query = ('UPDATE user SET orientation = :orientation WHERE id_user = :id');
 		  $this->_db->query($query, array(':orientation' => $datatoinsert, ':id' => $this->_id));
-		  $this->_db->execute();
+
 
 		}
 
@@ -380,7 +380,7 @@
 		{
 		  $query = ('UPDATE user SET biography = :bio WHERE id_user = :id');
 		  $this->_db->query($query, array(':bio' => $datatoinsert, ':id' => $this->_id));
-		  $this->_db->execute();
+
 		}
 
 		public function set_last_log()
@@ -396,28 +396,28 @@
 		{
 			$query = ('UPDATE user SET birth = :data WHERE id_user = :id');
 		 	$this->_db->query($query, array(':data' => $data, ':id' => $this->_id));
-		 	$this->_db->execute();
+
 		}
 
 		public function set_popularity_score($value)
 		{
 			$query = ('UPDATE user SET popularity_score = :value WHERE id_user = :id');
 		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
-		 	$this->_db->execute();
+
 		}
 
 		public function set_first_name($value)
 		{
 			$query = ('UPDATE user SET firstname = :value WHERE id_user = :id');
 		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
-		 	$this->_db->execute();
+
 		}
 
 		public function set_last_name($value)
 		{
 			$query = ('UPDATE user SET lastname = :value WHERE id_user = :id');
 		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
-		 	$this->_db->execute();
+
 		}
 
 
@@ -575,7 +575,7 @@
 		// liked OK
 		// match OK mais pas encore utiliser
 
-	// fonction qui notif quand like & unlike 	
+	// fonction qui notif quand like & unlike
 		// profile viewed OK mais pas encore utiliser
 		// new message OK
 		// dislike OK
@@ -612,6 +612,12 @@
 			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
 		}
 
+		public function set_all_notif_readed()
+		{
+			$query = 'UPDATE `notifications` SET readed = :val WHERE `id_user` = :id';
+			$this->_db->query($query, array(':val' => true, ':id' => $this->_id));
+		}
+
 
 												//GET
 
@@ -620,7 +626,7 @@
 		{
 			$query = ('SELECT *  FROM `notifications` WHERE id_user = :id');
 				// ORDER BY date DESC');
-			$this->_db->query($query, array(':id' => $this->_pseudo));
+			$this->_db->query($query, array(':id' => $this->_id));
 			$row = $this->_db->fetchAll();
 			if ($row === false) {
 				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
@@ -630,16 +636,43 @@
 
 		public function get_count_notif_user_connected()
 		{
-			$query = ('SELECT *  FROM `notifications` WHERE id_user = :id');
+			$query = ('SELECT *  FROM `notifications` WHERE id_user = :id AND readed = :readed');
 				// ORDER BY date DESC');
-			$this->_db->query($query, array(':id' => $this->_pseudo));
+			$this->_db->query($query, array(':id' => $this->_id, ':readed' => false));
 			$row = $this->_db->rowCount();
-
 			return $row;
-
 		}
 
 		// profile viewed
+
+
+
+
+		/*
+		** ------------------- TAGS ---------------------
+		*/
+
+			public function get_tag()
+			{
+				$query = 'SELECT * FROM `ìntrests` WHERE id_user = :id';
+				$this->_db->query($query, array(':id' => $this->_id));
+				$row = $this->_db->fetch();
+			 	if ($row === false) {
+				 throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			 	}
+				return $row;
+			}
+
+			public function set_tag($string)
+			{
+				$query = 'INSERT INTO `ìntrests` (id_user, tags) VALUES (:id, :string)';
+				$this->_db->query($query, array(':id' => $this->_id, ':string' => $string));
+				$row = $this->_db->fetch();
+			 	if ($row === false) {
+				 throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			 	}
+				return 1;
+			}
 
 
 		/*

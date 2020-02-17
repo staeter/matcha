@@ -39,11 +39,9 @@ else {
  if ($usr->is_id_exist($_POST['id']) == FALSE)
  {
    echo '{
-   "result" : "Failure",
-   "message" : "The id doesnt exist",
    "data" : {
-     "newLikeStatus" : false
-   },
+
+   }},
    "alert" : {
      "color" : "DarkRed",
      "message" : "the id doesnt exist!"
@@ -60,7 +58,7 @@ if ($ret == 1)
   echo '{
   "data" : {
     "id" : "'.$_POST['id'].'",
-    "newLikeStatus" : false,
+    "newLikeStatus" : false
 
   },
   "alert" : {

@@ -26,9 +26,8 @@ else {
 
   // message d erreur non pris en compte car elm attend un field avec data
   echo '{
- "result": "Failure",
- "message": "All information of the user isnt set.",
- "alert": {
+  "data": {},
+  "alert": {
   "color": "DarkRed",
   "message": "Cant get information because user DOESNT EXISTS"}
  }';
@@ -54,9 +53,8 @@ if (isset($row))
   if (empty($row['orientation']) || empty($row['biography']))
   {
     echo '{
-   "result": "Failure",
-   "message": "All information of the user isnt set.",
-   "alert": {
+    "data": {},
+    "alert": {
     "color": "DarkRed",
     "message": "Cant get information because user didnt give it"}
    }';
@@ -120,8 +118,7 @@ $usr->set_a_notif_for_profile_viewed($_POST['id']);
 }
 else {
  echo '{
-"result": "Failure",
-"message": "An error occur to provide user s information.",
+"data": {},
 "alert": {
  "color": "DarkRed",
  "message": "Cant get information of the user the row who must contain all info do not exist"}
