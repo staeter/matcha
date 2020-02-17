@@ -417,7 +417,7 @@
 		{
 			$query = ('UPDATE user SET lastname = :value WHERE id_user = :id');
 		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
-		 	
+
 		}
 
 
@@ -644,6 +644,35 @@
 		}
 
 		// profile viewed
+
+
+
+
+		/*
+		** ------------------- TAGS ---------------------
+		*/
+
+			public function get_tag()
+			{
+				$query = 'SELECT * FROM `ìntrests` WHERE id_user = :id';
+				$this->_db->query($query, array(':id' => $this->_id));
+				$row = $this->_db->fetch();
+			 	if ($row === false) {
+				 throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			 	}
+				return $row;
+			}
+
+			public function set_tag($string)
+			{
+				$query = 'INSERT INTO `ìntrests` (id_user, tags) VALUES (:id, :string)';
+				$this->_db->query($query, array(':id' => $this->_id, ':string' => $string));
+				$row = $this->_db->fetch();
+			 	if ($row === false) {
+				 throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			 	}
+				return 1;
+			}
 
 
 		/*

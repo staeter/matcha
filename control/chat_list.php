@@ -128,7 +128,7 @@ foreach ($arraytoconvertinJson as $key => $value) {
   //   echo '<br><br><br>';
   //     echo '<br><br><br>';
     //unread
-  if ($raw_message[$key]['msg_read'] == 0)
+  if ($raw_message[$key]['msg_read'] != 0)
     $unread = 'false';
   else
     $unread = 'true';
@@ -152,6 +152,7 @@ $jsondata = substr($jsondata, 0, -4);
 // echo '<br><br>';
 
 $jsondata .= $findestring;
+
 echo $jsondata;
 
 
