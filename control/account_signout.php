@@ -7,9 +7,8 @@ require '../model/classes/User.class.php';
 $x = 2;
 
 try {
-  $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
-  $usr = new User($_SESSION['id'], $db);
-  $usr->is_logged(false);
+  $usr = unserialize($_SESSION['user']);
+  $usr->set_log(false);
 
   $_SESSION['id'] = NULL;
   $_SESSION['pseudo'] = NULL;

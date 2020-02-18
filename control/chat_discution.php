@@ -4,27 +4,31 @@ session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 
-$db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
 $usr = unserialize($_SESSION['user']);
 
 
-$row = $usr->get_all_messages_between_two_user(2);
+$row = $usr->get_all_messages_between_two_user($_POST['id']);
 
-$row2 = $usr->get_all_details_of_this_id(2);
+$row2 = $usr->get_all_details_of_this_id($_POST['id']);
 
+$row3 = $usr->get_picture_profil($_SESSION['id']);
 //print_r($row);
+
+if ($row2['is_loged'] == 1)
+  $stringlastlog = "Now";
+else
+  $stringlastlog = $row['last_log'];
 
 $string = '{
   "data" : {
     "id" : '.$_POST['id'].',
     "pseudo" : "'.$row2['pseudo'].'",
-    "picture" : "/Pictures/def.jpg",
-    "last_log" : "Now",
+    "picture" : "'.$row3['path'].'",
+    "last_log" : "'.$stringlastlog.'",
     "messages" : [';
 
-foreach ($row as $key => $value) {
-    // code...
-
+foreach ($row as $key => $value)
+{
     if ($row[$key]['msg_read'] == true)
       $readed = 'true';
     else
@@ -35,29 +39,13 @@ foreach ($row as $key => $value) {
       "content" : "'.$row[$key]['content'].'"
     },
     ';
-  }
+}
 
 function enleve_virgule($string)
 {
-
-
-
-  //
-  // echo '<br><br>';
-    $nbchar = strlen($string);
-  // echo $nbchar;
-
-  $string1 = substr($string, 0, -8);
-
-
-
-    //
-    // $count = $nbchar - $nbcharalertfixe - 178;
-    //
-    // $newstring2 = substr($string, 0,  ($nbchar - $nbcharalertfixe - 17));
-    // echo $newstring2;
-    //
-    $findestring = '
+//$nbchar = strlen($string);
+  $string = substr($string, 0, -6);
+  $findestring = '
       ]
     },
       "alert" : {
@@ -66,114 +54,35 @@ function enleve_virgule($string)
     }
     }';
 
-    //
-     $string1 .= $findestring;
-    // echo $newstring2;
+  $string .= $findestring;
+  // $x ='{
+	// "data": {
+	// 	"id": 2,
+	// 	"pseudo": "sosa",
+	// 	"picture": "/Pictures/def.jpg",
+	// 	"last_log": "Now",
+	// 	"messages": [{
+	// 		"sent": false,
+	// 		"date": "2020-02-17 17:53:08",
+	// 		"content": "test tjrs test"
+	// 	}, {
+	// 		"sent": true,
+	// 		"date": "2020-02-17 17:06:42",
+	// 		"content": "test message yo ma poule "
+	// 	}]
+	// },
+	// "alert": {
+	// 	"color": "DarkBlue",
+	// 	"message": "chat discution alert"
+	// }}';
 
-    $x ='{
-	"data": {
-		"id": 2,
-		"pseudo": "sosa",
-		"picture": "/Pictures/def.jpg",
-		"last_log": "Now",
-		"messages": [{
-			"sent": false,
-			"date": "2020-02-17 17:53:08",
-			"content": "test tjrs test"
-		}, {
-			"sent": true,
-			"date": "2020-02-17 17:06:42",
-			"content": "test message yo ma poule "
-		}]
-	},
-	"alert": {
-		"color": "DarkBlue",
-		"message": "chat discution alert"
-	}}';
-    echo $x;
-    // $stringstart = '{
-    //   "data" : {
-    //     "messages" : [';
-    // $stringstart;
-    // $stringstart .= $newstring2;
-    // $stringstart .= $newstring;
-    //
-    //
-    //
-    // echo $stringstart;
+  // avant de echo je vais mettre les messages à read
 
 
-  //  $string[$nbchar - $nbcharalertfixe] = 'W';
+  return $string;
   }
 
-
-
-//
-// echo $string;
-// echo "<br><br>";
-// // echo "<br><br>";
-//
-// function enleve_virgule2($string)
-// {
-//
-//   $stringtocount = '
-//     ]
-//   },
-//     "alert" : {
-//     "color" : "DarkBlue",
-//     "message" : "chat discution alert"
-//   }
-//   }';
-//
-//   $c = strlen($stringtocount);
-//   $s = strlen($string);
-//
-//   // echo $c;
-//   // echo '<br>';
-//   // echo $s;
-//   // echo '<br>';
-//
-//  $string[$s - $c + 4] = '';
-//   //echo $string[$s - $c - 20];
-//
-//   // echo '<br>';
-//   // echo '<br>';
-//
-// echo $string;
-//
-// //  echo [string['']]
-//
-//
-//
-// }
-
-// enleve_virgule2($string);
-// echo '<br>';
-// echo $string[257];
-//
-// echo '<br>';
-// $string[257] = 'X';
-// echo $string;
-
-// if (!empty($row))
-// {
-//   echo '{
-//   "data" : {
-//     "messages" : [
-//
-//   ]},
-//   "alert" : {
-//     "color" : "DarkRed",
-//     "message" : "there is not conversation between those user!"
-//   }
-//   }';
-// }
-// else {
-  enleve_virgule($string);
-// }
-//echo $string;
-
-//echo '<br><br><br><br><br><br><br><br><br><br>';
-
-//echo $string;
+$string = enleve_virgule($string);
+$usr->set_msg_readed($_POST['id']);
+echo $string;
 ?>
