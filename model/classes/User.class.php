@@ -594,6 +594,12 @@
 			// }
 		}
 
+		public function update_picture($id_photo, $path_fichier)
+		{
+			//UPDATE `picture` SET `path`= '/Pictures/reda.png' WHERE`id_picture`= 12
+			$query = 'UPDATE `picture` SET `path` = :pat WHERE `id_picture` = :idp';
+			$this->_db->query($query, array(':pat' => $path_fichier, ':idp' => $id_photo));
+		}
 
 
 

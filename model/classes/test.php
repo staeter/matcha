@@ -41,5 +41,12 @@ echo 'yo sosa sksks';
 $r = $usr->get_all_picture();
 print_r($r);
 
-echo '<img src="/Pictures/def.jpg" >';
+
+echo '<br><br>';
+
+echo $usr->update_picture(11, "/Pictures/sosa.png");
+
+
+echo 'update';
+echo "sjsjjsjks";
 ?>
