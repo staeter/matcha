@@ -99,12 +99,18 @@ foreach ($arraytoconvertinJson as $key => $value) {
     $unread = 'true';
 $row = $usr->get_picture_profil($id_pic);
 
+  if ($ret['is_loged'] == 1)
+    $stringlastlog = "Now";
+  else {
+    $stringlastlog = $ret['last_log'];
+  }
+
   $jsondata .='
   {
         "id" : '.$arraytoconvertinJson[$key]['id_user_receiving'].',
         "pseudo" : "'.$ret['pseudo'].'",
         "picture" : "'.$row['path'].'",
-        "last_log" : "Now",
+        "last_log" : "'.$stringlastlog.'",
         "last_message" : "'.$raw_message[$key]['content'].'",
         "unread" : '.$unread.'
       },
