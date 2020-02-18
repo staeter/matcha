@@ -40,7 +40,7 @@ else {
 {
   echo '{
   "result": "Failure",
-  "message": "Le mot de passe ne correspond pas à a celui renseigné lors de l inscription",
+  "message": "Le mot de passe ne correspond pas à a celui enregistré",
   "alert": {
     "color": "DarkRed",
     "message": "OLD OLD Password doesnt match!"
