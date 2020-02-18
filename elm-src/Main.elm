@@ -37,8 +37,11 @@ import RemoteData exposing (RemoteData(..))
 
 import Bootstrap.CDN as CDN exposing (stylesheet)
 import Bootstrap.Card as Card exposing (..)
+import Bootstrap.Card.Block as Block exposing (..)
 import Bootstrap.Carousel as Carousel exposing (..)
 import Bootstrap.Carousel.Slide as Slide exposing (..)
+import Bootstrap.Button as Button exposing (..)
+import Bootstrap.Utilities.Spacing as Spacing exposing (mt2)
 
 
 -- modules
@@ -844,8 +847,9 @@ update msg model =
     (Logged lmodel, Home, Like id) ->
       let likeRequest = requestLike id ReceiveLikeUpdate in
       ( model, likeRequest )
+
     (Logged lmodel, User urlId, Like id) ->
-      if urlId == id
+      if Debug.log "send like request" (urlId == id)
       then
         let likeRequest = requestLike id ReceiveLikeUpdate in
         ( model, likeRequest )
@@ -868,7 +872,9 @@ update msg model =
                         Success usrd ->
                           if usrd.id == id
                           then Success { usrd | liked = newLikeStatus }
+                                  |> Debug.log "ud updated"
                           else Success usrd
+                                  |> Debug.log "ud not updated"
                         smthg -> smthg
               }
             }
@@ -1960,22 +1966,22 @@ viewHeader route lmodel =
             ]
       ]
 
-viewUserDetails : UserDetails -> Html Msg
-viewUserDetails userDetails =
-  div []
-      [ viewCarousel
-          userDetails.pictures
-          userDetails.carouselState
-          InputUserDetailsSelectImage
-      , h2 [] [ Html.text userDetails.pseudo ]
-      , h3 [] [ Html.text (userDetails.first_name ++ " " ++ userDetails.last_name) ]
-      , Html.text (orientationToString userDetails.orientation ++ " " ++ genderToString userDetails.gender )
-      , Html.text userDetails.birth
-      , br [] []
-      , Html.text userDetails.biography
-      , br [] []
-      , viewLikeButton userDetails.id userDetails.liked
-      ]
+-- viewUserDetails : UserDetails -> Html Msg
+-- viewUserDetails userDetails =
+--   div []
+--       [ viewCarousel
+--           userDetails.pictures
+--           userDetails.carouselState
+--           InputUserDetailsSelectImage
+--       , h2 [] [ Html.text userDetails.pseudo ]
+--       , h3 [] [ Html.text (userDetails.first_name ++ " " ++ userDetails.last_name) ]
+--       , Html.text (orientationToString userDetails.orientation ++ " " ++ genderToString userDetails.gender )
+--       , Html.text userDetails.birth
+--       , br [] []
+--       , Html.text userDetails.biography
+--       , br [] []
+--       , viewLikeButton userDetails.id userDetails.liked
+--       ]
 
 orientationToString : BasicValues.Orientation -> String
 orientationToString orientation =
@@ -2363,13 +2369,12 @@ viewProfile profile =
 
 viewLikeButton : Int -> Bool -> Html Msg
 viewLikeButton id isLiked =
-  Html.button
-          [ Html.Events.onClick (Like id)
-          , if isLiked
-            then style "background-color" "red"
-            else style "background-color" "white"
-          ]
-          [ Html.text "Like" ]
+  Button.button
+    [ if isLiked
+      then Button.primary
+      else Button.secondary
+    , Button.attrs [ Html.Events.onClick (Like id) ]
+    ] [ Html.text "like" ]
 
 viewFeedPageNav : Feed a -> Html Msg
 viewFeedPageNav lmodel =
@@ -2465,6 +2470,24 @@ viewCarousel imgList state toMsg =
                 (Slide.customContent (div [] [])) )
       )
   |> Carousel.view state
+
+viewUserDetails : UserDetails -> Html Msg
+viewUserDetails ud =
+  Card.config [ Card.attrs [ style "width" "300px" ] ]
+    |> Card.header [ class "text-center" ]
+        [ viewCarousel ud.pictures ud.carouselState InputUserDetailsSelectImage
+        , h3 [ Spacing.mt2 ] [ Html.text ud.pseudo ]
+        ]
+    |> Card.block []
+        [ Block.titleH4 [] [ Html.text (ud.first_name ++ " " ++ ud.last_name) ]
+        , Block.titleH6 [] [ Html.text (ud.birth) ]
+        , Block.titleH6 [] [ Html.text ((orientationToString ud.orientation) ++ " " ++ (genderToString ud.gender)) ]
+        , Block.text [] [ Html.text ud.biography ]
+        , Block.custom <|
+            viewLikeButton ud.id ud.liked
+        ]
+    |> Card.view
+
 
 -- subscriptions
 

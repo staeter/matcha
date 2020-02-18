@@ -10,7 +10,7 @@ echo '{
     "elemAmount" : 18,
     "users" : [
       {
-        "id" : 1,
+        "id" : 3,
         "pseudo" : "John",
         "picture" : "/data/doe.png",
         "tags" : ["geek", "foot"],
@@ -24,14 +24,14 @@ echo '{
         "liked" : false
       },
       {
-        "id" : 12,
+        "id" : 3,
         "pseudo" : "Marcel",
         "picture" : "/data/marcel.png",
         "tags" : ["tatoo", "beer"],
         "liked" : false
       },
       {
-        "id" : 13,
+        "id" : 3,
         "pseudo" : "clara",
         "picture" : "/data/gotaga.png",
         "tags" : ["geek", "fun"],
