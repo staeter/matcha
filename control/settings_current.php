@@ -34,17 +34,17 @@ $row = $usr->get_all_details();
 
 ////
 
-if ($row['gender'] == 0)
-  $gender = 'Man';
+if ($row['gender'] == 1)
+  $gender = 'man';
 else
   $gender = 'woman';
 
 if ($row['orientation'] == 0)
-  $orientation = 'Bisexual';
+  $orientation = 'bisexual';
 else if ($row['orientation'] == 1)
-  $orientation = 'Homosexual';
+  $orientation = 'heterosexual';
 else
-  $orientation = 'Homosexual';
+  $orientation = 'homosexual';
 
 ////
 

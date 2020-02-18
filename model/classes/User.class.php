@@ -351,11 +351,10 @@
 			}
 		}
 
-		public function  set_gender($datatoinsert)
+		public function  set_gender($bool)
 		{
-		    $query = ('UPDATE user SET gender = :genre WHERE id_user = :id');
-		    $db->query($query, array(':genre' => $datatoinsert, ':id' => $this->_id));
-				$db->execute();
+		    $query = 'UPDATE user SET gender = :genre WHERE id_user = :id';
+		    $this->_db->query($query, array(':genre' => $bool, ':id' => $this->_id));
 		}
 
 		public function set_log($bool)
@@ -363,7 +362,7 @@
 		  //tester qu il capte bien la variable = a true or false
 		  $query = ('UPDATE user SET is_loged = :logged WHERE id_user = :id');
 		  $this->_db->query($query, array(':logged' => $bool, ':id' => $this->_id));
-		  //$this->_db->execute();
+
 			$modified_row_count = $this->_db->rowCount();
 			if ($modified_row_count !== 1) {
 				throw new DatabaseException("Fail setting logged. " . $modified_row_count . " rows have been modified in the database.");
@@ -374,8 +373,6 @@
 		{
 		  $query = ('UPDATE user SET orientation = :orientation WHERE id_user = :id');
 		  $this->_db->query($query, array(':orientation' => $datatoinsert, ':id' => $this->_id));
-
-
 		}
 
 		public function set_biography($datatoinsert)
@@ -410,7 +407,7 @@
 
 		public function set_first_name($value)
 		{
-			$query = ('UPDATE user SET firstname = :value WHERE id_user = :id');
+			$query = ('UPDATE `user` SET `firstname` = :value WHERE `id_user` = :id');
 		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
 
 		}
@@ -419,7 +416,6 @@
 		{
 			$query = ('UPDATE user SET lastname = :value WHERE id_user = :id');
 		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
-
 		}
 
 
