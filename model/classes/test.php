@@ -35,18 +35,18 @@ $usr = unserialize($_SESSION['user']);
 //      echo $e->getMessage();
 //    }
 
-echo 'yo sosa sksks';
+//echo 'yo sosa sksks';
 
 //$usr->set_picture();
-$r = $usr->get_all_picture();
-print_r($r);
-
+echo '<br>salut<br>';echo '<br>salut<br>';
 
 echo '<br><br>';
+$id_pic = 1;
 
-echo $usr->update_picture(11, "/Pictures/sosa.png");
+$row = $usr->get_picture_profil($id_pic);
+print_r($row);
 
-
-echo 'update';
-echo "sjsjjsjks";
+echo '<br>salut<br>';
+echo $row;
+return;
 ?>

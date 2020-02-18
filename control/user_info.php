@@ -50,7 +50,7 @@ if (isset($row))
     $stringforlast_log = $row['last_log'];
   }
   //$row['orientation'] = '';
-  if (empty($row['orientation']) || empty($row['biography']))
+  if (empty($row['biography']))
   {
     echo '{
     "data": {},

@@ -41,16 +41,14 @@ function enleve_virgule($string)
 {
 
 
-   echo $string;
+
   //
   // echo '<br><br>';
     $nbchar = strlen($string);
   // echo $nbchar;
-   echo '<br><br>';
+
   $string1 = substr($string, 0, -8);
-  echo '<br>dososojsojsjosojsjojosjojosjosjojo<br>';
-  echo $string1;
-   echo '<br><br>';
+
 
 
     //
@@ -83,7 +81,7 @@ function enleve_virgule($string)
 			"date": "2020-02-17 17:53:08",
 			"content": "test tjrs test"
 		}, {
-			"sent": false,
+			"sent": true,
 			"date": "2020-02-17 17:06:42",
 			"content": "test message yo ma poule "
 		}]

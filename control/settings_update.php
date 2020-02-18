@@ -19,7 +19,8 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
 $usr = unserialize($_SESSION['user']);
 
-//print_r($_POST);
+// print_r($_POST);
+// return;
 $row = $usr->get_all_details();
 
 //print_r($row);
