@@ -39,6 +39,13 @@ if ($row['gender'] == 0)
 else
   $gender = 'woman';
 
+if ($row['orientation'] == 0)
+  $orientation = 'Bisexual';
+else if ($row['orientation'] == 1)
+  $orientation = 'Homosexual';
+else
+  $orientation = 'Homosexual';
+
 ////
 
 
@@ -48,8 +55,8 @@ echo '{
   "first_name" : "'.$row['firstname'].'",
   "last_name" : "'.$row['lastname'].'",
   "email" : "'.$row['email'].'",
-  "gender" : "Woman",
-  "orientation" : "Bisexual",
+  "gender" : "'.$gender.'",
+  "orientation" : "'.$orientation.'",
   "biography" : "'.$row['biography'].'",
   "birth" : "'.$row['birth'].'",
   "pictures" :

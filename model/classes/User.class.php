@@ -140,6 +140,8 @@
 			$this->_email = $email;
 			$this->_db = $db;
 
+			//now i will set 5 default picture with one as profile picture
+
 		}
 
 
@@ -533,16 +535,28 @@
 		** -------------------- Picture --------------------
 		*/
 
-		public function set_picture($path)
+		public function set_picture()
 		{
 			//$query ()
+			$path = '/Pictures/def.jpg';
+			$query = 'INSERT INTO `picture` (`id_user`, `is_profile-picture`, `path`) VALUES (:id, :true, :pathf)';
+	//		$query = 'INSERT INTO `picture` (id_user, `path`) VALUES (:id, :pathfichier)';
+			$this->_db->query($query, array(':id' => $this->_id, ':true' => true, ':pathf' => $path));
 
-			$query = ('INSERT INTO picture id_user = :id AND `path` = :pathfichier');
-			$this->_db->query($query, array(':id' => $this->_id, ':pathfichier' => $path));
-			$modified_row_count = $this->_db->rowCount();
-			if ($modified_row_count !== 1) {
-				throw new DatabaseException("Fail setting picture in data base. " . $modified_row_count . " rows have been modified in the database.");
+			$i = 0;
+			while ($i <= 3)
+			{
+				$path = '/Pictures/addpic.png';
+				$query = 'INSERT INTO `picture` (`id_user`, `is_profile-picture`, `path`) VALUES (:id, :false, :pathf)';
+				//		$query = 'INSERT INTO `picture` (id_user, `path`) VALUES (:id, :pathfichier)';
+				$this->_db->query($query, array(':id' => $this->_id, ':false' => false, ':pathf' => $path));
+
+				$i++;
 			}
+			// $modified_row_count = $this->_db->rowCount();
+			// if ($modified_row_count !== 1) {
+			// 	throw new DatabaseException("Fail setting picture in data base. " . $modified_row_count . " rows have been modified in the database.");
+			// }
 		}
 
 		public function set_is_picture_profil($bool, $id_picture)
@@ -561,6 +575,20 @@
 			}
 			 return $row;
 		}
+
+		public function set_picture_signup()
+		{
+			//$query ()
+			$path = './Pictures/def.jpg';
+			$query = 'INSERT INTO `picture` id_user = :id AND is_profile-picture = :true AND `path` = :pathfichier';
+			$this->_db->query($query, array(':id' => $this->_id, ':true' => true, ':pathfichier' => $path));
+
+			// $modified_row_count = $this->_db->rowCount();
+			// if ($modified_row_count !== 1) {
+			// 	throw new DatabaseException("Fail setting picture in data base. " . $modified_row_count . " rows have been modified in the database.");
+			// }
+		}
+
 
 
 

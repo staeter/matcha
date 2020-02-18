@@ -155,8 +155,8 @@ $jsondata .= $findestring;
 
 echo $jsondata;
 
-
-
+//$x = '{ "data" : [ { "id" : 1, "pseudo" : "reda", "picture" : "/Pictures/def.jpg", "last_log" : "Now", "last_message" : "test message yo ma poule ", "unread" : true }], "alert" : { "color" : "DarkBlue", "message" : "chat list alert" } }';
+//echo $x;
   //     $x = 0;
   //
   //     $tableau;

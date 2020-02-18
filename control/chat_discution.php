@@ -8,9 +8,9 @@ $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot'
 $usr = unserialize($_SESSION['user']);
 
 
-$row = $usr->get_all_messages_between_two_user($_POST['id']);
+$row = $usr->get_all_messages_between_two_user(2);
 
-$row2 = $usr->get_all_details_of_this_id($_POST['id']);
+$row2 = $usr->get_all_details_of_this_id(2);
 
 //print_r($row);
 
@@ -25,33 +25,32 @@ $string = '{
 foreach ($row as $key => $value) {
     // code...
 
-    if ($row[$key]['readed'] == true)
+    if ($row[$key]['msg_read'] == true)
       $readed = 'true';
     else
       $readed = 'false';
-    $string .= '
-    {
-          "sent" : '.$readed.',
-          "date" : "'.$row[$key]['date'].'",
-          "content" : "'.$row[$key]['content'].'"
-        },
-        ';
+    $string .= '{
+      "sent" : '.$readed.',
+      "date" : "'.$row[$key]['date'].'",
+      "content" : "'.$row[$key]['content'].'"
+    },
+    ';
   }
 
 function enleve_virgule($string)
 {
 
 
-  // echo $string;
+   echo $string;
   //
   // echo '<br><br>';
     $nbchar = strlen($string);
   // echo $nbchar;
-  // echo '<br><br>';
-  $string1 = substr($string, 0, -10);
-
-  // echo $string1;
-  // echo '<br><br>';
+   echo '<br><br>';
+  $string1 = substr($string, 0, -8);
+  echo '<br>dososojsojsjosojsjojosjojosjosjojo<br>';
+  echo $string1;
+   echo '<br><br>';
 
 
     //
@@ -73,8 +72,27 @@ function enleve_virgule($string)
      $string1 .= $findestring;
     // echo $newstring2;
 
-
-    echo $string1;
+    $x ='{
+	"data": {
+		"id": 2,
+		"pseudo": "sosa",
+		"picture": "/Pictures/def.jpg",
+		"last_log": "Now",
+		"messages": [{
+			"sent": false,
+			"date": "2020-02-17 17:53:08",
+			"content": "test tjrs test"
+		}, {
+			"sent": false,
+			"date": "2020-02-17 17:06:42",
+			"content": "test message yo ma poule "
+		}]
+	},
+	"alert": {
+		"color": "DarkBlue",
+		"message": "chat discution alert"
+	}}';
+    echo $x;
     // $stringstart = '{
     //   "data" : {
     //     "messages" : [';
@@ -138,22 +156,23 @@ function enleve_virgule($string)
 // echo '<br>';
 // $string[257] = 'X';
 // echo $string;
-if (empty($row))
-{
-  echo '{
-  "data" : {
-    "messages" : [
 
-  ]},
-  "alert" : {
-    "color" : "DarkRed",
-    "message" : "there is not conversation between those user!"
-  }
-  }';
-}
-else {
+// if (!empty($row))
+// {
+//   echo '{
+//   "data" : {
+//     "messages" : [
+//
+//   ]},
+//   "alert" : {
+//     "color" : "DarkRed",
+//     "message" : "there is not conversation between those user!"
+//   }
+//   }';
+// }
+// else {
   enleve_virgule($string);
-}
+// }
 //echo $string;
 
 //echo '<br><br><br><br><br><br><br><br><br><br>';

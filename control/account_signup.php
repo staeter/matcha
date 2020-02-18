@@ -34,6 +34,7 @@ else {
   try {
     $usr = new User($_POST['pseudo'], $_POST['firstname'], $_POST['lastname'], $_POST['email'], hash_password($_POST['password']), $db);
     $usr->send_account_verification_request("http://localhost/control/account_confirmation.php");
+    $usr->set_picture();
     $x = 1;
       }
   catch (Exception $e) {
@@ -95,7 +96,7 @@ else if ($x == 5)
 else {
   echo '{
     "result" : "Failure",
-    "message" : "probleme non determiné/gerer '.$e->getCode().'"
+    "message" : "probleme non determiné/gerer '.$e->getMessage().'"
   }';
 }
 }
