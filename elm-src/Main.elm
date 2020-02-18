@@ -43,9 +43,9 @@ import Bootstrap.Carousel.Slide as Slide exposing (..)
 
 -- modules
 
-import Alert  exposing (..)
-import Form  exposing (..)
-import Feed  exposing (..)
+import Alert exposing (..)
+import Form exposing (..)
+import Feed exposing (..)
 import BasicValues exposing (..)
 import ZipList exposing (..)
 import Dropdown exposing (..)
@@ -1682,28 +1682,6 @@ view model =
         ]
       }
 
-    (Anonymous _, _) ->
-      { title = "matcha - 404 page not found"
-      , body =
-        column  [ centerX
-                , centerY
-                ]
-                [ El.el [ padding 5
-                        , centerX
-                        ]
-                        ( El.text "You seem lost" )
-                , El.el [ padding 5
-                        , centerX
-                        ]
-                        ( a [ href "/signin" ]
-                            [ Html.text "go to signin" ]
-                          |> El.html
-                        )
-                ]
-        |> El.layout []
-        |> List.singleton
-      }
-
     (Logged lmodel, Home) ->
       { title = "matcha - home"
       , body =
@@ -1815,12 +1793,48 @@ view model =
         ]
       }
 
+    (Anonymous _, _) ->
+      { title = "matcha - 404 page not found"
+      , body =
+          column  [ centerX
+                  , centerY
+                  ]
+                  [ El.el [ padding 5
+                          , centerX
+                          ]
+                          ( El.text "You seem lost" )
+                  , El.el [ padding 5
+                          , centerX
+                          ]
+                          ( a [ href "/signin" ]
+                              [ Html.text "go to signin" ]
+                            |> El.html
+                          )
+                  ]
+          |> El.layout []
+          |> List.singleton
+      }
+
     (Logged _, _) ->
       { title = "matcha - 404 page not found"
       , body =
-        [ Html.text "You seem lost", br [] []
-        , a [ href "/" ] [ Html.text "go back home" ]
-        ]
+          column  [ centerX
+                  , centerY
+                  ]
+                  [ El.el [ padding 5
+                          , centerX
+                          ]
+                          ( El.text "You seem lost" )
+                  , El.el [ padding 5
+                          , centerX
+                          ]
+                          ( a [ href "/" ]
+                              [ Html.text "go back home" ]
+                            |> El.html
+                          )
+                  ]
+          |> El.layout []
+          |> List.singleton
       }
 
 type alias PictUpdateModel a =
