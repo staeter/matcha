@@ -1,4 +1,4 @@
-module MyList exposing (indexedAny)
+module MyList exposing (indexedAny, sumStringList)
 
 indexedAny : (a -> Bool) -> List a -> Maybe Int
 indexedAny condition list =
@@ -13,3 +13,14 @@ indexedAnyLoop index boolList =
       if head
       then Just index
       else indexedAnyLoop (index + 1) queue
+
+sumStringList : List String -> String
+sumStringList list =
+  sumStringListLoop "" list
+
+sumStringListLoop : String -> List String -> String
+sumStringListLoop acc list =
+  case list of
+    [] -> acc
+    head :: queue ->
+      sumStringListLoop (acc ++ head) queue

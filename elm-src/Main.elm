@@ -52,6 +52,7 @@ import Feed exposing (..)
 import BasicValues exposing (..)
 import ZipList exposing (..)
 import Dropdown exposing (..)
+import MyList exposing (..)
 
 
 -- model
@@ -1691,7 +1692,8 @@ view model =
     (Logged lmodel, Home) ->
       { title = "matcha - home"
       , body =
-        [ viewHeader model.route lmodel
+        [ CDN.stylesheet
+        , viewHeader model.route lmodel
         , Alert.view model
         , Maybe.map Form.view lmodel.filtersForm
           |> Maybe.map (Html.map FiltersForm)
@@ -1716,6 +1718,13 @@ view model =
               Success ud ->
                 [ Alert.view model
                 , viewUserDetails ud
+                  |> El.html
+                  |> El.layout  [ centerX
+                                , centerY
+                                , padding 64
+                                , El.width shrink
+                                , El.height shrink
+                                ]
                 ]
               RemoteData.Failure err ->
                 model
@@ -2355,17 +2364,23 @@ settingsView model =
                 }
           ]
 
-viewProfile : Profile -> Html Msg
+viewProfile : Profile -> Card.Config Msg
 viewProfile profile =
-  div []
-      [ img [ src profile.picture ] []
-      , br [] []
-      , a [ href ("/user/" ++ (String.fromInt profile.id)) ]
-          [ Html.text profile.pseudo ]
-      , br [] []
-      , div [] (List.map Html.text profile.tags)
-      , viewLikeButton profile.id profile.liked
-      ]
+  Card.config [ Card.attrs [ style "width" "20rem" ] ]
+    |> Card.header [ class "text-center" ]
+        [ img [ src profile.picture ] []
+        , h3 [ Spacing.mt2 ] [ Html.text profile.pseudo ]
+        ]
+    |> Card.block []
+        [ Block.titleH4 [] [ Html.text "Card title" ]
+        , Block.text [] [ Html.text
+                            ( List.intersperse " " profile.tags
+                              |> sumStringList
+                            )
+                        ]
+        , Block.custom <|
+            viewLikeButton profile.id profile.liked
+        ]
 
 viewLikeButton : Int -> Bool -> Html Msg
 viewLikeButton id isLiked =
@@ -2397,7 +2412,7 @@ viewFeed lmodel =
     Html.text "Loading content..."
   else
     div []
-        [ div [] ( List.map viewProfile lmodel.feedContent )
+        [ Card.columns ( List.map viewProfile lmodel.feedContent )
         , viewFeedPageNav lmodel
         ]
 
@@ -2443,9 +2458,9 @@ viewCarousel : List String -> Carousel.State -> (Carousel.Msg -> Msg) -> Html Ms
 viewCarousel imgList state toMsg =
   Carousel.config toMsg
     [ Html.Attributes.style
-        "width" "256px"
+        "width" "45em"
     , Html.Attributes.style
-        "height" "256px"
+        "height" "45em"
     ]
   |> Carousel.withControls
   |> Carousel.withIndicators
@@ -2463,9 +2478,9 @@ viewCarousel imgList state toMsg =
                 , Html.Attributes.style
                     "background-repeat" "no-repeat"
                 , Html.Attributes.style
-                    "width" "256px"
+                    "width" "45em"
                 , Html.Attributes.style
-                    "height" "256px"
+                    "height" "45em"
                 ]
                 (Slide.customContent (div [] [])) )
       )
@@ -2473,7 +2488,7 @@ viewCarousel imgList state toMsg =
 
 viewUserDetails : UserDetails -> Html Msg
 viewUserDetails ud =
-  Card.config [ Card.attrs [ style "width" "300px" ] ]
+  Card.config [ Card.attrs [ style "width" "47em" ] ]
     |> Card.header [ class "text-center" ]
         [ viewCarousel ud.pictures ud.carouselState InputUserDetailsSelectImage
         , h3 [ Spacing.mt2 ] [ Html.text ud.pseudo ]
@@ -2483,6 +2498,11 @@ viewUserDetails ud =
         , Block.titleH6 [] [ Html.text (ud.birth) ]
         , Block.titleH6 [] [ Html.text ((orientationToString ud.orientation) ++ " " ++ (genderToString ud.gender)) ]
         , Block.text [] [ Html.text ud.biography ]
+        , Block.text [] [ Html.text <|
+                            case ud.last_log of
+                              Now -> "Is logged in"
+                              AWhileAgo date -> "Last log : " ++ date
+                        ]
         , Block.custom <|
             viewLikeButton ud.id ud.liked
         ]
