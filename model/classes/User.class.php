@@ -601,6 +601,12 @@
 			$this->_db->query($query, array(':pat' => $path_fichier, ':idp' => $id_photo));
 		}
 
+		public function delete_picture($id_photo)
+		{
+			$path_fichier = '/Pictures/addpic.png';
+			$query = 'UPDATE `picture` SET `path` = :pat WHERE `id_picture` = :idp';
+			$this->_db->query($query, array(':pat' => $path_fichier, ':idp' => $id_photo));
+		}
 
 
 		/*
