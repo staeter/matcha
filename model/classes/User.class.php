@@ -576,12 +576,17 @@
 			 return $row;
 		}
 
-		public function set_picture_signup()
+		public function get_all_picture()
 		{
 			//$query ()
-			$path = './Pictures/def.jpg';
-			$query = 'INSERT INTO `picture` id_user = :id AND is_profile-picture = :true AND `path` = :pathfichier';
-			$this->_db->query($query, array(':id' => $this->_id, ':true' => true, ':pathfichier' => $path));
+			$query = 'SELECT * FROM `picture` WHERE id_user = :id';
+			$this->_db->query($query, array(':id' => $this->_id));
+
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
 
 			// $modified_row_count = $this->_db->rowCount();
 			// if ($modified_row_count !== 1) {

@@ -38,6 +38,8 @@ $usr = unserialize($_SESSION['user']);
 echo 'yo sosa sksks';
 
 //$usr->set_picture();
+$r = $usr->get_all_picture();
+print_r($r);
 
 echo '<img src="/Pictures/def.jpg" >';
 ?>
