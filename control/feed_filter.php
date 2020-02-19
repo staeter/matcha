@@ -20,15 +20,87 @@ $usr = unserialize($_SESSION['user']);
   $age_max = $_POST['ageMax'];
 
   // je dois convertir age min & max en valeur AAAA-MM-JJ
-  $age_min2 = date();
+  $date = date_create();
+  date_sub($date, date_interval_create_from_date_string(' '.$age_min.' years'));
+  $age_min = date_format($date, 'Y-m-d');
+
+
+  $date = date_create();
+  date_sub($date, date_interval_create_from_date_string(' '.$age_max.' years'));
+  $age_max = date_format($date, 'Y-m-d');
+
 
   // je dois recuperer un tableau trier dont les users ont un age compris
   // entre
   // age min & age max
-  $row = $usr->get_all_details_of_all_id_between_age_min_max($age_min, $age_max);
+  $row_to_clear = $usr->get_all_details_of_all_id_between_age_min_max($age_max, $age_min);
 
 
 
+  if (empty($row_to_clear))
+    {
+      echo '{
+        "data" : {
+          "pageAmount" : 1,
+          "elemAmount" : 1,
+          "users" : []
+        },
+        "alert" : {
+          "color" : "DarkRed",
+          "message" : "There is no profil who match ur query"
+        }
+      }';
+
+      return;
+    }
+//foreach a faire a la fin
+
+$string = '{
+  "data" : {
+    "pageAmount" : 1,
+    "elemAmount" : 1,
+    "users" : [';
+
+//////////////////////////////////////////////////
+// ici j enleve l occurence de l user connecté  //
+$array = array();
+foreach ($row_to_clear as $key => $value) {
+  if ($row_to_clear[$key]['id_user'] != $_SESSION['id'])
+      $array[$key] = $row_to_clear[$key];
+}
+/////////////////////////////////////////////////
+
+foreach ($array as $key => $value)
+{
+
+    $path = $usr->get_picture_profil($row_to_clear[$key]['id_user']);
+    $liked = $usr->get_if_liked($row_to_clear[$key]['id_user']);
+    if ($liked == 1)
+      $liked = 'true';
+    else
+      $liked = 'false';
+
+
+    $string .= '{
+      "id" : '.$row_to_clear[$key]['id_user'].',
+      "pseudo" : "'.$row_to_clear[$key]['pseudo'].'",
+      "picture" : "'.$path['path'].'",
+      "tags" : ["sosa", "alanoix"],
+      "liked" : '.$liked.'
+    },';
+}
+
+$string = substr($string, 0, -1);
+
+$string .= ']
+},
+"alert" : {
+"color" : "DarkBlue",
+"message" : "feed filter call"
+}
+}';
+echo $string;
+return;
 
   // ["popularityMin"]=>
   // string(2) "10"
@@ -51,36 +123,36 @@ $usr = unserialize($_SESSION['user']);
 
 echo '{
   "data" : {
-    "pageAmount" : 5,
-    "elemAmount" : 18,
+    "pageAmount" : 1,
+    "elemAmount" : 1,
     "users" : [
       {
         "id" : 1,
         "pseudo" : "John",
-        "picture" : "/data/doe.png",
+        "picture" : "/Pictures/addpic.png",
         "tags" : ["geek", "foot"],
         "liked" : false
       },
       {
         "id" : 3,
         "pseudo" : "Lise",
-        "picture" : "/data/liypick.png",
+        "picture" : "/Pictures/addpic.png",
         "tags" : ["boty", "makup"],
         "liked" : false
       },
       {
         "id" : 12,
         "pseudo" : "Marcel",
-        "picture" : "/data/marcel.png",
+        "picture" : "/Pictures/addpic.png",
         "tags" : ["tatoo", "beer"],
         "liked" : false
       },
       {
         "id" : 13,
         "pseudo" : "clara",
-        "picture" : "/data/gotaga.png",
-        "tags" : ["geek", "fun"],
-        "liked" : true
+        "picture" : "/Pictures/addpic.png",
+        "tags" : [],
+        "liked" : false
       }
     ]
   },
