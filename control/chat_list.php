@@ -6,6 +6,19 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 
 $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
 $usr = unserialize($_SESSION['user']);
+
+$raw_message = $usr->get_all_messages_of_user_connected();
+
+
+
+
+
+
+
+
+
+
+
 // je dois renvoyer dans un foreach pour chaque conversation avec un User
 // un tableau contenant l id du gars / pseudo / picture / last log/ last message / unread(regle dans bdd ca)
 //
@@ -20,7 +33,7 @@ $usr = unserialize($_SESSION['user']);
 // 1. && 2.  fonction a coder
 
 //print_r
-$raw_message = $usr->get_all_messages_of_user_connected();
+
 //);
 //return;
 
@@ -40,10 +53,10 @@ function is_not_yet_in_array($arraymult, $arraysimple)
   {
     // cette condition n est pas juste !
     // si je fixe ca le fichier est OK
-    if ($x == 1)
-      if (( (($arraymult[$i]['id_user_sending'] == $arraysimple['id_user_sending']) && ($arraymult[$i]['id_user_sending'] == $arraysimple['id_user_receiving']) )) || (($arraymult[$i]['id_user_sending'] == $arraysimple['id_user_receiving'] && $arraymult[$i]['id_user_sending'] == $arraysimple['id_user_sending'] )))
+
+      if ( ($arraymult[$i]['id_user_sending'] == $arraysimple['id_user_sending'])
+      ||  ($arraymult[$i]['id_user_receiving'] == $arraysimple['id_user_receiving']))
         return 0;
-    $x = 1;
     $i++;
   }
   return 1;
@@ -69,10 +82,54 @@ function rend_moi_une_occurence_par_conv($raw_message)
   return ($array);
 }
 
-$arraytoconvertinJson = rend_moi_une_occurence_par_conv($raw_message);
+// $finalArray = [];
+// foreach($array as $arr){
+//
+//     if(isset($finalArray[$arr['id_user_sending'].'-'.$arr['id_user_receiving']])){
+//         if(strtotime($finalArray[$arr['id_user_sending'].'-'.$arr['id_user_receiving']]['date']) <= strtotime($arr['date'])){
+//
+//             $finalArray[$arr['id_user_sending'].'-'.$arr['id_user_receiving']] = $arr;
+//         }
+//
+//
+//     }else{
+//
+//         $finalArray[$arr['id_user_sending'].'-'.$arr['id_user_receiving']] = $arr;
+//     }
+//
+// }
+//
+// $finalArray = array_values($raw_message);
+// print_r($finalArray);
+// return;
+function getLatestMessages(array $messages, $receiverId) {
+    $times = [];
+    $chats = [];
+    foreach ($messages as $message) {
+        if ($message['id_user_receiving'] === $receiverId) {
+            $senderId = $message['id_user_sending'];
+            if (!isset($times[$senderId])) {
+                $times[$senderId] = 0;
+            }
+            $date = new DateTime($message['date']);
+            $unix = $date->getTimestamp();
+            if ($unix > $times[$senderId]) {
+                $times[$senderId] = $unix;
+                $chats[$senderId] = $message;
+            }
+        }
+    }
+    return $chats;
+}
+$arraytoconvertinJson = getLatestMessages($raw_message, $_SESSION['id']);
+
+//$arraytoconvertinJson = rend_moi_une_occurence_par_conv($raw_message);
 
 // 3.       fonction deja coder
 $raw_user = $usr->get_all_details();
+
+// print_r($arraytoconvertinJson);
+// return;
 
 $jsondata = '{
   "data" : [
