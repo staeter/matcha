@@ -796,6 +796,19 @@
 
 		}
 
+		public function get_row_filter($age_min, $age_max, $popularity_min, $popularity_max)
+		{
+			$query = 'SELECT * FROM user WHERE `birth` BETWEEN "'.$age_min.'" AND "'.$age_max.'" AND WHERE `popularity_score` BETWEEN "'.$popularity_min.'" AND "'.$popularity_max.'" ';
+			$this->_db->query($query);
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+
+		}
+
+
 
 
 		/*

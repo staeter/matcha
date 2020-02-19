@@ -70,7 +70,43 @@ foreach ($row_to_clear as $key => $value) {
 }
 /////////////////////////////////////////////////
 
-foreach ($array as $key => $value)
+// ["popularityMin"]=>
+// string(2) "10"
+// ["popularityMax"]=>
+// string(3) "100"
+
+$popularity_min = $_POST['popularityMin'];
+$popularity_max = $_POST['popularityMax'];
+
+
+$array1 = array();
+
+foreach ($array as $key => $value) {
+  if ($row_to_clear[$key]['popularity_score'] >= $popularity_min && $row_to_clear[$key]['popularity_score'] <= $popularity_max)
+      $array1[$key] = $row_to_clear[$key];
+}
+
+if (empty($array1))
+  {
+    echo '{
+      "data" : {
+        "pageAmount" : 1,
+        "elemAmount" : 1,
+        "users" : []
+      },
+      "alert" : {
+        "color" : "DarkRed",
+        "message" : "There is no profil who match ur query"
+      }
+    }';
+
+    return;
+  }
+
+//////////// pour l instant je gere popularité & age min/max
+///////////////////////////////////////////////////////////////////////
+////////////////////// CE FOREACH RENVOI LE MSG JSON //////////////////
+foreach ($array1 as $key => $value)
 {
 
     $path = $usr->get_picture_profil($row_to_clear[$key]['id_user']);
@@ -102,10 +138,7 @@ $string .= ']
 echo $string;
 return;
 
-  // ["popularityMin"]=>
-  // string(2) "10"
-  // ["popularityMax"]=>
-  // string(3) "100"
+
   // ["distanceMax"]=>
   // string(2) "76"
   // ["tags"]=>
