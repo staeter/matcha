@@ -19,7 +19,11 @@ $usr = unserialize($_SESSION['user']);
 
 // 1. && 2.  fonction a coder
 
+//print_r
 $raw_message = $usr->get_all_messages_of_user_connected();
+//);
+//return;
+
 
 // probleme je recupere un tableau contenant toute les entree corespondant
 // a l id de l user connecte et moi j ai besoin d une occurence avec le dernier messages
@@ -31,10 +35,15 @@ function is_not_yet_in_array($arraymult, $arraysimple)
 
   $i = 0;
   $j = 0;
-  while (isset($arraymult[$i]['id_user_sending']))
+  $x = 0;
+  while (isset($arraymult[$i]))
   {
-    if ($arraymult[$i]['id_user_sending'] == $arraysimple['id_user_sending'] && $arraymult[$i]['id_user_receiving'] == $arraysimple['id_user_receiving'])
-      return 0;
+    // cette condition n est pas juste !
+    // si je fixe ca le fichier est OK
+    if ($x == 1)
+      if (( (($arraymult[$i]['id_user_sending'] == $arraysimple['id_user_sending']) && ($arraymult[$i]['id_user_sending'] == $arraysimple['id_user_receiving']) )) || (($arraymult[$i]['id_user_sending'] == $arraysimple['id_user_receiving'] && $arraymult[$i]['id_user_sending'] == $arraysimple['id_user_sending'] )))
+        return 0;
+    $x = 1;
     $i++;
   }
   return 1;
@@ -61,6 +70,7 @@ function rend_moi_une_occurence_par_conv($raw_message)
 }
 
 $arraytoconvertinJson = rend_moi_une_occurence_par_conv($raw_message);
+
 // 3.       fonction deja coder
 $raw_user = $usr->get_all_details();
 
@@ -83,9 +93,6 @@ foreach ($arraytoconvertinJson as $key => $value) {
       $arraytoconvertinJson[$key]['id_user_receiving'] = $arraytoconvertinJson[$key]['id_user_sending'];
 
   // je dois gerer l affichage de Pseudo
-
-  $pseudotoprint = '';
-
 
   //picture
   //lastlog
