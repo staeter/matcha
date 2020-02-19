@@ -1,6 +1,7 @@
 <?php
 ob_start();
 var_dump($_POST);
+
 $result = ob_get_clean();
 error_log("[POST] feed_page.php: " . $result);
 

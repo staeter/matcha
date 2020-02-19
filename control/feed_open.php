@@ -4,6 +4,13 @@ var_dump($_POST);
 $result = ob_get_clean();
 error_log("[POST] feed_open.php: " . $result);
 
+session_start();
+require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
+$usr = unserialize($_SESSION['user']);
+$row = $usr->get_all_details_of_all_id();
+
+
+
 
 echo '{
   "data" : {
@@ -19,31 +26,31 @@ echo '{
       "elemAmount" : 18,
       "users" : [
         {
-          "id" : 2,
-          "pseudo" : "John",
-          "picture" : "/data/doe.png",
-          "tags" : ["geek", "foot"],
+          "id" : '.$row[0]['id_user'].',
+          "pseudo" : "'.$row[0]['pseudo'].'",
+          "picture" : "/Pictures/addpic.png",
+          "tags" : ["geek ", "foot"],
           "liked" : false
         },
         {
-          "id" : 2,
-          "pseudo" : "Lise",
-          "picture" : "/data/liypick.png",
-          "tags" : ["boty", "makup"],
+          "id" : '.$row[1]['id_user'].',
+          "pseudo" : "'.$row[1]['pseudo'].'",
+          "picture" : "/Pictures/addpic.png",
+          "tags" : ["boty ", "makup"],
           "liked" : false
         },
         {
-          "id" : 2,
-          "pseudo" : "Marcel",
-          "picture" : "/data/marcel.png",
-          "tags" : ["tatoo", "beer"],
+          "id" : '.$row[2]['id_user'].',
+          "pseudo" : "'.$row[2]['pseudo'].'",
+          "picture" : "/Pictures/addpic.png",
+          "tags" : ["tatoo ", "beer"],
           "liked" : false
         },
         {
-          "id" : 2,
-          "pseudo" : "clara",
-          "picture" : "/data/gotaga.png",
-          "tags" : ["geek", "fun"],
+          "id" : '.$row[3]['id_user'].',
+          "pseudo" : "'.$row[3]['pseudo'].'",
+          "picture" : "/Pictures/addpic.png",
+          "tags" : ["geek ", "fun"],
           "liked" : true
         }
       ]

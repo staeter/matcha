@@ -772,6 +772,30 @@
 			 return $row;
 		}
 
+		public function get_all_details_of_all_id()
+		{
+			$query = 'SELECT * FROM user';
+			$this->_db->query($query);
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+
+		}
+
+		public function get_all_details_of_all_id_between_age_min_max($age_min, $age_max)
+		{
+			$query = 'SELECT * FROM user WHERE `birth` BETWEEN "'.$age_min.'" AND "'.$age_max.'" ';
+			$this->_db->query($query);
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+
+		}
+
 
 
 		/*

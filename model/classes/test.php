@@ -43,10 +43,23 @@ echo '<br>salut<br>';echo '<br>salut<br>';
 echo '<br><br>';
 $id_pic = 1;
 
-$row = $usr->get_picture_profil($id_pic);
+$row = $usr->get_all_details_of_all_id_between_age_min_max("2000-01-01", "2020-01-01");
 print_r($row);
 
-echo '<br>salut<br>';
-echo $row;
+echo '<br>salutsss<br>';
+
+
+$date = date_create('2000-01-01');
+date_add($date, date_interval_create_from_date_string('1 years'));
+echo date_format($date, 'Y-m-d');
+// $age_min2 = date('(Y - 16)-m-d');
+// //
+// // echo $age_min2;
+//
+// $yearnow= date("Y");
+// $yearnext=$yearnow+1;
+// echo date("Y")."-".$yearnext;
+
+//echo $row;
 return;
 ?>
