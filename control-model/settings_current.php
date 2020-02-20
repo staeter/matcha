@@ -10,10 +10,10 @@ echo '{
     "first_name" : "John",
     "last_name" : "Doe",
     "email" : "Doe@gmail.com",
-    "gender" : "Man",
-    "orientation" : "Bisexual",
+    "gender" : "Woman",
+    "orientation" : "Heterosexual",
     "biography" : "Im good",
-    "birth" : "01-01-1970",
+    "birth" : "1970-01-01",
     "pictures" :
       [ { "id" : 1,
           "path" : "https://images.unsplash.com/photo-1537886079430-486164575c54?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=4c747db3353a34b312d05786f47930d3&auto=format&fit=crop&w=600&q=60"

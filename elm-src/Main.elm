@@ -35,20 +35,28 @@ import MultiInput exposing (..)
 
 import RemoteData exposing (RemoteData(..))
 
+import Date exposing (..)
+import Time exposing (Month(..))
+import Time.Format exposing (monthToString)
+
 import Bootstrap.CDN as CDN exposing (stylesheet)
 import Bootstrap.Card as Card exposing (..)
+import Bootstrap.Card.Block as Block exposing (..)
 import Bootstrap.Carousel as Carousel exposing (..)
 import Bootstrap.Carousel.Slide as Slide exposing (..)
+import Bootstrap.Button as Button exposing (..)
+import Bootstrap.Utilities.Spacing as Spacing exposing (mt2)
 
 
 -- modules
 
-import Alert  exposing (..)
-import Form  exposing (..)
-import Feed  exposing (..)
+import Alert exposing (..)
+import Form exposing (..)
+import Feed exposing (..)
 import BasicValues exposing (..)
 import ZipList exposing (..)
 import Dropdown exposing (..)
+import MyList exposing (..)
 
 
 -- model
@@ -96,6 +104,10 @@ type alias LModel =
   , settingsBiography : String
   , settingsTagsState : MultiInput.State
   , settingsTagsItems : List String
+  , settingsBirth : Date
+  , settingsBirthDay : ZipList (Int, String)
+  , settingsBirthMonth : ZipList (Date.Month, String)
+  , settingsBirthYear : ZipList (Int, String)
   -- pictures settings
   , pictures : Maybe (ZipList (Int, String))
   }
@@ -186,8 +198,24 @@ anonymousAccessInit route =
         }
   , Cmd.none )
 
+dayList : List (Int, String)
+dayList =
+  List.range 1 31
+  |> List.map (\ nr -> (nr, String.fromInt nr) )
+
+monthList : List (Date.Month, String)
+monthList =
+  [ Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec ]
+  |> List.map (\ month -> (month, monthToString month) )
+
+yearList : List (Int, String)
+yearList =
+  List.range 1900 2020
+  |> List.map (\ nr -> (nr, String.fromInt nr) )
+
 loggedAccessInit : Route -> String -> String -> (Access, Cmd Msg)
 loggedAccessInit route pseudo picture =
+  let date = Date.fromOrdinalDate 2000 1 in
   ( Logged
       { pseudo = pseudo
       , picture = picture
@@ -213,6 +241,16 @@ loggedAccessInit route pseudo picture =
       , settingsBiography = ""
       , settingsTagsState = MultiInput.init "settings-tags"
       , settingsTagsItems = []
+      , settingsBirth = date
+      , settingsBirthDay =
+          ZipList.fromList dayList
+          |> ZipList.goToFirst (Tuple.first >> (==) (Date.day date))
+      , settingsBirthMonth =
+          ZipList.fromList monthList
+          |> ZipList.goToFirst (Tuple.first >> (==) (Date.month date))
+      , settingsBirthYear =
+          ZipList.fromList yearList
+          |> ZipList.goToFirst (Tuple.first >> (==) (Date.year date))
       , pictures = Nothing
       }
   , case route of
@@ -315,6 +353,7 @@ type Msg
   | InternalLinkClicked Url
   | ExternalLinkClicked String
   | UrlChange Url
+  | NavToUser Int
   -- time
   | Tick Time.Posix
   -- signin
@@ -353,6 +392,9 @@ type Msg
   | InputSettingsOrientation (ZipList (BasicValues.Orientation, String))
   | InputSettingsBiography String
   | InputSettingsTags MultiInput.Msg
+  | InputSettingsBirthDay (ZipList (Int, String))
+  | InputSettingsBirthMonth (ZipList (Date.Month, String))
+  | InputSettingsBirthYear (ZipList (Int, String))
   | SubmitSettings
   | ResultSettings (Result Http.Error (Result String String))
   -- user pictures update
@@ -370,6 +412,10 @@ type Msg
   | ReceivePageContentUpdate (Result Http.Error (DataAlert PageContent))
   | Like Int
   | ReceiveLikeUpdate (Result Http.Error (DataAlert (Int, Bool)))
+  | Block Int
+  | ReceiveBlockUpdate (Result Http.Error (Result String String))
+  | Report Int
+  | ReceiveReportUpdate (Result Http.Error (Result String String))
   | ReceiveUserDetails (Result Http.Error (DataAlert UserDetails))
   | ReceiveUnreadNotifsAmount (Result Http.Error (DataAlert Int))
   | ReceiveNotifS (Result Http.Error (DataAlert (List Notif)))
@@ -453,6 +499,10 @@ update msg model =
         _ ->
           ({ model | route = newRoute }, Cmd.none)
 
+    (Logged lmodel, _, NavToUser id) ->
+      ( model
+      , Nav.pushUrl model.key ("/user/" ++ (String.fromInt id))
+      )
 
     -- time
 
@@ -709,6 +759,27 @@ update msg model =
       , Cmd.none
       )
 
+    (Logged lmodel, Settings, InputSettingsBirthDay selection) ->
+      ( { model | access = Logged { lmodel |
+          settingsBirthDay = selection
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, InputSettingsBirthMonth selection) ->
+      ( { model | access = Logged { lmodel |
+          settingsBirthMonth = selection
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, InputSettingsBirthYear selection) ->
+      ( { model | access = Logged { lmodel |
+          settingsBirthYear = selection
+        }}
+      , Cmd.none
+      )
+
     (Logged lmodel, Settings, InputSettingsBiography bio) ->
       ( { model | access = Logged { lmodel |
           settingsBiography = bio
@@ -731,7 +802,13 @@ update msg model =
         )
 
     (Logged lmodel, Settings, SubmitSettings) ->
-      ( model
+      ( { model | access = Logged { lmodel | settingsBirth =
+            Maybe.map3 Date.fromCalendarDate
+                (lmodel.settingsBirthYear |> ZipList.current |> Maybe.map Tuple.first)
+                (lmodel.settingsBirthMonth |> ZipList.current |> Maybe.map Tuple.first)
+                (lmodel.settingsBirthDay |> ZipList.current |> Maybe.map Tuple.first)
+            |> Maybe.withDefault lmodel.settingsBirth
+        } }
       , submitSettings lmodel
       )
 
@@ -844,8 +921,9 @@ update msg model =
     (Logged lmodel, Home, Like id) ->
       let likeRequest = requestLike id ReceiveLikeUpdate in
       ( model, likeRequest )
+
     (Logged lmodel, User urlId, Like id) ->
-      if urlId == id
+      if Debug.log "send like request" (urlId == id)
       then
         let likeRequest = requestLike id ReceiveLikeUpdate in
         ( model, likeRequest )
@@ -868,7 +946,9 @@ update msg model =
                         Success usrd ->
                           if usrd.id == id
                           then Success { usrd | liked = newLikeStatus }
+                                  |> Debug.log "ud updated"
                           else Success usrd
+                                  |> Debug.log "ud not updated"
                         smthg -> smthg
               }
             }
@@ -879,6 +959,46 @@ update msg model =
           , Cmd.none
           )
         Error error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
+
+    (Logged lmodel, User urlId, Block id) ->
+      ( model
+      , submitBlock id
+      )
+
+    (Logged lmodel, User urlId, Report id) ->
+      ( model
+      , submitReport id
+      )
+
+    (Logged lmodel, _, ReceiveBlockUpdate result) ->
+      case result of
+        Ok (Ok message) ->
+          ( model |> (Alert.put << Just) (Alert.successAlert message)
+          , Nav.pushUrl model.key "/"
+          )
+        Ok (Err message) ->
+          ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
+          , Cmd.none
+          )
+        Err error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
+
+    (Logged lmodel, _, ReceiveReportUpdate result) ->
+      case result of
+        Ok (Ok message) ->
+          ( model |> (Alert.put << Just) (Alert.successAlert message)
+          , Cmd.none
+          )
+        Ok (Err message) ->
+          ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
+          , Cmd.none
+          )
+        Err error ->
           ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
           , Cmd.none
           )
@@ -1010,6 +1130,16 @@ update msg model =
                     |> ZipList.goToFirst (\ elem -> currentSettings.orientation == Tuple.first elem )
                 , settingsBiography = currentSettings.biography
                 , settingsTagsItems = currentSettings.tags
+                , settingsBirth = currentSettings.birth
+                , settingsBirthDay =
+                    ZipList.fromList dayList
+                    |> ZipList.goToFirst (Tuple.first >> (==) (Date.day currentSettings.birth))
+                , settingsBirthMonth =
+                    ZipList.fromList monthList
+                    |> ZipList.goToFirst (Tuple.first >> (==) (Date.month currentSettings.birth))
+                , settingsBirthYear =
+                    ZipList.fromList yearList
+                    |> ZipList.goToFirst (Tuple.first >> (==) (Date.year currentSettings.birth))
               }
             } |> Alert.put alert
           , Cmd.none
@@ -1145,6 +1275,26 @@ retreiveAccountResultHandler result model cmd =
       , cmd |> Cmd.map AccountRetrievalForm
       )
 
+-- report and block
+
+submitBlock : Int -> Cmd Msg
+submitBlock id =
+  Http.post
+      { url = "http://localhost/control/user_block.php"
+      , body = multipartBody
+                [ stringPart "id" (String.fromInt id) ]
+      , expect = Http.expectJson ReceiveBlockUpdate resultMessageDecoder
+      }
+
+submitReport : Int -> Cmd Msg
+submitReport id =
+  Http.post
+      { url = "http://localhost/control/user_report.php"
+      , body = multipartBody
+                [ stringPart "id" (String.fromInt id) ]
+      , expect = Http.expectJson ReceiveReportUpdate resultMessageDecoder
+      }
+
 
 -- settings
 
@@ -1156,7 +1306,7 @@ type alias CurrentSettings =
   , gender : Gender
   , orientation : BasicValues.Orientation
   , biography : String
-  , birth : String
+  , birth : Date
   , pictures : ZipList (Int, String)
   , popularity_score : Int
   , tags : List String
@@ -1184,19 +1334,22 @@ currentSettingsDecoder =
   Field.require "popularity_score" Decode.int <| \popularity_score ->
   Field.require "tags" (Decode.list Decode.string) <| \tags ->
 
-  Decode.succeed
-    { pseudo = pseudo
-    , first_name = first_name
-    , last_name = last_name
-    , email = email
-    , gender = gender
-    , orientation = orientation
-    , biography = biography
-    , birth = birth
-    , pictures = ZipList.fromList pictures
-    , popularity_score = popularity_score
-    , tags = tags
-    }
+  case Date.fromIsoString birth of
+    Err msg -> Decode.fail msg
+    Ok date ->
+      Decode.succeed
+        { pseudo = pseudo
+        , first_name = first_name
+        , last_name = last_name
+        , email = email
+        , gender = gender
+        , orientation = orientation
+        , biography = biography
+        , birth = date
+        , pictures = ZipList.fromList pictures
+        , popularity_score = popularity_score
+        , tags = tags
+        }
 
 type alias SettingsModel a =
   { a
@@ -1209,6 +1362,10 @@ type alias SettingsModel a =
   , settingsBiography : String
   , settingsTagsState : MultiInput.State
   , settingsTagsItems : List String
+  , settingsBirth : Date
+  , settingsBirthDay : ZipList (Int, String)
+  , settingsBirthMonth : ZipList (Date.Month, String)
+  , settingsBirthYear : ZipList (Int, String)
   }
 
 submitSettings : SettingsModel a -> Cmd Msg
@@ -1235,6 +1392,13 @@ submitSettings model =
                       |> orientationToString
                     )
                 , stringPart "biography" model.settingsBiography
+                , stringPart "tags"
+                    ( model.settingsTagsItems
+                      |> List.intersperse " "
+                      |> MyList.sumStringList
+                    )
+                , stringPart "birth" <|
+                    Date.toIsoString model.settingsBirth
                 ]
       , expect = Http.expectJson ResultPwUpdate resultMessageDecoder
       }
@@ -1682,32 +1846,11 @@ view model =
         ]
       }
 
-    (Anonymous _, _) ->
-      { title = "matcha - 404 page not found"
-      , body =
-        column  [ centerX
-                , centerY
-                ]
-                [ El.el [ padding 5
-                        , centerX
-                        ]
-                        ( El.text "You seem lost" )
-                , El.el [ padding 5
-                        , centerX
-                        ]
-                        ( a [ href "/signin" ]
-                            [ Html.text "go to signin" ]
-                          |> El.html
-                        )
-                ]
-        |> El.layout []
-        |> List.singleton
-      }
-
     (Logged lmodel, Home) ->
       { title = "matcha - home"
       , body =
-        [ viewHeader model.route lmodel
+        [ CDN.stylesheet
+        , viewHeader model.route lmodel
         , Alert.view model
         , Maybe.map Form.view lmodel.filtersForm
           |> Maybe.map (Html.map FiltersForm)
@@ -1732,6 +1875,13 @@ view model =
               Success ud ->
                 [ Alert.view model
                 , viewUserDetails ud
+                  |> El.html
+                  |> El.layout  [ centerX
+                                , centerY
+                                , padding 64
+                                , El.width shrink
+                                , El.height shrink
+                                ]
                 ]
               RemoteData.Failure err ->
                 model
@@ -1815,12 +1965,48 @@ view model =
         ]
       }
 
+    (Anonymous _, _) ->
+      { title = "matcha - 404 page not found"
+      , body =
+          column  [ centerX
+                  , centerY
+                  ]
+                  [ El.el [ padding 5
+                          , centerX
+                          ]
+                          ( El.text "You seem lost" )
+                  , El.el [ padding 5
+                          , centerX
+                          ]
+                          ( a [ href "/signin" ]
+                              [ Html.text "go to signin" ]
+                            |> El.html
+                          )
+                  ]
+          |> El.layout []
+          |> List.singleton
+      }
+
     (Logged _, _) ->
       { title = "matcha - 404 page not found"
       , body =
-        [ Html.text "You seem lost", br [] []
-        , a [ href "/" ] [ Html.text "go back home" ]
-        ]
+          column  [ centerX
+                  , centerY
+                  ]
+                  [ El.el [ padding 5
+                          , centerX
+                          ]
+                          ( El.text "You seem lost" )
+                  , El.el [ padding 5
+                          , centerX
+                          ]
+                          ( a [ href "/" ]
+                              [ Html.text "go back home" ]
+                            |> El.html
+                          )
+                  ]
+          |> El.layout []
+          |> List.singleton
       }
 
 type alias PictUpdateModel a =
@@ -1944,23 +2130,6 @@ viewHeader route lmodel =
                 ] [ Html.text "signout" ]
             -- , Form.view lmodel.signoutForm |> Html.map SignoutForm
             ]
-      ]
-
-viewUserDetails : UserDetails -> Html Msg
-viewUserDetails userDetails =
-  div []
-      [ viewCarousel
-          userDetails.pictures
-          userDetails.carouselState
-          InputUserDetailsSelectImage
-      , h2 [] [ Html.text userDetails.pseudo ]
-      , h3 [] [ Html.text (userDetails.first_name ++ " " ++ userDetails.last_name) ]
-      , Html.text (orientationToString userDetails.orientation ++ " " ++ genderToString userDetails.gender )
-      , Html.text userDetails.birth
-      , br [] []
-      , Html.text userDetails.biography
-      , br [] []
-      , viewLikeButton userDetails.id userDetails.liked
       ]
 
 orientationToString : BasicValues.Orientation -> String
@@ -2278,6 +2447,29 @@ settingsView model =
                             [ centerY ]
                             (El.text "firstname : ")
                 }
+          , row []
+                [ El.el
+                      [ onEnter SubmitSettings
+                      , padding 8
+                      ]
+                      ( dropdown [] model.settingsBirthDay InputSettingsBirthDay
+                        |> El.html
+                      )
+                , El.el
+                      [ onEnter SubmitSettings
+                      , padding 8
+                      ]
+                      ( dropdown [] model.settingsBirthMonth InputSettingsBirthMonth
+                        |> El.html
+                      )
+                , El.el
+                      [ onEnter SubmitSettings
+                      , padding 8
+                      ]
+                      ( dropdown [] model.settingsBirthYear InputSettingsBirthYear
+                        |> El.html
+                      )
+                ]
           , Inp.email
                 [ onEnter SubmitSettings
                 , padding 8
@@ -2335,27 +2527,41 @@ settingsView model =
                 }
           ]
 
-viewProfile : Profile -> Html Msg
+viewProfile : Profile -> Card.Config Msg
 viewProfile profile =
-  div []
-      [ img [ src profile.picture ] []
-      , br [] []
-      , a [ href ("/user/" ++ (String.fromInt profile.id)) ]
-          [ Html.text profile.pseudo ]
-      , br [] []
-      , div [] (List.map Html.text profile.tags)
-      , viewLikeButton profile.id profile.liked
-      ]
+  Card.config [ Card.attrs [ style "width" "20rem" ] ]
+    |> Card.header [ class "text-center" ]
+        [ img [ src profile.picture ] []
+        , h3  [ Spacing.mt2
+              , Html.Events.onClick (NavToUser profile.id)
+              ] [ Html.text profile.pseudo ]
+        ]
+    |> Card.block []
+        [ Block.titleH4 [] [ Html.text "Card title" ]
+        , Block.text [] [ Html.text
+                            ( List.intersperse " " profile.tags
+                              |> sumStringList
+                            )
+                        ]
+        , Block.custom <|
+            viewLikeButton profile.id profile.liked
+        ]
 
 viewLikeButton : Int -> Bool -> Html Msg
 viewLikeButton id isLiked =
-  Html.button
-          [ Html.Events.onClick (Like id)
-          , if isLiked
-            then style "background-color" "red"
-            else style "background-color" "white"
-          ]
-          [ Html.text "Like" ]
+  Button.button
+    [ if isLiked
+      then Button.primary
+      else Button.secondary
+    , Button.attrs [ Html.Events.onClick (Like id) ]
+    ] [ Html.text "like" ]
+
+viewAngryButton : String -> Msg -> Html Msg
+viewAngryButton name msg =
+  Button.button
+    [ Button.danger
+    , Button.attrs [ Html.Events.onClick msg ]
+    ] [ Html.text name ]
 
 viewFeedPageNav : Feed a -> Html Msg
 viewFeedPageNav lmodel =
@@ -2378,7 +2584,7 @@ viewFeed lmodel =
     Html.text "Loading content..."
   else
     div []
-        [ div [] ( List.map viewProfile lmodel.feedContent )
+        [ Card.columns ( List.map viewProfile lmodel.feedContent )
         , viewFeedPageNav lmodel
         ]
 
@@ -2424,9 +2630,9 @@ viewCarousel : List String -> Carousel.State -> (Carousel.Msg -> Msg) -> Html Ms
 viewCarousel imgList state toMsg =
   Carousel.config toMsg
     [ Html.Attributes.style
-        "width" "256px"
+        "width" "45em"
     , Html.Attributes.style
-        "height" "256px"
+        "height" "45em"
     ]
   |> Carousel.withControls
   |> Carousel.withIndicators
@@ -2444,13 +2650,41 @@ viewCarousel imgList state toMsg =
                 , Html.Attributes.style
                     "background-repeat" "no-repeat"
                 , Html.Attributes.style
-                    "width" "256px"
+                    "width" "45em"
                 , Html.Attributes.style
-                    "height" "256px"
+                    "height" "45em"
                 ]
                 (Slide.customContent (div [] [])) )
       )
   |> Carousel.view state
+
+viewUserDetails : UserDetails -> Html Msg
+viewUserDetails ud =
+  Card.config [ Card.attrs [ style "width" "47em" ] ]
+    |> Card.header
+        [ class "text-center" ]
+        [ viewCarousel ud.pictures ud.carouselState InputUserDetailsSelectImage
+        , h3 [ Spacing.mt2 ] [ Html.text ud.pseudo ]
+        ]
+    |> Card.block []
+        [ Block.titleH4 [] [ Html.text (ud.first_name ++ " " ++ ud.last_name) ]
+        , Block.titleH6 [] [ Html.text (ud.birth) ]
+        , Block.titleH6 [] [ Html.text ((orientationToString ud.orientation) ++ " " ++ (genderToString ud.gender)) ]
+        , Block.text [] [ Html.text ud.biography ]
+        , Block.text [] [ Html.text <|
+                            case ud.last_log of
+                              Now -> "Is logged in"
+                              AWhileAgo date -> "Last log : " ++ date
+                        ]
+        , Block.custom <|
+            viewLikeButton ud.id ud.liked
+        , Block.custom <|
+            viewAngryButton "block" (Block ud.id)
+        , Block.custom <|
+            viewAngryButton "reprt" (Report ud.id)
+        ]
+    |> Card.view
+
 
 -- subscriptions
 

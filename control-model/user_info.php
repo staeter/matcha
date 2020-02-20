@@ -6,7 +6,7 @@ error_log("[POST] user_info.php: " . $result);
 
 echo '{
   "data" : {
-    "id" : 1,
+    "id" : 3,
     "pseudo" : "hisPseudo",
     "first_name" : "John",
     "last_name" : "Doe",
