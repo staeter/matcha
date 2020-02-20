@@ -105,7 +105,7 @@ $usr->set_a_notif_for_profile_viewed($_POST['id']);
       "biography" : "'.$row['biography'].'",
       "birth" : "'.$row['birth'].'",
       "last_log" : "'.$row['last_log'].'",
-      "pictures" : ["/data/name.png", "/data/pic2.png"],
+      "pictures" : ["/Pictures/rick.png"],
       "popularity_score" : '.$row['popularity_score'].',
       "tags" : ["joy", "stuff"],
       "liked" : '.$x.'
@@ -121,7 +121,8 @@ else {
 "data": {},
 "alert": {
  "color": "DarkRed",
- "message": "Cant get information of the user the row who must contain all info do not exist"}
+ "message": "Cant get information of the user the row who must contain all info do not exist"
+}
 }';
 }
 ?>

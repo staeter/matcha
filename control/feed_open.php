@@ -1,8 +1,8 @@
 <?php
-ob_start();
-var_dump($_POST);
-$result = ob_get_clean();
-error_log("[POST] feed_open.php: " . $result);
+// ob_start();
+// var_dump($_POST);
+// $result = ob_get_clean();
+// error_log("[POST] feed_open.php: " . $result);
 
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
@@ -72,7 +72,7 @@ foreach ($array as $key => $value)
       "id" : '.$row[$key]['id_user'].',
       "pseudo" : "'.$row[$key]['pseudo'].'",
       "picture" : "'.$path['path'].'",
-      "tags" : ["sosa", "alanoix"],
+      "tags" : ["sosa"," ", "alanoix"],
       "liked" : '.$liked.'
     },';
 }
@@ -87,56 +87,56 @@ $string .= ']
 }';
 echo $string;
 return;
-
-echo '{
-  "data" : {
-    "filtersEdgeValues" : {
-      "ageMin" : 16,
-      "ageMax" : 120,
-      "distanceMax" : 100,
-      "popularityMin" : 0,
-      "popularityMax" : 100
-    },
-    "pageContent" : {
-      "pageAmount" : 1,
-      "elemAmount" : 1,
-      "users" : [
-        {
-          "id" : '.$row[0]['id_user'].',
-          "pseudo" : "'.$row[0]['pseudo'].'",
-          "picture" : "/Pictures/addpic.png",
-          "tags" : ["geek ", "foot"],
-          "liked" : false
-        },
-        {
-          "id" : '.$row[1]['id_user'].',
-          "pseudo" : "'.$row[1]['pseudo'].'",
-          "picture" : "/Pictures/addpic.png",
-          "tags" : ["boty ", "makup"],
-          "liked" : false
-        },
-        {
-          "id" : '.$row[2]['id_user'].',
-          "pseudo" : "'.$row[2]['pseudo'].'",
-          "picture" : "/Pictures/addpic.png",
-          "tags" : ["tatoo ", "beer"],
-          "liked" : false
-        },
-        {
-          "id" : '.$row[3]['id_user'].',
-          "pseudo" : "'.$row[3]['pseudo'].'",
-          "picture" : "/Pictures/addpic.png",
-          "tags" : ["geek ", "fun"],
-          "liked" : true
-        }
-      ]
-    }
-  },
-  "alert" : {
-    "color" : "DarkBlue",
-    "message" : "feed open call"
-  }
-}';
+//
+// echo '{
+//   "data" : {
+//     "filtersEdgeValues" : {
+//       "ageMin" : 16,
+//       "ageMax" : 120,
+//       "distanceMax" : 100,
+//       "popularityMin" : 0,
+//       "popularityMax" : 100
+//     },
+//     "pageContent" : {
+//       "pageAmount" : 1,
+//       "elemAmount" : 1,
+//       "users" : [
+//         {
+//           "id" : '.$row[0]['id_user'].',
+//           "pseudo" : "'.$row[0]['pseudo'].'",
+//           "picture" : "/Pictures/addpic.png",
+//           "tags" : ["geek ", "foot"],
+//           "liked" : false
+//         },
+//         {
+//           "id" : '.$row[1]['id_user'].',
+//           "pseudo" : "'.$row[1]['pseudo'].'",
+//           "picture" : "/Pictures/addpic.png",
+//           "tags" : ["boty ", "makup"],
+//           "liked" : false
+//         },
+//         {
+//           "id" : '.$row[2]['id_user'].',
+//           "pseudo" : "'.$row[2]['pseudo'].'",
+//           "picture" : "/Pictures/addpic.png",
+//           "tags" : ["tatoo ", "beer"],
+//           "liked" : false
+//         },
+//         {
+//           "id" : '.$row[3]['id_user'].',
+//           "pseudo" : "'.$row[3]['pseudo'].'",
+//           "picture" : "/Pictures/addpic.png",
+//           "tags" : ["geek ", "fun"],
+//           "liked" : true
+//         }
+//       ]
+//     }
+//   },
+//   "alert" : {
+//     "color" : "DarkBlue",
+//     "message" : "feed open call"
+//   }
+// }';
 //
 /*
 {
