@@ -412,6 +412,10 @@ type Msg
   | ReceivePageContentUpdate (Result Http.Error (DataAlert PageContent))
   | Like Int
   | ReceiveLikeUpdate (Result Http.Error (DataAlert (Int, Bool)))
+  | Block Int
+  | ReceiveBlockUpdate (Result Http.Error (Result String String))
+  | Report Int
+  | ReceiveReportUpdate (Result Http.Error (Result String String))
   | ReceiveUserDetails (Result Http.Error (DataAlert UserDetails))
   | ReceiveUnreadNotifsAmount (Result Http.Error (DataAlert Int))
   | ReceiveNotifS (Result Http.Error (DataAlert (List Notif)))
@@ -959,6 +963,46 @@ update msg model =
           , Cmd.none
           )
 
+    (Logged lmodel, User urlId, Block id) ->
+      ( model
+      , submitBlock id
+      )
+
+    (Logged lmodel, User urlId, Report id) ->
+      ( model
+      , submitReport id
+      )
+
+    (Logged lmodel, _, ReceiveBlockUpdate result) ->
+      case result of
+        Ok (Ok message) ->
+          ( model |> (Alert.put << Just) (Alert.successAlert message)
+          , Nav.pushUrl model.key "/"
+          )
+        Ok (Err message) ->
+          ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
+          , Cmd.none
+          )
+        Err error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
+
+    (Logged lmodel, _, ReceiveReportUpdate result) ->
+      case result of
+        Ok (Ok message) ->
+          ( model |> (Alert.put << Just) (Alert.successAlert message)
+          , Cmd.none
+          )
+        Ok (Err message) ->
+          ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
+          , Cmd.none
+          )
+        Err error ->
+          ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+          , Cmd.none
+          )
+
     (Logged lmodel, _, ReceiveUserDetails result) ->
       case toWebResultDataAlert result of
         AvData userDetails alert ->
@@ -1230,6 +1274,26 @@ retreiveAccountResultHandler result model cmd =
       ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
       , cmd |> Cmd.map AccountRetrievalForm
       )
+
+-- report and block
+
+submitBlock : Int -> Cmd Msg
+submitBlock id =
+  Http.post
+      { url = "http://localhost/control/user_block.php"
+      , body = multipartBody
+                [ stringPart "id" (String.fromInt id) ]
+      , expect = Http.expectJson ReceiveBlockUpdate resultMessageDecoder
+      }
+
+submitReport : Int -> Cmd Msg
+submitReport id =
+  Http.post
+      { url = "http://localhost/control/user_report.php"
+      , body = multipartBody
+                [ stringPart "id" (String.fromInt id) ]
+      , expect = Http.expectJson ReceiveReportUpdate resultMessageDecoder
+      }
 
 
 -- settings
@@ -2492,6 +2556,13 @@ viewLikeButton id isLiked =
     , Button.attrs [ Html.Events.onClick (Like id) ]
     ] [ Html.text "like" ]
 
+viewAngryButton : String -> Msg -> Html Msg
+viewAngryButton name msg =
+  Button.button
+    [ Button.danger
+    , Button.attrs [ Html.Events.onClick msg ]
+    ] [ Html.text name ]
+
 viewFeedPageNav : Feed a -> Html Msg
 viewFeedPageNav lmodel =
   div []
@@ -2607,6 +2678,10 @@ viewUserDetails ud =
                         ]
         , Block.custom <|
             viewLikeButton ud.id ud.liked
+        , Block.custom <|
+            viewAngryButton "block" (Block ud.id)
+        , Block.custom <|
+            viewAngryButton "reprt" (Report ud.id)
         ]
     |> Card.view
 
