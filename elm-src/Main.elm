@@ -35,6 +35,10 @@ import MultiInput exposing (..)
 
 import RemoteData exposing (RemoteData(..))
 
+import Date exposing (..)
+import Time exposing (Month(..))
+import Time.Format exposing (monthToString)
+
 import Bootstrap.CDN as CDN exposing (stylesheet)
 import Bootstrap.Card as Card exposing (..)
 import Bootstrap.Card.Block as Block exposing (..)
@@ -100,6 +104,10 @@ type alias LModel =
   , settingsBiography : String
   , settingsTagsState : MultiInput.State
   , settingsTagsItems : List String
+  , settingsBirth : Date
+  , settingsBirthDay : ZipList (Int, String)
+  , settingsBirthMonth : ZipList (Date.Month, String)
+  , settingsBirthYear : ZipList (Int, String)
   -- pictures settings
   , pictures : Maybe (ZipList (Int, String))
   }
@@ -190,8 +198,24 @@ anonymousAccessInit route =
         }
   , Cmd.none )
 
+dayList : List (Int, String)
+dayList =
+  List.range 1 31
+  |> List.map (\ nr -> (nr, String.fromInt nr) )
+
+monthList : List (Date.Month, String)
+monthList =
+  [ Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec ]
+  |> List.map (\ month -> (month, monthToString month) )
+
+yearList : List (Int, String)
+yearList =
+  List.range 1900 2020
+  |> List.map (\ nr -> (nr, String.fromInt nr) )
+
 loggedAccessInit : Route -> String -> String -> (Access, Cmd Msg)
 loggedAccessInit route pseudo picture =
+  let date = Date.fromOrdinalDate 2000 1 in
   ( Logged
       { pseudo = pseudo
       , picture = picture
@@ -217,6 +241,16 @@ loggedAccessInit route pseudo picture =
       , settingsBiography = ""
       , settingsTagsState = MultiInput.init "settings-tags"
       , settingsTagsItems = []
+      , settingsBirth = date
+      , settingsBirthDay =
+          ZipList.fromList dayList
+          |> ZipList.goToFirst (Tuple.first >> (==) (Date.day date))
+      , settingsBirthMonth =
+          ZipList.fromList monthList
+          |> ZipList.goToFirst (Tuple.first >> (==) (Date.month date))
+      , settingsBirthYear =
+          ZipList.fromList yearList
+          |> ZipList.goToFirst (Tuple.first >> (==) (Date.year date))
       , pictures = Nothing
       }
   , case route of
@@ -357,6 +391,9 @@ type Msg
   | InputSettingsOrientation (ZipList (BasicValues.Orientation, String))
   | InputSettingsBiography String
   | InputSettingsTags MultiInput.Msg
+  | InputSettingsBirthDay (ZipList (Int, String))
+  | InputSettingsBirthMonth (ZipList (Date.Month, String))
+  | InputSettingsBirthYear (ZipList (Int, String))
   | SubmitSettings
   | ResultSettings (Result Http.Error (Result String String))
   -- user pictures update
@@ -713,6 +750,27 @@ update msg model =
       , Cmd.none
       )
 
+    (Logged lmodel, Settings, InputSettingsBirthDay selection) ->
+      ( { model | access = Logged { lmodel |
+          settingsBirthDay = selection
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, InputSettingsBirthMonth selection) ->
+      ( { model | access = Logged { lmodel |
+          settingsBirthMonth = selection
+        }}
+      , Cmd.none
+      )
+
+    (Logged lmodel, Settings, InputSettingsBirthYear selection) ->
+      ( { model | access = Logged { lmodel |
+          settingsBirthYear = selection
+        }}
+      , Cmd.none
+      )
+
     (Logged lmodel, Settings, InputSettingsBiography bio) ->
       ( { model | access = Logged { lmodel |
           settingsBiography = bio
@@ -735,7 +793,13 @@ update msg model =
         )
 
     (Logged lmodel, Settings, SubmitSettings) ->
-      ( model
+      ( { model | access = Logged { lmodel | settingsBirth =
+            Maybe.map3 Date.fromCalendarDate
+                (lmodel.settingsBirthYear |> ZipList.current |> Maybe.map Tuple.first)
+                (lmodel.settingsBirthMonth |> ZipList.current |> Maybe.map Tuple.first)
+                (lmodel.settingsBirthDay |> ZipList.current |> Maybe.map Tuple.first)
+            |> Maybe.withDefault lmodel.settingsBirth
+        } }
       , submitSettings lmodel
       )
 
@@ -1017,6 +1081,16 @@ update msg model =
                     |> ZipList.goToFirst (\ elem -> currentSettings.orientation == Tuple.first elem )
                 , settingsBiography = currentSettings.biography
                 , settingsTagsItems = currentSettings.tags
+                , settingsBirth = currentSettings.birth
+                , settingsBirthDay =
+                    ZipList.fromList dayList
+                    |> ZipList.goToFirst (Tuple.first >> (==) (Date.day currentSettings.birth))
+                , settingsBirthMonth =
+                    ZipList.fromList monthList
+                    |> ZipList.goToFirst (Tuple.first >> (==) (Date.month currentSettings.birth))
+                , settingsBirthYear =
+                    ZipList.fromList yearList
+                    |> ZipList.goToFirst (Tuple.first >> (==) (Date.year currentSettings.birth))
               }
             } |> Alert.put alert
           , Cmd.none
@@ -1163,7 +1237,7 @@ type alias CurrentSettings =
   , gender : Gender
   , orientation : BasicValues.Orientation
   , biography : String
-  , birth : String
+  , birth : Date
   , pictures : ZipList (Int, String)
   , popularity_score : Int
   , tags : List String
@@ -1191,19 +1265,22 @@ currentSettingsDecoder =
   Field.require "popularity_score" Decode.int <| \popularity_score ->
   Field.require "tags" (Decode.list Decode.string) <| \tags ->
 
-  Decode.succeed
-    { pseudo = pseudo
-    , first_name = first_name
-    , last_name = last_name
-    , email = email
-    , gender = gender
-    , orientation = orientation
-    , biography = biography
-    , birth = birth
-    , pictures = ZipList.fromList pictures
-    , popularity_score = popularity_score
-    , tags = tags
-    }
+  case Date.fromIsoString birth of
+    Err msg -> Decode.fail msg
+    Ok date ->
+      Decode.succeed
+        { pseudo = pseudo
+        , first_name = first_name
+        , last_name = last_name
+        , email = email
+        , gender = gender
+        , orientation = orientation
+        , biography = biography
+        , birth = date
+        , pictures = ZipList.fromList pictures
+        , popularity_score = popularity_score
+        , tags = tags
+        }
 
 type alias SettingsModel a =
   { a
@@ -1216,6 +1293,10 @@ type alias SettingsModel a =
   , settingsBiography : String
   , settingsTagsState : MultiInput.State
   , settingsTagsItems : List String
+  , settingsBirth : Date
+  , settingsBirthDay : ZipList (Int, String)
+  , settingsBirthMonth : ZipList (Date.Month, String)
+  , settingsBirthYear : ZipList (Int, String)
   }
 
 submitSettings : SettingsModel a -> Cmd Msg
@@ -1242,6 +1323,13 @@ submitSettings model =
                       |> orientationToString
                     )
                 , stringPart "biography" model.settingsBiography
+                , stringPart "tags"
+                    ( model.settingsTagsItems
+                      |> List.intersperse " "
+                      |> MyList.sumStringList
+                    )
+                , stringPart "birth" <|
+                    Date.toIsoString model.settingsBirth
                 ]
       , expect = Http.expectJson ResultPwUpdate resultMessageDecoder
       }
@@ -2307,6 +2395,29 @@ settingsView model =
                             [ centerY ]
                             (El.text "firstname : ")
                 }
+          , row []
+                [ El.el
+                      [ onEnter SubmitSettings
+                      , padding 8
+                      ]
+                      ( dropdown [] model.settingsBirthDay InputSettingsBirthDay
+                        |> El.html
+                      )
+                , El.el
+                      [ onEnter SubmitSettings
+                      , padding 8
+                      ]
+                      ( dropdown [] model.settingsBirthMonth InputSettingsBirthMonth
+                        |> El.html
+                      )
+                , El.el
+                      [ onEnter SubmitSettings
+                      , padding 8
+                      ]
+                      ( dropdown [] model.settingsBirthYear InputSettingsBirthYear
+                        |> El.html
+                      )
+                ]
           , Inp.email
                 [ onEnter SubmitSettings
                 , padding 8
