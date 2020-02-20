@@ -82,6 +82,11 @@ echo $age_max;
 // je dois recuperer un tableau trier dont les users ont un age compris
 // entre
 // age min & age max
+
+$popularity_min = 1;
+$popularity_max = 100;
+
+
 $row_to_clear = $usr->get_all_details_of_all_id_between_age_min_max($age_max, $age_min);
 
 $array = array();

@@ -7,8 +7,8 @@ error_log("[POST] feed_page.php: " . $result);
 
 echo '{
   "data" : {
-    "pageAmount" : 6,
-    "elemAmount" : 18,
+    "pageAmount" : 1,
+    "elemAmount" : 1,
     "users" : [
       {
         "id" : 2,

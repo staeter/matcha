@@ -9,8 +9,84 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);
 $row = $usr->get_all_details_of_all_id();
 
+$string = '{
+  "data" : {
+    "filtersEdgeValues" : {
+      "ageMin" : 16,
+      "ageMax" : 120,
+      "distanceMax" : 100,
+      "popularityMin" : 0,
+      "popularityMax" : 100
+    },
+    "pageContent" : {
+      "pageAmount" : 1,
+      "elemAmount" : 1,
+      "users" : [';
+
+      // ici j enleve l occurence de l user connecté  //
+$arrayxx = array();
+foreach ($row as $key => $value) {
+  if ($row[$key]['id_user'] != $_SESSION['id'])
+      $arrayxx[$key] = $row[$key];}
 
 
+foreach ($arrayxx as $key => $value) {
+  if ($arrayxx[$key]['biography'] != NULL)
+      $array[$key] = $arrayxx[$key];}
+
+
+if (empty($row) || empty($array))
+{
+    echo'"data" : {
+      "filtersEdgeValues" : {
+        "ageMin" : 16,
+        "ageMax" : 120,
+        "distanceMax" : 100,
+        "popularityMin" : 0,
+        "popularityMax" : 100
+      },
+      "pageContent" : {
+        "pageAmount" : 1,
+        "elemAmount" : 1,
+        "users" : []
+      },
+      "alert" : {
+        "color" : "DarkRed",
+        "message" : "There is no profil who match ur query"
+      }
+    }';
+    return;
+}
+foreach ($array as $key => $value)
+{
+
+    $path = $usr->get_picture_profil($row[$key]['id_user']);
+    $liked = $usr->get_if_liked($row[$key]['id_user']);
+    if ($liked == 1)
+      $liked = 'true';
+    else
+      $liked = 'false';
+
+
+    $string .= '{
+      "id" : '.$row[$key]['id_user'].',
+      "pseudo" : "'.$row[$key]['pseudo'].'",
+      "picture" : "'.$path['path'].'",
+      "tags" : ["sosa", "alanoix"],
+      "liked" : '.$liked.'
+    },';
+}
+$string = substr($string, 0, -1);
+$string .= ']
+}
+},
+"alert" : {
+"color" : "DarkBlue",
+"message" : "feed open call"
+}
+}';
+echo $string;
+return;
 
 echo '{
   "data" : {
@@ -22,8 +98,8 @@ echo '{
       "popularityMax" : 100
     },
     "pageContent" : {
-      "pageAmount" : 5,
-      "elemAmount" : 18,
+      "pageAmount" : 1,
+      "elemAmount" : 1,
       "users" : [
         {
           "id" : '.$row[0]['id_user'].',

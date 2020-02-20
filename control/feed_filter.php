@@ -63,11 +63,16 @@ $string = '{
 
 //////////////////////////////////////////////////
 // ici j enleve l occurence de l user connecté  //
-$array = array();
+$arrayx = array();
 foreach ($row_to_clear as $key => $value) {
   if ($row_to_clear[$key]['id_user'] != $_SESSION['id'])
-      $array[$key] = $row_to_clear[$key];
+      $arrayx[$key] = $row_to_clear[$key];
 }
+foreach ($arrayx as $key => $value) {
+  if ($arrayx[$key]['biography'] != NULL)
+      $array[$key] = $arrayx[$key];}
+
+
 /////////////////////////////////////////////////
 
 // ["popularityMin"]=>
