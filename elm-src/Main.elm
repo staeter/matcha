@@ -353,6 +353,7 @@ type Msg
   | InternalLinkClicked Url
   | ExternalLinkClicked String
   | UrlChange Url
+  | NavToUser Int
   -- time
   | Tick Time.Posix
   -- signin
@@ -494,6 +495,10 @@ update msg model =
         _ ->
           ({ model | route = newRoute }, Cmd.none)
 
+    (Logged lmodel, _, NavToUser id) ->
+      ( model
+      , Nav.pushUrl model.key ("/user/" ++ (String.fromInt id))
+      )
 
     -- time
 
@@ -2063,23 +2068,6 @@ viewHeader route lmodel =
             ]
       ]
 
--- viewUserDetails : UserDetails -> Html Msg
--- viewUserDetails userDetails =
---   div []
---       [ viewCarousel
---           userDetails.pictures
---           userDetails.carouselState
---           InputUserDetailsSelectImage
---       , h2 [] [ Html.text userDetails.pseudo ]
---       , h3 [] [ Html.text (userDetails.first_name ++ " " ++ userDetails.last_name) ]
---       , Html.text (orientationToString userDetails.orientation ++ " " ++ genderToString userDetails.gender )
---       , Html.text userDetails.birth
---       , br [] []
---       , Html.text userDetails.biography
---       , br [] []
---       , viewLikeButton userDetails.id userDetails.liked
---       ]
-
 orientationToString : BasicValues.Orientation -> String
 orientationToString orientation =
   case orientation of
@@ -2480,7 +2468,9 @@ viewProfile profile =
   Card.config [ Card.attrs [ style "width" "20rem" ] ]
     |> Card.header [ class "text-center" ]
         [ img [ src profile.picture ] []
-        , h3 [ Spacing.mt2 ] [ Html.text profile.pseudo ]
+        , h3  [ Spacing.mt2
+              , Html.Events.onClick (NavToUser profile.id)
+              ] [ Html.text profile.pseudo ]
         ]
     |> Card.block []
         [ Block.titleH4 [] [ Html.text "Card title" ]
@@ -2600,7 +2590,8 @@ viewCarousel imgList state toMsg =
 viewUserDetails : UserDetails -> Html Msg
 viewUserDetails ud =
   Card.config [ Card.attrs [ style "width" "47em" ] ]
-    |> Card.header [ class "text-center" ]
+    |> Card.header
+        [ class "text-center" ]
         [ viewCarousel ud.pictures ud.carouselState InputUserDetailsSelectImage
         , h3 [ Spacing.mt2 ] [ Html.text ud.pseudo ]
         ]
