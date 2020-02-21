@@ -91,6 +91,21 @@ foreach ($array as $key => $value) {
       $array1[$key] = $row_to_clear[$key];
 }
 
+$profile_viewed = $_POST['viewed'];
+$profile_liked = $_POST['liked'];
+
+if ($profile_viewed == TRUE)
+{
+  //trier array 1 pour ne contenir que les raw contenant une occurence dans profile viewed
+}
+
+if ($profile_liked == TRUE)
+{
+  //trier array 1 pour ne contenir que les raw contenant une occurence dans profile liked
+
+}
+
+
 if (empty($array1))
   {
     echo '{
