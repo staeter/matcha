@@ -7,9 +7,10 @@
 
 
 // tags
+//birth
+// var_dump($_POST);
+// return;
 
-
-//birth not set by simon
 
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
@@ -76,6 +77,13 @@ if ((!empty($_POST['last_name']) && ($_POST['last_name'] != $row['lastname'])))
       }';
       return;
     }
+}
+
+//birth
+
+if (!empty($_POST['birth']))
+{
+  $usr->set_birthdate($_POST['birth']);
 }
 
 
@@ -145,6 +153,37 @@ if (!empty($_POST['biography']))
 // }
 //
 //
+
+
+/// GESTION DES TAGS ici
+
+if (!empty($_POST['tags']))
+{
+  // je recois ici une string que je dois split avec espace
+  $i = 0;
+  $string = $_POST['tags'];
+
+  $string = trim($string);
+  $array = explode(" ", $string);
+  $usr->delete_all_tag();
+
+  foreach ($array as $key => $value) {
+    if ($array[$key] != '')
+    {
+      $tagstocheckifexist .= $array[$key] . ' ';
+      $x =  $usr->get_if_tag_already_set($array[$key]);
+      if ($x["COUNT(*)"] == '0')
+      {
+        $usr->set_tag($array[$key]);
+      }
+    }
+  }
+  // ic je supprime les entres qui existe mais qui ne sont pas dans l array
+  //
+
+}
+
+
 echo '{
   "result" : "Success",
   "message" : "settings update success!"

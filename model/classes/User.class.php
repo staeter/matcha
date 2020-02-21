@@ -594,6 +594,23 @@
 			// 	throw new DatabaseException("Fail setting picture in data base. " . $modified_row_count . " rows have been modified in the database.");
 			// }
 		}
+		public function get_all_picture_of_this_id($id)
+		{
+			//$query ()
+			$query = 'SELECT * FROM `picture` WHERE id_user = :id';
+			$this->_db->query($query, array(':id' => $id));
+
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+
+			// $modified_row_count = $this->_db->rowCount();
+			// if ($modified_row_count !== 1) {
+			// 	throw new DatabaseException("Fail setting picture in data base. " . $modified_row_count . " rows have been modified in the database.");
+			// }
+		}
 
 		public function update_picture($id_photo, $path_fichier)
 		{
@@ -700,26 +717,51 @@
 
 			public function get_tag()
 			{
-				$query = 'SELECT * FROM `ìntrests` WHERE id_user = :id';
+				$query = 'SELECT * FROM `intrests` WHERE id_user = :id';
 				$this->_db->query($query, array(':id' => $this->_id));
-				$row = $this->_db->fetch();
+				$row = $this->_db->fetchAll();
 			 	if ($row === false) {
 				 throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
 			 	}
 				return $row;
 			}
 
-			public function set_tag($string)
+			public function get_tag_of_this_id($id)
 			{
-				$query = 'INSERT INTO `ìntrests` (id_user, tags) VALUES (:id, :string)';
-				$this->_db->query($query, array(':id' => $this->_id, ':string' => $string));
-				$row = $this->_db->fetch();
+				$query = 'SELECT * FROM `intrests` WHERE id_user = :id';
+				$this->_db->query($query, array(':id' => $id));
+				$row = $this->_db->fetchAll();
 			 	if ($row === false) {
 				 throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
 			 	}
-				return 1;
+				return $row;
 			}
 
+
+			public function delete_all_tag()
+			{
+				//$query = 'DELETE FROM `intrests` WHERE id_user = :id AND tag = :string)';
+				$query = 'DELETE FROM `intrests` WHERE `intrests`.`id_user` = :id';
+				$this->_db->query($query, array(':id' => $this->_id));
+				//$this->_db->execute();
+				// $row = $this->_db->fetch();
+				// return $row;
+			}
+
+			public function set_tag($string)
+			{
+				$query = 'INSERT INTO `intrests` (id_user, tag) VALUES (:id, :string)';
+				$this->_db->query($query, array(':id' => $this->_id, ':string' => $string));
+				// $row = $this->_db->fetch();
+				// return $row;
+			}
+			public function get_if_tag_already_set($string)
+			{
+				$query = 'SELECT COUNT(*) FROM `intrests` WHERE id_user = :id AND tag = :string';
+				$this->_db->query($query, array(':id' => $this->_id, ':string' => $string));
+				$row = $this->_db->fetch();
+			 	return $row;
+			}
 
 		/*
 		** -------------------- Get --------------------

@@ -121,12 +121,24 @@ foreach ($array1 as $key => $value)
     else
       $liked = 'false';
 
+      $rowtag = $usr->get_tag_of_this_id($row_to_clear[$key]['id_user']);
+        $output =' "tags" : [';
+        $x = 0;
+        foreach ($rowtag as $key => $value) {
+          $x = 1;
+          $output .=  '"'.$rowtag[$key]['tag'].'"';
+          $output .= ', ';
+        }
+        if ($x == 1)
+          $output = substr($output, 0 , -2);
+        $output .= ']';
+
 
     $string .= '{
       "id" : '.$row_to_clear[$key]['id_user'].',
       "pseudo" : "'.$row_to_clear[$key]['pseudo'].'",
       "picture" : "'.$path['path'].'",
-      "tags" : ["sosa", "alanoix"],
+      '.$output.',
       "liked" : '.$liked.'
     },';
 }

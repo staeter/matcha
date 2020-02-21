@@ -11,11 +11,7 @@ $usr = (unserialize($_SESSION['user']));
 if ($usr->is_valid_id($_POST['id']) === false)
 {
   echo '{
-    "result" : "failure",
-    "message" : "the id requested doesnt exist",
-    "data" : {
-      "newLikeStatus" : false
-    },
+    "data" : {},
     "alert" : {
       "color" : "DarkRed",
       "message" : "The id requested doesnt exist"

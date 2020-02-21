@@ -16,11 +16,11 @@
   var app = Elm.Main.init({
     node: document.getElementById('elm'),
     flags:  <?php
-              if (/*no user signed in*/ true) {
+              if (!isset($_SESSION['id'])) {
                 ?>null<?php
               }
               else {
-                ?>{ pseudo: "LeroyJenkins", picture: "/data/leroyspick.jpg" }<?php
+                ?>{ pseudo: .$_SESSION['pseudo']., picture: "/Pictures/rick.png" }<?php
               }
             ?>
   });

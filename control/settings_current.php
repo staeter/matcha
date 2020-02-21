@@ -1,6 +1,9 @@
 <?php
 // id[int]
 
+//
+// var_dump($_POST);
+// return;
 
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
@@ -24,6 +27,18 @@ else
   $orientation = 'Homosexual';
 
 $rowpic = $usr->get_all_picture();
+
+$rowtag = $usr->get_tag();
+$output =' "tags" : [';
+$x = 0;
+foreach ($rowtag as $key => $value) {
+  $x = 1;
+  $output .=  '"'.$rowtag[$key]['tag'].'"';
+  $output .= ', ';
+}
+if ($x == 1)
+  $output = substr($output, 0 , -2);
+$output .= ']';
 
 //
 // echo '{
@@ -92,7 +107,7 @@ echo '{
       }
     ],
   "popularity_score" : '.$row['popularity_score'].',
-  "tags" : []
+  '.$output.'
 },
 "alert" : {
   "color" : "DarkBlue",
