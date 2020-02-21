@@ -418,7 +418,13 @@
 		 	$this->_db->query($query, array(':value' => $value, ':id' => $this->_id));
 		}
 
-
+		public function list_of_like_of_user_connected()
+		{
+			$query = 'SELECT * FROM `like` WHERE `liked` = :lik AND (id_user_liking = :id OR id_user_liked = :id) ';
+			$this->_db->query($query, array(':lik' => 1, ':id' => $this->_id));
+			$row = $this->_db->fetchAll();
+			return $row;
+		}
 		public function get_if_liked($idli)
 		{
 			// id user liking

@@ -94,18 +94,50 @@ foreach ($array as $key => $value) {
 $profile_viewed = $_POST['viewed'];
 $profile_liked = $_POST['liked'];
 
-if ($profile_viewed == TRUE)
+// var_dump($array1);
+// return;
+if ($profile_viewed == 'true')
 {
   //trier array 1 pour ne contenir que les raw contenant une occurence dans profile viewed
 }
 
-if ($profile_liked == TRUE)
+
+
+if ($profile_liked == 'True')
 {
-  //trier array 1 pour ne contenir que les raw contenant une occurence dans profile liked
+  $row_like = $usr->list_of_like_of_user_connected();
+//   var_dump($row_like);
+//   // row like contient un tableau des occurence de like entre des users et lui
+//
+//   echo '<br>';
+//   var_dump($row_to_clear);
+//   echo '<br>';
+// var_dump($array1);
+  // donc le tableau a renvoye doit contenir uniquement ces occurences la
+$array1 = array();
+  foreach ($row_like as $key => $value) {
+    if ($row_like[$key]['id_user_liked'] == $row_to_clear[$key]['id_user'])
+    $array1[$key] = $row_to_clear[$key];
+  }
 
 }
 
 
+
+
+
+  //trier array 1 pour ne contenir que les raw contenant une occurence dans profile liked
+  // foreach ($row_like as $key => $value) {
+  //   if ($row_like[$key]['id_user_liked'] == $_SESSION['id'] || $row_like[$key]['id_user_liking'] == $_SESSION['id'])
+  //   {
+  //     print_r($row_like[$key]);
+  //     print_r($array1[$key]);
+  //       if ($row_like[$key]['id_user_liked'] == $array1[$key]['id_user'] || $row_like[$key]['id_user_liking'] == $array1[$key]['id_user'])
+  //       {
+  //         echo 'sosa aaaaa          ';
+  //       }
+  //   }
+  //  }
 if (empty($array1))
   {
     echo '{
@@ -126,6 +158,7 @@ if (empty($array1))
 //////////// pour l instant je gere popularité & age min/max
 ///////////////////////////////////////////////////////////////////////
 ////////////////////// CE FOREACH RENVOI LE MSG JSON //////////////////
+
 foreach ($array1 as $key => $value)
 {
 
@@ -150,13 +183,14 @@ foreach ($array1 as $key => $value)
 
 
     $string .= '{
-      "id" : '.$row_to_clear[$key]['id_user'].',
-      "pseudo" : "'.$row_to_clear[$key]['pseudo'].'",
+      "id" : '.$array1[$key]['id_user'].',
+      "pseudo" : "'.$array1[$key]['pseudo'].'",
       "picture" : "'.$path['path'].'",
       '.$output.',
       "liked" : '.$liked.'
     },';
 }
+
 
 $string = substr($string, 0, -1);
 

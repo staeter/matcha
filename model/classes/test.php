@@ -192,16 +192,19 @@ $string = "so sosa  s      s         ";
 // $output = substr($output, 0 , -2);
 // $output .= ']';
 // echo $output;
-$row_pic = $usr->get_all_picture_of_this_id(6);
-
-$string = '[';
-foreach ($row_pic as $key => $value) {
-  // code...
-  $string .= '"'.$row_pic[$key]['path'].'", ';
-}
-$string = substr($string, 0, -2);
-$string .= ']';
+// $row_pic = $usr->get_all_picture_of_this_id(6);
+//
+// $string = '[';
+// foreach ($row_pic as $key => $value) {
+//   // code...
+//   $string .= '"'.$row_pic[$key]['path'].'", ';
+// }
+// $string = substr($string, 0, -2);
+// $string .= ']';
 //var_dump($array);
-echo $string;;
+// echo $string;;
+
+$row = $usr->list_of_like_of_user_connected();
+print_r($row);
 return;
 ?>

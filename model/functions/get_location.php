@@ -23,10 +23,10 @@ function get_client_ip()
 
 $PublicIP = get_client_ip();
 //$PublicIP = '8.8.8.8';
-$json     = file_get_contents("http://ipinfo.io/$PublicIP/geo");
+$json     = file_get_contents("http://ipinfo.io/81.246.29.107/geo");
 $json     = json_decode($json, true);
 
-
+var_dump($json);
 function set_last_location($country, $town)
 {
   $query = ('UPDATE user SET last_localisation = :last_loc WHERE id_user = :id');
