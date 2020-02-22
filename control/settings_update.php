@@ -10,7 +10,8 @@
 //birth
 // var_dump($_POST);
 // return;
-
+// var_dump($_POST);
+// return;
 
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
@@ -131,11 +132,17 @@ if (!empty($_POST['orientation']))
   // 1 = Heterosexual
   // 2 = Homosexual
   if ($_POST['orientation'] == 'heterosexual')
+  {
     $orientatation = 1;
-  else if ($_POST['orientatation'] == 'homosexual')
+  }
+  else if ($_POST['orientation'] == 'homosexual')
+  {
     $orientatation = 2;
+  }
   else
+  {
     $orientatation = 0;
+  }
   $usr->set_sexuality_orientation($orientatation);
 }
 

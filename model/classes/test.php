@@ -204,7 +204,10 @@ $string = "so sosa  s      s         ";
 //var_dump($array);
 // echo $string;;
 
-$row = $usr->list_of_like_of_user_connected();
-print_r($row);
+// // $row = $usr->get_gender();
+// print_r($row);
+
+$usr->set_sexuality_orientation(2);
+echo "string";
 return;
 ?>

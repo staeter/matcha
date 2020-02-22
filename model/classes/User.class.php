@@ -371,7 +371,7 @@
 
 		public function set_sexuality_orientation($datatoinsert)
 		{
-		  $query = ('UPDATE user SET orientation = :orientation WHERE id_user = :id');
+		  $query = ('UPDATE `user` SET `orientation` = :orientation WHERE `id_user` = :id');
 		  $this->_db->query($query, array(':orientation' => $datatoinsert, ':id' => $this->_id));
 		}
 
@@ -856,7 +856,27 @@
 
 		}
 
+		public function get_sexuality_orientation()
+		{
+		  $query = 'SELECT `orientation` FROM `user` WHERE id_user = :id';
+		  $this->_db->query($query, array(':id' => $this->_id));
+			$row = $this->_db->fetch();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+		}
 
+		public function get_gender()
+		{
+			$query = 'SELECT `gender` FROM `user` WHERE id_user = :id';
+			$this->_db->query($query, array(':id' => $this->_id));
+			$row = $this->_db->fetch();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+		}
 
 
 		/*
