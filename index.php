@@ -8,11 +8,14 @@
   <link rel="stylesheet" href="/css/multi-input.css">
   <link rel="stylesheet" href="/css/header.css">
   <script src="/index.js"></script>
+  <script type='text/javascript' src='/js/PortFunnel.js'></script>
+  <script type='text/javascript' src='/js/PortFunnel/Geolocation.js'></script>
 </head>
 
 <body>
   <div id="elm"></div>
   <script>
+  
   var app = Elm.Main.init({
     node: document.getElementById('elm'),
     flags:  <?php
@@ -24,6 +27,10 @@
               }
             ?>
   });
+
+  var modules = ['Geolocation'];
+  PortFunnel.subscribe(app, {modules: modules});
+
   </script>
 </div>
 </html>

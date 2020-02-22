@@ -39,6 +39,11 @@ import Date exposing (..)
 import Time exposing (Month(..))
 import Time.Format exposing (monthToString)
 
+-- import PortFunnel
+--   exposing (FunnelSpec, GenericMessage, ModuleDesc, StateAccessors)
+-- import PortFunnel.Geolocation as Geolocation
+--   exposing (Message, Movement(..), Response(..))
+
 import Bootstrap.CDN as CDN exposing (stylesheet)
 import Bootstrap.Card as Card exposing (..)
 import Bootstrap.Card.Block as Block exposing (..)
@@ -108,6 +113,7 @@ type alias LModel =
   , settingsBirthDay : ZipList (Int, String)
   , settingsBirthMonth : ZipList (Date.Month, String)
   , settingsBirthYear : ZipList (Int, String)
+  , settingsGeoInfo : GeolocationInfo
   -- pictures settings
   , pictures : Maybe (ZipList (Int, String))
   }
@@ -251,6 +257,7 @@ loggedAccessInit route pseudo picture =
       , settingsBirthYear =
           ZipList.fromList yearList
           |> ZipList.goToFirst (Tuple.first >> (==) (Date.year date))
+      , settingsGeoInfo = GeoAuthRefused 0 0
       , pictures = Nothing
       }
   , case route of
@@ -395,6 +402,9 @@ type Msg
   | InputSettingsBirthDay (ZipList (Int, String))
   | InputSettingsBirthMonth (ZipList (Date.Month, String))
   | InputSettingsBirthYear (ZipList (Int, String))
+  | InputSettingsGeoLatitude String
+  | InputSettingsGeoLongitude String
+  | InputSettingsGeoAuth Bool
   | SubmitSettings
   | ResultSettings (Result Http.Error (Result String String))
   -- user pictures update
@@ -801,15 +811,70 @@ update msg model =
         , nextCmd |> Cmd.map InputSettingsTags
         )
 
+    (Logged lmodel, Settings, InputSettingsGeoLatitude latitudeStr) ->
+      String.toFloat latitudeStr
+      |> Maybe.map
+          (\ latitude ->
+            case lmodel.settingsGeoInfo of
+              GeoAuthGranted _ _ -> ( model, Cmd.none )
+              GeoAuthRefused _ longitude ->
+                ( { model | access = Logged { lmodel |
+                      settingsGeoInfo = GeoAuthRefused latitude longitude
+                  }}
+                , Cmd.none )
+          )
+      |> Maybe.withDefault
+            ( model |> (Alert.put << Just << Alert.invalidImputAlert) "The latitude you enter has to be a floating point number!"
+            , Cmd.none )
+
+    (Logged lmodel, Settings, InputSettingsGeoLongitude longitudeStr) ->
+      String.toFloat longitudeStr
+      |> Maybe.map
+          (\ longitude ->
+            case lmodel.settingsGeoInfo of
+              GeoAuthGranted _ _ -> ( model, Cmd.none )
+              GeoAuthRefused latitude _ ->
+                ( { model | access = Logged { lmodel |
+                      settingsGeoInfo = GeoAuthRefused latitude longitude
+                  }}
+                , Cmd.none )
+          )
+      |> Maybe.withDefault
+            ( model |> (Alert.put << Just << Alert.invalidImputAlert) "The longitude you enter has to be a floating point number!"
+            , Cmd.none )
+
+    (Logged lmodel, Settings, InputSettingsGeoAuth newAuth) ->
+      case lmodel.settingsGeoInfo of
+        GeoAuthGranted _ _ ->
+          if newAuth
+          then (model, Cmd.none)
+          else
+            ( { model | access = Logged { lmodel |
+                settingsGeoInfo = GeoAuthRefused 0 0
+              }}
+            , Cmd.none )
+        GeoAuthRefused _ _ ->
+          if not newAuth
+          then (model, Cmd.none)
+          else
+            ( { model | access = Logged { lmodel |
+                settingsGeoInfo = GeoAuthGranted 0 0
+              }}
+            , Cmd.none )
+
     (Logged lmodel, Settings, SubmitSettings) ->
-      ( { model | access = Logged { lmodel | settingsBirth =
-            Maybe.map3 Date.fromCalendarDate
-                (lmodel.settingsBirthYear |> ZipList.current |> Maybe.map Tuple.first)
-                (lmodel.settingsBirthMonth |> ZipList.current |> Maybe.map Tuple.first)
-                (lmodel.settingsBirthDay |> ZipList.current |> Maybe.map Tuple.first)
-            |> Maybe.withDefault lmodel.settingsBirth
-        } }
-      , submitSettings lmodel
+      let
+        newLmodel =
+          { lmodel | settingsBirth =
+                Maybe.map3 Date.fromCalendarDate
+                    (lmodel.settingsBirthYear |> ZipList.current |> Maybe.map Tuple.first)
+                    (lmodel.settingsBirthMonth |> ZipList.current |> Maybe.map Tuple.first)
+                    (lmodel.settingsBirthDay |> ZipList.current |> Maybe.map Tuple.first)
+                |> Maybe.withDefault lmodel.settingsBirth
+            }
+      in
+      ( { model | access = Logged newLmodel }
+      , submitSettings newLmodel
       )
 
     (Logged lmodel, _, ResultSettings result) ->
@@ -955,7 +1020,9 @@ update msg model =
           , Cmd.none
           )
         NoData alert ->
-          ( model |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you like/unlike this persone. It could be because your account isn't complete.")
+          ( model
+            |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you like/unlike this persone. It could be because your account isn't complete.")
+            |> (Alert.put) alert
           , Cmd.none
           )
         Error error ->
@@ -1014,6 +1081,7 @@ update msg model =
         NoData alert ->
           ( { model | access = Logged { lmodel | userDetails = RemoteData.Failure "Access denied" } }
             |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
+            |> (Alert.put) alert
           , Cmd.none
           )
         Error error ->
@@ -1033,7 +1101,9 @@ update msg model =
           , Cmd.none
           )
         NoData alert ->
-          ( model |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
+          ( model
+            |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
+            |> (Alert.put) alert
           , Cmd.none
           )
         Error error ->
@@ -1140,6 +1210,8 @@ update msg model =
                 , settingsBirthYear =
                     ZipList.fromList yearList
                     |> ZipList.goToFirst (Tuple.first >> (==) (Date.year currentSettings.birth))
+                , settingsGeoInfo =
+                    currentSettings.geolocationInfo
               }
             } |> Alert.put alert
           , Cmd.none
@@ -1256,7 +1328,10 @@ unreadNotifsAmountResultHandler result lmodel model =
               }
             )
         |> Maybe.withDefault
-            (model |> (Alert.put << Just) (Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount")))
+            ( model
+              |> (Alert.put << Just) (Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount"))
+              |> (Alert.put) alert
+            )
     Err error ->
       model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
 
@@ -1296,6 +1371,19 @@ submitReport id =
       }
 
 
+-- geolocation
+
+type GeolocationInfo
+  = GeoAuthGranted Float Float
+  | GeoAuthRefused Float Float
+
+breakAppartGeoInfo : GeolocationInfo -> (Bool, Float, Float)
+breakAppartGeoInfo newGInfo =
+  case newGInfo of
+    GeoAuthGranted latitude longitude -> (True, latitude, longitude)
+    GeoAuthRefused latitude longitude -> (False, latitude, longitude)
+
+
 -- settings
 
 type alias CurrentSettings =
@@ -1310,6 +1398,7 @@ type alias CurrentSettings =
   , pictures : ZipList (Int, String)
   , popularity_score : Int
   , tags : List String
+  , geolocationInfo : GeolocationInfo
   }
 
 requestCurrentSettings : (Result Http.Error (DataAlert CurrentSettings) -> msg) -> Cmd msg
@@ -1333,6 +1422,9 @@ currentSettingsDecoder =
   Field.require "pictures" (Decode.list pictureDecoder) <| \pictures ->
   Field.require "popularity_score" Decode.int <| \popularity_score ->
   Field.require "tags" (Decode.list Decode.string) <| \tags ->
+  Field.require "geoAuth" Decode.bool <| \geoAuth ->
+  Field.require "longitude" Decode.float <| \longitude ->
+  Field.require "latitude" Decode.float <| \latitude ->
 
   case Date.fromIsoString birth of
     Err msg -> Decode.fail msg
@@ -1349,6 +1441,10 @@ currentSettingsDecoder =
         , pictures = ZipList.fromList pictures
         , popularity_score = popularity_score
         , tags = tags
+        , geolocationInfo =
+            if geoAuth
+            then GeoAuthGranted longitude latitude
+            else GeoAuthRefused longitude latitude
         }
 
 type alias SettingsModel a =
@@ -1366,10 +1462,12 @@ type alias SettingsModel a =
   , settingsBirthDay : ZipList (Int, String)
   , settingsBirthMonth : ZipList (Date.Month, String)
   , settingsBirthYear : ZipList (Int, String)
+  , settingsGeoInfo : GeolocationInfo
   }
 
 submitSettings : SettingsModel a -> Cmd Msg
 submitSettings model =
+  let (geoAuth, longitude, latitude) = breakAppartGeoInfo model.settingsGeoInfo in
   Http.post
       { url = "http://localhost/control/settings_update.php"
       , body = multipartBody
@@ -1399,6 +1497,9 @@ submitSettings model =
                     )
                 , stringPart "birth" <|
                     Date.toIsoString model.settingsBirth
+                , stringPart "geoAuth" (if geoAuth then "true" else "false")
+                , stringPart "latitude" (String.fromFloat latitude)
+                , stringPart "longitude" (String.fromFloat longitude)
                 ]
       , expect = Http.expectJson ResultPwUpdate resultMessageDecoder
       }
@@ -2404,6 +2505,7 @@ retreivealRequestView model =
 
 settingsView : SettingsModel a -> Element Msg
 settingsView model =
+  let (geoAuth, latitude, longitude) = breakAppartGeoInfo model.settingsGeoInfo in
   column  [ spacing 16
           , centerX
           , Border.shadow
@@ -2518,6 +2620,45 @@ settingsView model =
                     [] model.settingsTagsItems model.settingsTagsState
                   |> El.html
                 )
+          , Inp.checkbox
+                [ padding 8 ]
+                { onChange = InputSettingsGeoAuth
+                , icon = Inp.defaultCheckbox
+                , checked = geoAuth
+                , label = labelRight
+                            [ centerY
+                            , El.alignLeft
+                            ]
+                            (El.text "authorisation to automaticaly get your geolocation")
+                }
+          , if geoAuth
+            then El.none
+            else
+              Inp.text
+                [ onEnter SubmitSettings
+                , padding 8
+                ]
+                { onChange = InputSettingsGeoLatitude
+                , text = String.fromFloat latitude
+                , placeholder = Inp.placeholder [] (El.text "floating point number") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "latitude : ")
+                }
+          , if geoAuth
+            then El.none
+            else
+              Inp.text
+                [ onEnter SubmitSettings
+                , padding 8
+                ]
+                { onChange = InputSettingsGeoLongitude
+                , text = String.fromFloat longitude
+                , placeholder = Inp.placeholder [] (El.text "floating point number") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "longitude : ")
+                }
           , Inp.button
                 [ padding 0
                 , centerX
