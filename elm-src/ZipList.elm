@@ -1,16 +1,19 @@
--- https://package.elm-lang.org/packages/guid75/ziplist/latest/ZipList
+-- https://package.elm-lang.org/packages/guid75/zipList/latest/ZipList
 
 module ZipList exposing
     ( ZipList
     , fromList, singleton
     , current, toList, length
     , forward, backward
-    , currentIndex, isValidIndex
+    , currentIndex
     , jumpForward, jumpBackward
-    , goTo, goToFirst, zipListDecoder
+    , goToIndex, goToFirst, isCurrent
+    , goToNext, goToLast
+    , goToPrevious, zipListDecoder
     , map, indexedMap
     , selectedMap, indexedSelectedMap
-    , removeCurrent, insert
+    , remove, replace, insert
+    , insertAfter, insertBefore
     )
 
 {-| A `ZipList` is a collection which can be moved forward/backward and that exposes a single current element
@@ -67,7 +70,7 @@ singleton item =
     Zipper [] item []
 
 
-{-| Return the current element of a ZipList. `Nothing` will be returned if the ziplist is empty
+{-| Return the current element of a ZipList. `Nothing` will be returned if the zipList is empty
 -}
 current : ZipList a -> Maybe a
 current zipList =
@@ -78,25 +81,43 @@ current zipList =
         Zipper _ elem _ ->
             Just elem
 
-removeCurrent : ZipList a -> ZipList a
-removeCurrent ziplist =
-  case ziplist of
+remove : ZipList a -> ZipList a
+remove zipList =
+  case zipList of
     Empty -> Empty
-    Zipper before elem after ->
-      case (before, after) of
-        (_, head :: queue) ->
-          Zipper before head queue
-        (head :: queue, []) ->
-          Zipper queue head []
-        ([], []) ->
-          Empty
+    Zipper [] _ [] -> Empty
+    Zipper before _ (head :: queue) ->
+        Zipper before head queue
+    Zipper (head :: queue) _ [] ->
+        Zipper queue head []
+
+replace : a -> ZipList a -> ZipList a
+replace newElem zipList =
+  case zipList of
+    Empty -> Empty
+    Zipper before _ after ->
+      Zipper before newElem after
 
 insert : a -> ZipList a -> ZipList a
-insert newElem ziplist =
-  case ziplist of
+insert newElem zipList =
+  case zipList of
     Empty -> Zipper [] newElem []
     Zipper before elem after ->
-      Zipper before newElem (elem :: after)
+      Zipper (elem :: before) newElem after
+
+insertAfter : a -> ZipList a -> ZipList a
+insertAfter newElem zipList =
+  case zipList of
+    Empty -> Zipper [] newElem []
+    Zipper before elem after ->
+      Zipper before elem (newElem :: after)
+
+insertBefore : a -> ZipList a -> ZipList a
+insertBefore newElem zipList =
+  case zipList of
+    Empty -> Zipper [] newElem []
+    Zipper before elem after ->
+      Zipper (newElem :: before) elem after
 
 
 {-| Move forward a `ZipList`
@@ -162,31 +183,31 @@ length zipList =
 
 
 currentIndex : ZipList a -> Maybe Int
-currentIndex ziplist =
-  case ziplist of
+currentIndex zipList =
+  case zipList of
     Empty -> Nothing
     Zipper before _ _ ->
       List.length before |> Just
 
-isValidIndex : Int -> ZipList a -> Bool
-isValidIndex index ziplist =
-  not (index < 0 || index >= length ziplist)
-
 jumpForward : Int -> ZipList a -> ZipList a
-jumpForward jumpSize ziplist =
+jumpForward jumpSize zipList =
   if jumpSize <= 0
-  then ziplist
-  else
-    forward ziplist
-    |> jumpForward (jumpSize - 1)
+  then zipList
+  else case zipList of
+    Zipper before elem (head :: queue) ->
+        Zipper (elem :: before) head queue
+        |> jumpForward (jumpSize - 1)
+    _ -> zipList
 
 jumpBackward : Int -> ZipList a -> ZipList a
-jumpBackward jumpSize ziplist =
+jumpBackward jumpSize zipList =
   if jumpSize <= 0
-  then ziplist
-  else
-    backward ziplist
-    |> jumpBackward (jumpSize - 1)
+  then zipList
+  else case zipList of
+    Zipper (head :: queue) elem after ->
+        Zipper queue head (elem :: after)
+        |> jumpBackward (jumpSize - 1)
+    _ -> zipList
 
 type Sign
   = Zero
@@ -202,36 +223,63 @@ sign val =
     then Positif
     else Negatif
 
-goTo : Int -> ZipList a -> ZipList a
-goTo newIndex ziplist =
+goToIndex : Int -> ZipList a -> ZipList a
+goToIndex newIndex zipList =
   let
-    maybeIndex = currentIndex ziplist
+    maybeIndex = currentIndex zipList
     delta =
       maybeIndex
       |> Maybe.map (\index -> newIndex - index)
       |> Maybe.withDefault 0
   in
   case sign delta of
-    Zero -> ziplist
+    Zero -> zipList
     Positif ->
-      jumpForward delta ziplist
+      jumpForward delta zipList
     Negatif ->
-      jumpBackward (abs delta) ziplist
+      jumpBackward (abs delta) zipList
+
+isCurrent : (a -> Bool) -> ZipList a -> Bool
+isCurrent condition zipList =
+  current zipList
+  |> Maybe.map condition
+  |> Maybe.withDefault False
 
 goToFirst : (a -> Bool) -> ZipList a -> ZipList a
-goToFirst condition ziplist =
-  let
-    list = toList ziplist
-    index = MyList.indexedAny condition list
-  in
-    index
-    |> Maybe.map (\ i -> goTo i ziplist )
-    |> Maybe.withDefault ziplist
+goToFirst condition zipList =
+  let newZipList = goToIndex 0 zipList in
+  if isCurrent condition newZipList
+  then newZipList
+  else goToNext condition newZipList
 
+goToNext : (a -> Bool) -> ZipList a -> ZipList a
+goToNext condition zipList =
+  case zipList of
+    Empty -> Empty
+    Zipper _ _ after ->
+      if List.any condition after
+      then goToNext condition (forward zipList)
+      else zipList
+
+goToLast : (a -> Bool) -> ZipList a -> ZipList a
+goToLast condition zipList =
+  let newZipList = goToIndex ((length zipList) - 1) zipList in
+  if isCurrent condition newZipList
+  then newZipList
+  else goToPrevious condition newZipList
+
+goToPrevious : (a -> Bool) -> ZipList a -> ZipList a
+goToPrevious condition zipList =
+  case zipList of
+    Empty -> Empty
+    Zipper before _ _ ->
+      if List.any condition before
+      then goToPrevious condition (backward zipList)
+      else zipList
 
 map : (a -> b) -> ZipList a -> ZipList b
-map func ziplist =
-  case ziplist of
+map func zipList =
+  case zipList of
     Empty -> Empty
     Zipper before elem after ->
       Zipper
@@ -240,8 +288,8 @@ map func ziplist =
         (List.map func after)
 
 indexedMap : (Int -> a -> b) -> ZipList a -> ZipList b
-indexedMap func ziplist =
-  case ziplist of
+indexedMap func zipList =
+  case zipList of
     Empty -> Empty
     Zipper before elem after ->
       let index = List.length before in
@@ -257,8 +305,8 @@ indexedMap func ziplist =
         )
 
 selectedMap : (Bool -> a -> b) -> ZipList a -> ZipList b
-selectedMap func ziplist =
-  case ziplist of
+selectedMap func zipList =
+  case zipList of
     Empty -> Empty
     Zipper before elem after ->
       Zipper
@@ -267,8 +315,8 @@ selectedMap func ziplist =
         (List.map (func False) after)
 
 indexedSelectedMap : (Int -> Bool -> a -> b) -> ZipList a -> ZipList b
-indexedSelectedMap func ziplist =
-  case ziplist of
+indexedSelectedMap func zipList =
+  case zipList of
     Empty -> Empty
     Zipper before elem after ->
       let index = List.length before in

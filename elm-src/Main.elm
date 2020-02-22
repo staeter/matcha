@@ -2737,7 +2737,7 @@ viewGalery toMsg pictures =
               |> ZipList.indexedSelectedMap
                     ( viewGaleryElem
                         (\ index ->
-                            ZipList.goTo index pictures
+                            ZipList.goToIndex index pictures
                             |> toMsg
                         )
                     )
