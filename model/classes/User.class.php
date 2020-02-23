@@ -514,6 +514,22 @@
 		** -------------------- Message --------------------
 		*/
 
+		public function set_a_conversation($id)
+		{
+			$query = ('INSERT INTO `messages` SET `id_user_sending` = :idusersending, `id_user_receiving` = :iduserreceiving, `content` = :message;');
+			$this->_db->query($query, array(':idusersending' => $this->_id, ':iduserreceiving' => $id, ':message' => 'Ceci est votre premier message ensemble suite à votre Match !'));
+
+			$query = ('INSERT INTO `messages` SET `id_user_sending` = :idusersending, `id_user_receiving` = :iduserreceiving, `content` = :message;');
+			$this->_db->query($query, array(':idusersending' => $id, ':iduserreceiving' => $this->_id, ':message' => 'Ceci est votre premier message ensemble suite à votre Match !'));
+
+		}
+
+		public function delete_conv_between_user($id)
+		{
+			$query = 'DELETE FROM `messages` WHERE `id_user_sending` = :idco AND `id_user_receiving` = :id OR `id_user_sending` = :id AND `id_user_receiving` = :idco';
+			$this->_db->query($query, array(':idco' => $this->_id, ':id' => $id));
+		}
+
 
 		public function send_message_to_id($id_destinataire, $content)
 		{
@@ -662,6 +678,12 @@
 
 
 											//SET
+		public function set_a_notif_string($value, $message)
+		{
+			$idconcat = $this->_pseudo . $message;
+			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
+			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+		}
 
 		public function set_a_notif_for_like($value, $message)
 		{
@@ -680,8 +702,29 @@
 		public function set_a_notif_for_match($value)
 		{
 			$idconcat = 'U got a match with ' .$this->_pseudo;
+			$query = ('INSERT INTO `notifications` SET `id_user` = :id, `notification` = :content');
+			$this->_db->query($query, array(':id' => $value, ':content' => $idconcat));
+
+
+
+			$row = $this->get_all_details_of_this_id($value);
+			$idconcat1 = 'U got a match with ' . $row['pseudo'];
 			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+			$this->_db->query($query, array(':value' => $this->_id, ':id' => $idconcat1));
+		}
+
+		public function set_a_notif_for_unmatch($value)
+		{
+			$idconcat = 'U lost match with ' .$this->_pseudo. ', so ur chat was deleted !';
+			$query = ('INSERT INTO `notifications` SET `id_user` = :id, `notification` = :content');
+			$this->_db->query($query, array(':id' => $value, ':content' => $idconcat));
+
+
+
+			$row = $this->get_all_details_of_this_id($value);
+			$idconcat1 = 'U lost a match with ' . $row['pseudo'];
+			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
+			$this->_db->query($query, array(':value' => $this->_id, ':id' => $idconcat1));
 		}
 
 		public function set_a_notif_for_profile_viewed($value)
@@ -699,6 +742,7 @@
 
 
 												//GET
+
 
 
 		public function get_all_notif_of_user_connected()
@@ -909,6 +953,15 @@
 				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
 			}
 			 return $row;
+		}
+
+		public function get_if_a_user_like_user_connected($id)
+		{
+			$query = 'SELECT `liked` FROM `like` WHERE id_user_liking = :id AND id_user_liked = :idco';
+			$this->_db->query($query, array('id' => $id, ':idco' => $this->_id));
+			$row = $this->_db->fetch();
+
+			return $row;
 		}
 
 

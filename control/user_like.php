@@ -1,13 +1,8 @@
 <?php
-
-
-
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
-
-$db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
 $usr = (unserialize($_SESSION['user']));
+
 if ($usr->is_valid_id($_POST['id']) === false)
 {
   echo '{
@@ -21,17 +16,6 @@ if ($usr->is_valid_id($_POST['id']) === false)
 }
 else {
 
-  // je dois verifier que l id existe encore en principe oui A FAIRE
-  // je dois ajouter un like dans la table like avec l id dees deux users C FAIT
-
-
-// fonction retour si id qu on veux liker existe (en principe oui mais bon)
-
-
-// donc gerer cet id n existe plus (car id en dessous de 0 deja reglé)
-// gerer une sortie de message adapté a nouveau like/ modif like + / modif like - C FAIT
-
-
  if ($usr->is_id_exist($_POST['id']) == FALSE)
  {
    echo '{
@@ -44,30 +28,47 @@ else {
    }
  }';
  return;
-
  }
 
-$ret = $usr->set_a_like($_POST['id']);
-if ($ret == 1)
-{
+  $ret = $usr->set_a_like($_POST['id']);
+  $array_like = $usr->get_if_a_user_like_user_connected($_POST['id']);
+
+  //si like en retour supprimer le chat + notif unmatch
+  // supprimer le chat si il y en avais un
+  if ($ret == 1)
+  {
   $usr->set_a_notif_for_like($_POST['id'], ' unliked u  :( )!');
+
+  if ($array_like['liked'] == 1)
+  {
+    //notif pour unmatch
+    $usr->set_a_notif_for_unmatch($_POST['id']);
+    //supprimer le chat
+    $usr->delete_conv_between_user($_POST['id']);
+  }
   echo '{
   "data" : {
     "id" : "'.$_POST['id'].'",
     "newLikeStatus" : false
-
   },
   "alert" : {
     "color" : "DarkBlue",
     "message" : "Like preference updated, u now unlike this user!"
   }
-}';
-return;
+  }';
+  return;
+  }
 
-}
 if ($ret == 2)
 {
     $usr->set_a_notif_for_like($_POST['id'], ' liked u again :p !');
+    // verifie si like en retour, si oui notif pour rematch + creation chat
+    if ($array_like['liked'] == 1)
+    {
+      $usr->set_a_notif_for_match($_POST['id']);
+      $usr->set_a_conversation($_POST['id']);
+    }
+    //recrée un chat
     echo '{
     "data" : {
       "id" : "'.$_POST['id'].'",
@@ -83,6 +84,13 @@ if ($ret == 2)
 if ($ret == 3)
 {
   $usr->set_a_notif_for_like($_POST['id'], ' liked u !');
+
+  if ($array_like['liked'] == 1)
+  {
+    $usr->set_a_notif_for_match($_POST['id']);
+    $usr->set_a_conversation($_POST['id']);
+  }
+  //verifier si like en retour si oui notif pour match + creation du chat
   echo '{
   "data" : {
     "id" : "'.$_POST['id'].'",
