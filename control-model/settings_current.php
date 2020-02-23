@@ -32,7 +32,10 @@ echo '{
         }
       ],
     "popularity_score" : 100,
-    "tags" : ["tag", "lovetags"]
+    "tags" : ["tag", "lovetags"],
+    "geoAuth" : true,
+    "latitude" : 12.5,
+    "longitude" : 45.32
   },
   "alert" : {
     "color" : "DarkBlue",

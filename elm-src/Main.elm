@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 
 -- imports
@@ -19,7 +19,8 @@ import Json.Decode.Field as Field  exposing (..)
 import Http  exposing (..)
 
 import Array  exposing (..)
-import Time  exposing (..)
+import Time exposing (..)
+import Dict exposing (..)
 
 import File exposing (File)
 import File.Select as Select  exposing (..)
@@ -38,6 +39,13 @@ import RemoteData exposing (RemoteData(..))
 import Date exposing (..)
 import Time exposing (Month(..))
 import Time.Format exposing (monthToString)
+
+import PortFunnel
+  exposing (FunnelSpec, GenericMessage, ModuleDesc, StateAccessors)
+import PortFunnel.Geolocation as Geolocation
+  exposing (Message, Movement(..), Response(..))
+
+import Cmd.Extra exposing (addCmd, addCmds, withCmd, withCmds, withNoCmd)
 
 import Bootstrap.CDN as CDN exposing (stylesheet)
 import Bootstrap.Card as Card exposing (..)
@@ -108,6 +116,9 @@ type alias LModel =
   , settingsBirthDay : ZipList (Int, String)
   , settingsBirthMonth : ZipList (Date.Month, String)
   , settingsBirthYear : ZipList (Int, String)
+  , settingsGeoInfo : GeolocationInfo
+  -- funnels
+  , funnelState : FunnelState
   -- pictures settings
   , pictures : Maybe (ZipList (Int, String))
   }
@@ -251,11 +262,13 @@ loggedAccessInit route pseudo picture =
       , settingsBirthYear =
           ZipList.fromList yearList
           |> ZipList.goToFirst (Tuple.first >> (==) (Date.year date))
+      , settingsGeoInfo = GeoAuthRefused 0 0
+      , funnelState = { geolocation = Geolocation.initialState }
       , pictures = Nothing
       }
   , case route of
       Home ->
-        requestFeedInit ReceiveFeedInit |> Debug.log "send request FeedInit"
+        requestFeedInit ReceiveFeedInit
       User id ->
         requestUserDetails id ReceiveUserDetails
       Notifs ->
@@ -263,7 +276,7 @@ loggedAccessInit route pseudo picture =
       Chats ->
         requestChats ReceiveChats
       Settings ->
-        requestCurrentSettings ReceiveCurrentSettings |> Debug.log "send request CurrentSettings"
+        requestCurrentSettings ReceiveCurrentSettings
       _ ->
         Cmd.none
   )
@@ -395,6 +408,9 @@ type Msg
   | InputSettingsBirthDay (ZipList (Int, String))
   | InputSettingsBirthMonth (ZipList (Date.Month, String))
   | InputSettingsBirthYear (ZipList (Int, String))
+  | InputSettingsGeoLatitude String
+  | InputSettingsGeoLongitude String
+  | InputSettingsGeoAuth Bool
   | SubmitSettings
   | ResultSettings (Result Http.Error (Result String String))
   -- user pictures update
@@ -405,6 +421,8 @@ type Msg
   | ReceivePicturesUpdate (Result Http.Error (DataAlert (ZipList (Int, String))))
   -- user details
   | InputUserDetailsSelectImage Carousel.Msg
+  -- geolocation
+  | ProcessPortFunnelVal Value
   -- other
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
   | FiltersForm FiltersFormMsg
@@ -801,15 +819,72 @@ update msg model =
         , nextCmd |> Cmd.map InputSettingsTags
         )
 
+    (Logged lmodel, Settings, InputSettingsGeoLatitude latitudeStr) ->
+      String.toFloat latitudeStr
+      |> Maybe.map
+          (\ latitude ->
+            case lmodel.settingsGeoInfo of
+              GeoAuthGranted _ _ -> ( model, Cmd.none )
+              GeoAuthRefused _ longitude ->
+                ( { model | access = Logged { lmodel |
+                      settingsGeoInfo = GeoAuthRefused latitude longitude
+                  }}
+                , Cmd.none )
+          )
+      |> Maybe.withDefault
+            ( model |> (Alert.put << Just << Alert.invalidImputAlert) "The latitude you enter has to be a floating point number!"
+            , Cmd.none )
+
+    (Logged lmodel, Settings, InputSettingsGeoLongitude longitudeStr) ->
+      String.toFloat longitudeStr
+      |> Maybe.map
+          (\ longitude ->
+            case lmodel.settingsGeoInfo of
+              GeoAuthGranted _ _ -> ( model, Cmd.none )
+              GeoAuthRefused latitude _ ->
+                ( { model | access = Logged { lmodel |
+                      settingsGeoInfo = GeoAuthRefused latitude longitude
+                  }}
+                , Cmd.none )
+          )
+      |> Maybe.withDefault
+            ( model |> (Alert.put << Just << Alert.invalidImputAlert) "The longitude you enter has to be a floating point number!"
+            , Cmd.none )
+
+    (Logged lmodel, Settings, InputSettingsGeoAuth newAuth) ->
+      case lmodel.settingsGeoInfo of
+        GeoAuthGranted _ _ ->
+          if newAuth
+          then (model, Cmd.none)
+          else
+            ( { model | access = Logged { lmodel |
+                settingsGeoInfo = GeoAuthRefused 0 0
+              }}
+            , Geolocation.send cmdPort Geolocation.stopWatching
+            )
+        GeoAuthRefused _ _ ->
+          if not newAuth
+          then (model, Cmd.none)
+          else
+            ( { model | access = Logged { lmodel |
+                settingsGeoInfo = GeoAuthGranted 0 0
+              }}
+            , Geolocation.send cmdPort Geolocation.watchChanges
+            )
+
     (Logged lmodel, Settings, SubmitSettings) ->
-      ( { model | access = Logged { lmodel | settingsBirth =
-            Maybe.map3 Date.fromCalendarDate
-                (lmodel.settingsBirthYear |> ZipList.current |> Maybe.map Tuple.first)
-                (lmodel.settingsBirthMonth |> ZipList.current |> Maybe.map Tuple.first)
-                (lmodel.settingsBirthDay |> ZipList.current |> Maybe.map Tuple.first)
-            |> Maybe.withDefault lmodel.settingsBirth
-        } }
-      , submitSettings lmodel
+      let
+        newLmodel =
+          { lmodel | settingsBirth =
+                Maybe.map3 Date.fromCalendarDate
+                    (lmodel.settingsBirthYear |> ZipList.current |> Maybe.map Tuple.first)
+                    (lmodel.settingsBirthMonth |> ZipList.current |> Maybe.map Tuple.first)
+                    (lmodel.settingsBirthDay |> ZipList.current |> Maybe.map Tuple.first)
+                |> Maybe.withDefault lmodel.settingsBirth
+            }
+      in
+      ( { model | access = Logged newLmodel }
+      , submitSettings newLmodel
       )
 
     (Logged lmodel, _, ResultSettings result) ->
@@ -955,7 +1030,9 @@ update msg model =
           , Cmd.none
           )
         NoData alert ->
-          ( model |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you like/unlike this persone. It could be because your account isn't complete.")
+          ( model
+            |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you like/unlike this persone. It could be because your account isn't complete.")
+            |> (Alert.put) alert
           , Cmd.none
           )
         Error error ->
@@ -1014,6 +1091,7 @@ update msg model =
         NoData alert ->
           ( { model | access = Logged { lmodel | userDetails = RemoteData.Failure "Access denied" } }
             |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
+            |> (Alert.put) alert
           , Cmd.none
           )
         Error error ->
@@ -1033,7 +1111,9 @@ update msg model =
           , Cmd.none
           )
         NoData alert ->
-          ( model |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
+          ( model
+            |> (Alert.put << Just) (Alert.invalidImputAlert "Sory we can't let you access this user's infos. It could be because your account isn't complete.")
+            |> (Alert.put) alert
           , Cmd.none
           )
         Error error ->
@@ -1115,35 +1195,40 @@ update msg model =
     (Logged lmodel, _, ReceiveCurrentSettings result) ->
       case toWebResultDataAlert result of
         AvData currentSettings alert ->
-          ( { model | access = Logged
-              { lmodel
-                | pictures = Just currentSettings.pictures
-                , settingsPseudo = currentSettings.pseudo
-                , settingsFirstname = currentSettings.first_name
-                , settingsLastname = currentSettings.last_name
-                , settingsEmail = currentSettings.email
-                , settingsGender =
-                    ZipList.fromList genderList
-                    |> ZipList.goToFirst (\ elem -> currentSettings.gender == Tuple.first elem )
-                , settingsOrientation =
-                    ZipList.fromList orientationList
-                    |> ZipList.goToFirst (\ elem -> currentSettings.orientation == Tuple.first elem )
-                , settingsBiography = currentSettings.biography
-                , settingsTagsItems = currentSettings.tags
-                , settingsBirth = currentSettings.birth
-                , settingsBirthDay =
-                    ZipList.fromList dayList
-                    |> ZipList.goToFirst (Tuple.first >> (==) (Date.day currentSettings.birth))
-                , settingsBirthMonth =
-                    ZipList.fromList monthList
-                    |> ZipList.goToFirst (Tuple.first >> (==) (Date.month currentSettings.birth))
-                , settingsBirthYear =
-                    ZipList.fromList yearList
-                    |> ZipList.goToFirst (Tuple.first >> (==) (Date.year currentSettings.birth))
-              }
-            } |> Alert.put alert
-          , Cmd.none
-          )
+          let (geoAuth, _, _) = breakAppartGeoInfo currentSettings.geolocationInfo in
+            ( { model | access = Logged
+                { lmodel
+                  | pictures = Just currentSettings.pictures
+                  , settingsPseudo = currentSettings.pseudo
+                  , settingsFirstname = currentSettings.first_name
+                  , settingsLastname = currentSettings.last_name
+                  , settingsEmail = currentSettings.email
+                  , settingsGender =
+                      ZipList.fromList genderList
+                      |> ZipList.goToFirst (\ elem -> currentSettings.gender == Tuple.first elem )
+                  , settingsOrientation =
+                      ZipList.fromList orientationList
+                      |> ZipList.goToFirst (\ elem -> currentSettings.orientation == Tuple.first elem )
+                  , settingsBiography = currentSettings.biography
+                  , settingsTagsItems = currentSettings.tags
+                  , settingsBirth = currentSettings.birth
+                  , settingsBirthDay =
+                      ZipList.fromList dayList
+                      |> ZipList.goToFirst (Tuple.first >> (==) (Date.day currentSettings.birth))
+                  , settingsBirthMonth =
+                      ZipList.fromList monthList
+                      |> ZipList.goToFirst (Tuple.first >> (==) (Date.month currentSettings.birth))
+                  , settingsBirthYear =
+                      ZipList.fromList yearList
+                      |> ZipList.goToFirst (Tuple.first >> (==) (Date.year currentSettings.birth))
+                  , settingsGeoInfo =
+                      currentSettings.geolocationInfo
+                }
+              } |> Alert.put alert
+            , if geoAuth
+              then Geolocation.send cmdPort Geolocation.watchChanges
+              else Cmd.none
+            )
         NoData alert ->
           ( model |> Alert.put alert
           , Cmd.none
@@ -1203,6 +1288,22 @@ update msg model =
           )
         _ -> (model, Cmd.none)
 
+    (Logged lmodel, _, ProcessPortFunnelVal value) ->
+      case
+        PortFunnel.processValue funnels
+            appTrampoline
+            value
+            lmodel.funnelState
+            model
+      of
+          Err error ->
+              model
+              |> (Alert.put << Just << Alert.invalidImputAlert) error
+              |> withNoCmd
+
+          Ok res ->
+              res
+
     _ -> ( model, Cmd.none )
 
 
@@ -1256,7 +1357,10 @@ unreadNotifsAmountResultHandler result lmodel model =
               }
             )
         |> Maybe.withDefault
-            (model |> (Alert.put << Just) (Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount")))
+            ( model
+              |> (Alert.put << Just) (Alert.serverNotReachedAlert (Http.BadBody "Data not received for notifs amount"))
+              |> (Alert.put) alert
+            )
     Err error ->
       model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
 
@@ -1274,6 +1378,7 @@ retreiveAccountResultHandler result model cmd =
       ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
       , cmd |> Cmd.map AccountRetrievalForm
       )
+
 
 -- report and block
 
@@ -1296,6 +1401,80 @@ submitReport id =
       }
 
 
+-- geolocation
+
+type GeolocationInfo
+  = GeoAuthGranted Float Float
+  | GeoAuthRefused Float Float
+
+breakAppartGeoInfo : GeolocationInfo -> (Bool, Float, Float)
+breakAppartGeoInfo newGInfo =
+  case newGInfo of
+    GeoAuthGranted latitude longitude -> (True, latitude, longitude)
+    GeoAuthRefused latitude longitude -> (False, latitude, longitude)
+
+
+port cmdPort : Value -> Cmd msg
+port subPort : (Value -> msg) -> Sub msg
+
+type alias FunnelState =
+    { geolocation : Geolocation.State }
+
+geolocationAccessors : StateAccessors FunnelState Geolocation.State
+geolocationAccessors =
+    StateAccessors .geolocation (\substate state -> { state | geolocation = substate })
+
+type alias AppFunnel substate message response =
+    FunnelSpec FunnelState substate message response Model Msg
+
+type Funnel
+    = GeolocationFunnel (AppFunnel Geolocation.State Geolocation.Message Geolocation.Response)
+
+
+funnels : Dict String Funnel
+funnels =
+    Dict.fromList
+        [ ( Geolocation.moduleName
+          , GeolocationFunnel <|
+                FunnelSpec geolocationAccessors
+                    Geolocation.moduleDesc
+                    Geolocation.commander
+                    geolocationHandler
+          )
+        ]
+
+geolocationHandler : Geolocation.Response -> FunnelState -> Model -> ( Model, Cmd Msg )
+geolocationHandler response state model =
+    case (response, model.access) of
+      (LocationResponse location, Logged lmodel) ->
+        let (geoAuth, _, _) = breakAppartGeoInfo lmodel.settingsGeoInfo in
+        if not geoAuth
+        then model |> withNoCmd
+        else
+          { model | access = Logged { lmodel | settingsGeoInfo =
+              GeoAuthGranted location.latitude location.longitude
+          } }
+          |> withNoCmd
+
+      (ErrorResponse error, _) ->
+        model
+        |> (Alert.put << Just << Alert.invalidImputAlert)
+              (Geolocation.errorToString error)
+        |> withNoCmd
+
+      _ ->
+        model |> withNoCmd
+
+appTrampoline : GenericMessage -> Funnel -> FunnelState -> Model -> Result String ( Model, Cmd Msg )
+appTrampoline genericMessage funnel state model =
+    case funnel of
+        GeolocationFunnel geolocationFunnel ->
+            PortFunnel.appProcess cmdPort
+                genericMessage
+                geolocationFunnel
+                state
+                model
+
 -- settings
 
 type alias CurrentSettings =
@@ -1310,6 +1489,7 @@ type alias CurrentSettings =
   , pictures : ZipList (Int, String)
   , popularity_score : Int
   , tags : List String
+  , geolocationInfo : GeolocationInfo
   }
 
 requestCurrentSettings : (Result Http.Error (DataAlert CurrentSettings) -> msg) -> Cmd msg
@@ -1333,6 +1513,9 @@ currentSettingsDecoder =
   Field.require "pictures" (Decode.list pictureDecoder) <| \pictures ->
   Field.require "popularity_score" Decode.int <| \popularity_score ->
   Field.require "tags" (Decode.list Decode.string) <| \tags ->
+  Field.require "geoAuth" Decode.bool <| \geoAuth ->
+  Field.require "longitude" Decode.float <| \longitude ->
+  Field.require "latitude" Decode.float <| \latitude ->
 
   case Date.fromIsoString birth of
     Err msg -> Decode.fail msg
@@ -1349,6 +1532,10 @@ currentSettingsDecoder =
         , pictures = ZipList.fromList pictures
         , popularity_score = popularity_score
         , tags = tags
+        , geolocationInfo =
+            if geoAuth
+            then GeoAuthGranted longitude latitude
+            else GeoAuthRefused longitude latitude
         }
 
 type alias SettingsModel a =
@@ -1366,10 +1553,12 @@ type alias SettingsModel a =
   , settingsBirthDay : ZipList (Int, String)
   , settingsBirthMonth : ZipList (Date.Month, String)
   , settingsBirthYear : ZipList (Int, String)
+  , settingsGeoInfo : GeolocationInfo
   }
 
 submitSettings : SettingsModel a -> Cmd Msg
 submitSettings model =
+  let (geoAuth, longitude, latitude) = breakAppartGeoInfo model.settingsGeoInfo in
   Http.post
       { url = "http://localhost/control/settings_update.php"
       , body = multipartBody
@@ -1399,6 +1588,9 @@ submitSettings model =
                     )
                 , stringPart "birth" <|
                     Date.toIsoString model.settingsBirth
+                , stringPart "geoAuth" (if geoAuth then "true" else "false")
+                , stringPart "latitude" (String.fromFloat latitude)
+                , stringPart "longitude" (String.fromFloat longitude)
                 ]
       , expect = Http.expectJson ResultPwUpdate resultMessageDecoder
       }
@@ -2404,6 +2596,7 @@ retreivealRequestView model =
 
 settingsView : SettingsModel a -> Element Msg
 settingsView model =
+  let (geoAuth, latitude, longitude) = breakAppartGeoInfo model.settingsGeoInfo in
   column  [ spacing 16
           , centerX
           , Border.shadow
@@ -2518,6 +2711,45 @@ settingsView model =
                     [] model.settingsTagsItems model.settingsTagsState
                   |> El.html
                 )
+          , Inp.checkbox
+                [ padding 8 ]
+                { onChange = InputSettingsGeoAuth
+                , icon = Inp.defaultCheckbox
+                , checked = geoAuth
+                , label = labelRight
+                            [ centerY
+                            , El.alignLeft
+                            ]
+                            (El.text "authorisation to automaticaly get your geolocation")
+                }
+          , if geoAuth
+            then El.none
+            else
+              Inp.text
+                [ onEnter SubmitSettings
+                , padding 8
+                ]
+                { onChange = InputSettingsGeoLatitude
+                , text = String.fromFloat latitude
+                , placeholder = Inp.placeholder [] (El.text "floating point number") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "latitude : ")
+                }
+          , if geoAuth
+            then El.none
+            else
+              Inp.text
+                [ onEnter SubmitSettings
+                , padding 8
+                ]
+                { onChange = InputSettingsGeoLongitude
+                , text = String.fromFloat longitude
+                , placeholder = Inp.placeholder [] (El.text "floating point number") |> Just
+                , label = labelLeft
+                            [ centerY ]
+                            (El.text "longitude : ")
+                }
           , Inp.button
                 [ padding 0
                 , centerX
@@ -2596,7 +2828,7 @@ viewGalery toMsg pictures =
               |> ZipList.indexedSelectedMap
                     ( viewGaleryElem
                         (\ index ->
-                            ZipList.goTo index pictures
+                            ZipList.goToIndex index pictures
                             |> toMsg
                         )
                     )
@@ -2694,9 +2926,13 @@ subscriptions model =
     Anonymous amodel ->
       Sub.none
     Logged lmodel ->
+      let (geoAuth, _, _) = breakAppartGeoInfo lmodel.settingsGeoInfo in
       [ Time.every 3000 Tick
       , MultiInput.subscriptions lmodel.settingsTagsState
         |> Sub.map InputSettingsTags
+      , if geoAuth
+        then subPort ProcessPortFunnelVal
+        else Sub.none
       ] |> Sub.batch
 
 

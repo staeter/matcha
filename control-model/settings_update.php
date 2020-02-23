@@ -9,7 +9,7 @@ echo '{
   "result" : "Success",
   "message" : "settings update success!"
 }'
-//pseudo first_name last_name email gender orientation biography birth tags
+//pseudo first_name last_name email gender orientation biography birth tags geoAuth latitude longitude
 /*
 {
   "result" : "Success" or "Failure",
