@@ -900,6 +900,18 @@
 		}
 
 
+		public function get_who_see_the_profil_of_user_connect()
+		{
+			$query = 'SELECT * FROM `profile_viewed` WHERE `id_user_viewed` = :id';
+			$this->_db->query($query, array(':id' => $this->_id));
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+		}
+
+
 		/*
 		** -------------------- Is valid --------------------
 		*/

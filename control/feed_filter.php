@@ -146,6 +146,15 @@ if ($_POST['tags'] != '[]')
 if ($profile_viewed == 'True' && $profile_liked == 'False')
 {
   //trier array 1 pour ne contenir que les raw contenant une occurence dans profile viewed
+
+  $row_viewed = $usr->get_who_see_the_profil_of_user_connect();
+
+
+  $array1 = array();
+
+  foreach ($row_viewed as $key => $value) {
+      $array1[$key] = $usr->get_all_details_of_this_id($row_viewed[$key]['id_user_viewing']);
+  }
 }
 
 
