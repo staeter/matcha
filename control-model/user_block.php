@@ -1,6 +1,7 @@
 <?php
 ob_start();
 var_dump($_POST);
+return;
 $result = ob_get_clean();
 error_log("[POST] user_block.php: " . $result);
 

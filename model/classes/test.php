@@ -209,9 +209,9 @@ $string = "so sosa  s      s         ";
 
 // $usr->set_sexuality_orientation(2);
 
-$ip = gethostbyname('localhost');
-
-echo $ip;
+$usr->add_popularity();
+$usr->substract_popularity_of_this_user(5);
+$usr->substract_popularity();
 
 return;
 ?>

@@ -465,6 +465,63 @@
 		$this->_db->query($query, array(':idco' => $this->_id, 'id' => $id));
 	}
 
+	public function set_a_report($id)
+	{
+		$query = 'INSERT INTO `report`(`id_user_reporting`, `id_user_reported`, `description`) VALUES (:idco, :id, :string)';
+		$this->_db->query($query, array(':idco' => $this->_id, 'id' => $id, 'string' => 'Default Description By now'));
+	}
+
+	public function add_popularity()
+	{
+		$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
+		$this->_db->query($query, array(':idco' => $this->_id));
+		$row = $this->_db->fetch();
+		$int = 5 + $row['popularity_score'];
+		if ($int > 100)
+			$int = 100;
+
+		$query = 'UPDATE `user` SET `popularity_score` = :value WHERE id_user = :idco';
+		$this->_db->query($query, array(':idco' => $this->_id, 'value' => $int));
+	}
+	public function add_popularity_of_this_user($id)
+	{
+		$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
+		$this->_db->query($query, array(':idco' => $id));
+		$row = $this->_db->fetch();
+		$int = 5 + $row['popularity_score'];
+		if ($int > 100)
+			$int = 100;
+
+		$query = 'UPDATE `user` SET `popularity_score` = :value WHERE id_user = :idco';
+		$this->_db->query($query, array(':idco' => $id, 'value' => $int));
+	}
+
+	public function substract_popularity()
+	{
+		$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
+		$this->_db->query($query, array(':idco' => $this->_id));
+		$row = $this->_db->fetch();
+		$int = $row['popularity_score'] - 5;
+		if ($int < 0)
+			$int = 0;
+
+		$query = 'UPDATE `user` SET `popularity_score` = :value WHERE id_user = :idco';
+		$this->_db->query($query, array(':idco' => $this->_id, 'value' => $int));
+	}
+
+	public function substract_popularity_of_this_user($id)
+	{
+		$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
+		$this->_db->query($query, array(':idco' => $id));
+		$row = $this->_db->fetch();
+		$int = $row['popularity_score'] - 5;
+		if ($int < 0)
+			$int = 0;
+
+		$query = 'UPDATE `user` SET `popularity_score` = :value WHERE id_user = :idco';
+		$this->_db->query($query, array(':idco' => $id, 'value' => $int));
+	}
+
 	public function set_a_like($idli)
 		{
 			// id user liking

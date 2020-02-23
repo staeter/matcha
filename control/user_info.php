@@ -5,6 +5,9 @@
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);
+
+$usr->add_popularity_of_this_user($_POST['id']);
+
 $row = $usr->get_all_details_of_this_id($_POST['id']);
 $x = $usr->get_if_liked($_POST['id']);
 if ($x == true)

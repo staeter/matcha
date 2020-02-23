@@ -38,6 +38,7 @@ else {
   if ($ret == 1)
   {
   $usr->set_a_notif_for_like($_POST['id'], ' unliked u  :( )!');
+  $usr->substract_popularity_of_this_user($_POST['id']);
 
   if ($array_like['liked'] == 1)
   {
@@ -63,6 +64,7 @@ if ($ret == 2)
 {
     $usr->set_a_notif_for_like($_POST['id'], ' liked u again :p !');
     // verifie si like en retour, si oui notif pour rematch + creation chat
+    $usr->add_popularity_of_this_user($_POST['id']);
     if ($array_like['liked'] == 1)
     {
       $usr->set_a_notif_for_match($_POST['id']);
@@ -84,7 +86,7 @@ if ($ret == 2)
 if ($ret == 3)
 {
   $usr->set_a_notif_for_like($_POST['id'], ' liked u !');
-
+  $usr->add_popularity_of_this_user($_POST['id']);
   if ($array_like['liked'] == 1)
   {
     $usr->set_a_notif_for_match($_POST['id']);
