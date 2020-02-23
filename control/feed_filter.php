@@ -16,6 +16,37 @@ $usr = unserialize($_SESSION['user']);
   // ["ageMax"]=>
   // string(3) "120"
 
+
+  function array_empty($a)
+  {
+      foreach($a as $k => $v)
+          if(empty($v))
+              return false;
+      return true;
+  }
+
+
+// function gestion de la localisation
+
+$array_gps = $usr->get_all_details();
+$latitude_id_co = $array_gps['latitude'];
+$longitude_id_co = $array_gps['longitude'];
+
+function get_distance_m($lat1, $lng1, $lat2, $lng2) {
+     $earth_radius = 6378137;   // Terre = sphère de 6378km de rayon
+     $rlo1 = deg2rad($lng1);
+     $rla1 = deg2rad($lat1);
+     $rlo2 = deg2rad($lng2);
+     $rla2 = deg2rad($lat2);
+     $dlo = ($rlo2 - $rlo1) / 2;
+     $dla = ($rla2 - $rla1) / 2;
+     $a = (sin($dla) * sin($dla)) + cos($rla1) * cos($rla2) * (sin($dlo) * sin($dlo));
+     $d = 2 * atan2(sqrt($a), sqrt(1 - $a));
+     return ($earth_radius * $d);
+   }
+
+  //
+
   $age_min = $_POST['ageMin'];
   $age_max = $_POST['ageMax'];
 
@@ -86,10 +117,67 @@ $popularity_max = $_POST['popularityMax'];
 
 $array1 = array();
 
-foreach ($array as $key => $value) {
+foreach ($array as $key => $value)
   if ($row_to_clear[$key]['popularity_score'] >= $popularity_min && $row_to_clear[$key]['popularity_score'] <= $popularity_max)
       $array1[$key] = $row_to_clear[$key];
+
+
+//gestion des distance en km ici
+$distance_max_filtre = $_POST['distanceMax'];
+
+foreach ($array1 as $key => $value) {
+  // recuperer la valeur de longitude et latitude
+$latitude = $array1[$key]['latitude'];
+$longitude = $array1[$key]['longitude'];
+$distance = (round(get_distance_m($latitude_id_co, $longitude_id_co, $latitude, $longitude) / 1000, 3)). ' km';
+
+if ($distance <= $distance_max_filtre)
+  $arrayaaa[$key] = $array1[$key];
+
 }
+
+//$array1 = array();
+foreach ($arrayaaa as $key => $value) {
+  $arraylili[$key] = $arrayaaa[$key];
+}
+
+$array1 =array();
+foreach ($arraylili as $key => $value) {
+  $array1[$key] = $arraylili[$key];
+  // code...
+}
+// var_dump($array1);
+// echo '<br><br>';
+// return;
+//
+// if (!isset($arrayaicha))
+// {
+//   echo '{
+//     "data" : {
+//       "pageAmount" : 1,
+//       "elemAmount" : 1,
+//       "users" : []
+//     },
+//     "alert" : {
+//       "color" : "DarkRed",
+//       "message" : "There is no profil who match ur query of distance"
+//     }
+//   }';
+//   return;
+// }
+
+//
+// $array1 = array();
+// foreach ($arrayaicha as $key => $value) {
+//   $array1[$key] = $arrayaicha[$key];
+// }
+//
+//
+// var_dump($array1);
+// return;
+
+
+//
 
 $profile_viewed = $_POST['viewed'];
 $profile_liked = $_POST['liked'];
@@ -111,13 +199,7 @@ if ($_POST['tags'] != '[]')
   foreach ($array_tag as $key => $value){
     $row[$key] = $usr->get_users_who_have_this_tag($array_tag[$key]);}
 
-  function array_empty($a)
-  {
-      foreach($a as $k => $v)
-          if(empty($v))
-              return false;
-      return true;
-  }
+
   if (array_empty($row) == false)
   {
     echo '{
@@ -143,6 +225,8 @@ if ($_POST['tags'] != '[]')
   }
 }
 
+
+
 if ($profile_viewed == 'True' && $profile_liked == 'False')
 {
   //trier array 1 pour ne contenir que les raw contenant une occurence dans profile viewed
@@ -156,7 +240,21 @@ if ($profile_viewed == 'True' && $profile_liked == 'False')
       $array1[$key] = $usr->get_all_details_of_this_id($row_viewed[$key]['id_user_viewing']);
   }
 }
-
+if (array_empty($array1) == false)
+{
+  echo '{
+    "data" : {
+      "pageAmount" : 1,
+      "elemAmount" : 1,
+      "users" : []
+    },
+    "alert" : {
+      "color" : "DarkRed",
+      "message" : "There is no profil who visit ur profile LOOSER"
+    }
+  }';
+  return;
+}
 
 
 if ($profile_liked == 'True' && $profile_viewed == 'False')
@@ -176,6 +274,22 @@ foreach ($row_like as $key => $value) {
 // var_dump($arraysosa);
 // echo '<br>';
 // return;
+}
+
+if (array_empty($array1) == false)
+{
+  echo '{
+    "data" : {
+      "pageAmount" : 1,
+      "elemAmount" : 1,
+      "users" : []
+    },
+    "alert" : {
+      "color" : "DarkRed",
+      "message" : "There is no profil who liked ur profile LOOSER"
+    }
+  }';
+  return;
 }
 
 if ($profile_liked == 'True' && $profile_viewed == 'True')
@@ -270,20 +384,56 @@ if (empty($array1))
 //////////// pour l instant je gere popularité & age min/max
 ///////////////////////////////////////////////////////////////////////
 ////////////////////// CE FOREACH RENVOI LE MSG JSON //////////////////
-
+//
 
 // la je renvoi les occurences contenu dans array 1
+$array1 = array_values($array1);
+
+if (array_empty($array1) == false)
+{
+  echo '{
+    "data" : {
+      "pageAmount" : 1,
+      "elemAmount" : 1,
+      "users" : []
+    },
+    "alert" : {
+      "color" : "DarkRed",
+      "message" : "There is no profil who match with ur query"
+    }
+  }';
+  return;
+}
+// var_dump($array1);
+// return;
+
 foreach ($array1 as $key => $value)
 {
-
     $path = $usr->get_picture_profil($array1[$key]['id_user']);
     $liked = $usr->get_if_liked($array1[$key]['id_user']);
+    // if($array1[$key]['id_user'] == $_SESSION['id'])
+    //   $key++;
+    if (!isset($array1[$key]['id_user']))
+    {
+        echo '{
+          "data" : {
+            "pageAmount" : 1,
+            "elemAmount" : 1,
+            "users" : []
+          },
+          "alert" : {
+            "color" : "DarkRed",
+            "message" : "There is no profil who liked ur profile LOOSER"
+          }
+        }';
+        return;
+    }
     if ($liked == 1)
       $liked = 'true';
     else
       $liked = 'false';
 
-      $rowtag = $usr->get_tag_of_this_id($row_to_clear[$key]['id_user']);
+      $rowtag = $usr->get_tag_of_this_id($array1[$key]['id_user']);
         $output =' "tags" : [';
         $x = 0;
         foreach ($rowtag as $key => $value) {
@@ -295,6 +445,7 @@ foreach ($array1 as $key => $value)
           $output = substr($output, 0 , -2);
         $output .= ']';
 
+      //  echo $array[$key]['id_user'];
 
     $string .= '{
       "id" : '.$array1[$key]['id_user'].',
@@ -304,7 +455,8 @@ foreach ($array1 as $key => $value)
       "liked" : '.$liked.'
     },';
 }
-
+// echo ($string);
+// return;
 
 $string = substr($string, 0, -1);
 

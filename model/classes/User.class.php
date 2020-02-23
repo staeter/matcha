@@ -351,6 +351,12 @@
 			}
 		}
 
+	public function set_location($pref_loc, $longitude, $latitude)
+	{
+			$query = 'UPDATE `user` SET `longitude` = :longitude,`latitude` = :latitude,`pref_localisation`= :pref_loc WHERE id_user = :idco';
+			$this->_db->query($query, array(':longitude' => $longitude, ':latitude' => $latitude, ':pref_loc' => $pref_loc, ':idco' => $this->_id));
+	}
+
 		public function  set_gender($bool)
 		{
 		    $query = 'UPDATE user SET gender = :genre WHERE id_user = :id';
@@ -1025,6 +1031,11 @@
 
 			return $row;
 		}
+
+		// public function get_location_of_this_id()
+		// {
+		//
+		// }
 
 
 		/*

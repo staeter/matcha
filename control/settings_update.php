@@ -4,6 +4,9 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);
 $row = $usr->get_all_details();
 
+// var_dump($_POST);
+// return;
+
 if (empty($_POST['pseudo']) || empty($_POST['email']) || empty($_POST['last_name']) || empty($_POST['first_name']))
 {
   echo '{
@@ -164,6 +167,23 @@ if (!empty($_POST['tags']))
   // ic je supprime les entres qui existe mais qui ne sont pas dans l array
   //
 
+}
+
+
+// ["geoAuth"]=> string(4) "true"
+//["latitude"]=> string(9) "4.3172423"
+//["longitude"]=> string(10) "50.8882641"
+
+if (!empty($_POST['geoAuth']))
+{
+  // dans les deux cas je met a jour les trois info dans la bdd
+  // pref loc // longitude // latitude
+  if ($_POST['geoAuth'] == 'true')
+    $accord_loc = 1;
+  else
+    $accord_loc = 0;
+
+  $usr->set_location($accord_loc, $_POST['longitude'], $_POST['latitude']);
 }
 
 

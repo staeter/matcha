@@ -4,6 +4,16 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);
 $row = $usr->get_all_details();
 
+if($row['pref_localisation'] == false)
+  $string_loc = 'false';
+else
+    $string_loc = 'true';
+
+
+$int_latitude = $row['longitude'];
+$int_longitude = $row['latitude'];
+
+
 if ($row['gender'] == 1)
   $gender = 'Man';
 else
@@ -58,7 +68,10 @@ echo '{
       }
     ],
   "popularity_score" : '.$row['popularity_score'].',
-  '.$output.'
+  '.$output.',
+  "geoAuth" : '.$string_loc.',
+  "latitude" : '.$int_latitude.',
+  "longitude" : '.$int_longitude.'
 },
 "alert" : {
   "color" : "DarkBlue",
