@@ -1,17 +1,5 @@
 <?php
 
-
-// echo '{
-//   "data" : {
-//     "pseudo" : "sosa",
-//     "picture" : "Pictures/default-profile-picture.jpg"
-//   },
-//   "alert" : {
-//     "color" : "DarkGreen",
-//     "message" : "Welcome!"
-//   }
-// }';
-
 session_start();
 require '../model/classes/User.class.php';
 require '../model/functions/hash_password.php';

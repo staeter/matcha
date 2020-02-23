@@ -1,6 +1,5 @@
 <?php
 
-
 session_start();
 require '../model/classes/User.class.php';
 
@@ -37,12 +36,4 @@ else {
 
 }
 
-
-
-/*
-{
-  "result" : "Success" or "Failure",
-  "message" : "This is a message I want the user to see",
-}
-*/
 ?>

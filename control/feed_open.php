@@ -1,9 +1,4 @@
 <?php
-// ob_start();
-// var_dump($_POST);
-// $result = ob_get_clean();
-// error_log("[POST] feed_open.php: " . $result);
-
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);

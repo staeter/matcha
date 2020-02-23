@@ -1,19 +1,13 @@
 <?php
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
-
 $usr = unserialize($_SESSION['user']);
-
 $id_file_to_update = $_POST['id'];
 
-
 //creer une fonction qui remove la photo est remet une photo add
-
 $usr->delete_picture($id_file_to_update);
 
 $rowpic = $usr->get_all_picture();
-
 
 echo '{
   "data" :  [

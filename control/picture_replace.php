@@ -1,10 +1,7 @@
 <?php
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
-
 $usr = unserialize($_SESSION['user']);
-
 $id_file_to_update = $_POST['id'];
 
 if (is_uploaded_file($_FILES['pictureFile']['tmp_name']))

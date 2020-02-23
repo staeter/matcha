@@ -1,32 +1,8 @@
 <?php
-// En gros ici si pseudo/firstname/etc existe et est différent de vide on lance la fonction qui teste tout ce qui existe
-// comme ca l user peut envoyer plusieurs info en meme temps
-
-
-//pseudo ok first_name ok  last_name ok email OKgender OK orientation OKbiography OOK
-
-
-// tags
-//birth
-// var_dump($_POST);
-// return;
-// var_dump($_POST);
-// return;
-
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
-
-
-$db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
 $usr = unserialize($_SESSION['user']);
-
-// print_r($_POST);
-// return;
 $row = $usr->get_all_details();
-
-//print_r($row);
-// UPDATING PSEUDO
 
 if (empty($_POST['pseudo']) || empty($_POST['email']) || empty($_POST['last_name']) || empty($_POST['first_name']))
 {
@@ -195,20 +171,5 @@ echo '{
   "result" : "Success",
   "message" : "settings update success!"
 }';
-//
-//if (!(is_empty($_POST['pictures'])))
-//{
 
-// }
-// if (!(is_empty($_POST['tags'])))
-// {
-//
-// }
-
-/*
-{
-  "result" : "Success" or "Failure",
-  "message" : "This is a message I want the user to see",
-}
-*/
 ?>
