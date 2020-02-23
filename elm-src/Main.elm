@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 
 -- imports
@@ -19,7 +19,8 @@ import Json.Decode.Field as Field  exposing (..)
 import Http  exposing (..)
 
 import Array  exposing (..)
-import Time  exposing (..)
+import Time exposing (..)
+import Dict exposing (..)
 
 import File exposing (File)
 import File.Select as Select  exposing (..)
@@ -39,10 +40,12 @@ import Date exposing (..)
 import Time exposing (Month(..))
 import Time.Format exposing (monthToString)
 
--- import PortFunnel
---   exposing (FunnelSpec, GenericMessage, ModuleDesc, StateAccessors)
--- import PortFunnel.Geolocation as Geolocation
---   exposing (Message, Movement(..), Response(..))
+import PortFunnel
+  exposing (FunnelSpec, GenericMessage, ModuleDesc, StateAccessors)
+import PortFunnel.Geolocation as Geolocation
+  exposing (Message, Movement(..), Response(..))
+
+import Cmd.Extra exposing (addCmd, addCmds, withCmd, withCmds, withNoCmd)
 
 import Bootstrap.CDN as CDN exposing (stylesheet)
 import Bootstrap.Card as Card exposing (..)
@@ -114,6 +117,8 @@ type alias LModel =
   , settingsBirthMonth : ZipList (Date.Month, String)
   , settingsBirthYear : ZipList (Int, String)
   , settingsGeoInfo : GeolocationInfo
+  -- funnels
+  , funnelState : FunnelState
   -- pictures settings
   , pictures : Maybe (ZipList (Int, String))
   }
@@ -258,11 +263,12 @@ loggedAccessInit route pseudo picture =
           ZipList.fromList yearList
           |> ZipList.goToFirst (Tuple.first >> (==) (Date.year date))
       , settingsGeoInfo = GeoAuthRefused 0 0
+      , funnelState = { geolocation = Geolocation.initialState }
       , pictures = Nothing
       }
   , case route of
       Home ->
-        requestFeedInit ReceiveFeedInit |> Debug.log "send request FeedInit"
+        requestFeedInit ReceiveFeedInit
       User id ->
         requestUserDetails id ReceiveUserDetails
       Notifs ->
@@ -270,7 +276,7 @@ loggedAccessInit route pseudo picture =
       Chats ->
         requestChats ReceiveChats
       Settings ->
-        requestCurrentSettings ReceiveCurrentSettings |> Debug.log "send request CurrentSettings"
+        requestCurrentSettings ReceiveCurrentSettings
       _ ->
         Cmd.none
   )
@@ -415,6 +421,8 @@ type Msg
   | ReceivePicturesUpdate (Result Http.Error (DataAlert (ZipList (Int, String))))
   -- user details
   | InputUserDetailsSelectImage Carousel.Msg
+  -- geolocation
+  | ProcessPortFunnelVal Value
   -- other
   | ReceiveFeedInit (Result Http.Error (DataAlert (FiltersForm, PageContent)))
   | FiltersForm FiltersFormMsg
@@ -852,7 +860,8 @@ update msg model =
             ( { model | access = Logged { lmodel |
                 settingsGeoInfo = GeoAuthRefused 0 0
               }}
-            , Cmd.none )
+            , Geolocation.send cmdPort Geolocation.stopWatching
+            )
         GeoAuthRefused _ _ ->
           if not newAuth
           then (model, Cmd.none)
@@ -860,7 +869,8 @@ update msg model =
             ( { model | access = Logged { lmodel |
                 settingsGeoInfo = GeoAuthGranted 0 0
               }}
-            , Cmd.none )
+            , Geolocation.send cmdPort Geolocation.watchChanges
+            )
 
     (Logged lmodel, Settings, SubmitSettings) ->
       let
@@ -1185,37 +1195,40 @@ update msg model =
     (Logged lmodel, _, ReceiveCurrentSettings result) ->
       case toWebResultDataAlert result of
         AvData currentSettings alert ->
-          ( { model | access = Logged
-              { lmodel
-                | pictures = Just currentSettings.pictures
-                , settingsPseudo = currentSettings.pseudo
-                , settingsFirstname = currentSettings.first_name
-                , settingsLastname = currentSettings.last_name
-                , settingsEmail = currentSettings.email
-                , settingsGender =
-                    ZipList.fromList genderList
-                    |> ZipList.goToFirst (\ elem -> currentSettings.gender == Tuple.first elem )
-                , settingsOrientation =
-                    ZipList.fromList orientationList
-                    |> ZipList.goToFirst (\ elem -> currentSettings.orientation == Tuple.first elem )
-                , settingsBiography = currentSettings.biography
-                , settingsTagsItems = currentSettings.tags
-                , settingsBirth = currentSettings.birth
-                , settingsBirthDay =
-                    ZipList.fromList dayList
-                    |> ZipList.goToFirst (Tuple.first >> (==) (Date.day currentSettings.birth))
-                , settingsBirthMonth =
-                    ZipList.fromList monthList
-                    |> ZipList.goToFirst (Tuple.first >> (==) (Date.month currentSettings.birth))
-                , settingsBirthYear =
-                    ZipList.fromList yearList
-                    |> ZipList.goToFirst (Tuple.first >> (==) (Date.year currentSettings.birth))
-                , settingsGeoInfo =
-                    currentSettings.geolocationInfo
-              }
-            } |> Alert.put alert
-          , Cmd.none
-          )
+          let (geoAuth, _, _) = breakAppartGeoInfo currentSettings.geolocationInfo in
+            ( { model | access = Logged
+                { lmodel
+                  | pictures = Just currentSettings.pictures
+                  , settingsPseudo = currentSettings.pseudo
+                  , settingsFirstname = currentSettings.first_name
+                  , settingsLastname = currentSettings.last_name
+                  , settingsEmail = currentSettings.email
+                  , settingsGender =
+                      ZipList.fromList genderList
+                      |> ZipList.goToFirst (\ elem -> currentSettings.gender == Tuple.first elem )
+                  , settingsOrientation =
+                      ZipList.fromList orientationList
+                      |> ZipList.goToFirst (\ elem -> currentSettings.orientation == Tuple.first elem )
+                  , settingsBiography = currentSettings.biography
+                  , settingsTagsItems = currentSettings.tags
+                  , settingsBirth = currentSettings.birth
+                  , settingsBirthDay =
+                      ZipList.fromList dayList
+                      |> ZipList.goToFirst (Tuple.first >> (==) (Date.day currentSettings.birth))
+                  , settingsBirthMonth =
+                      ZipList.fromList monthList
+                      |> ZipList.goToFirst (Tuple.first >> (==) (Date.month currentSettings.birth))
+                  , settingsBirthYear =
+                      ZipList.fromList yearList
+                      |> ZipList.goToFirst (Tuple.first >> (==) (Date.year currentSettings.birth))
+                  , settingsGeoInfo =
+                      currentSettings.geolocationInfo
+                }
+              } |> Alert.put alert
+            , if geoAuth
+              then Geolocation.send cmdPort Geolocation.watchChanges
+              else Cmd.none
+            )
         NoData alert ->
           ( model |> Alert.put alert
           , Cmd.none
@@ -1274,6 +1287,22 @@ update msg model =
           , Cmd.none
           )
         _ -> (model, Cmd.none)
+
+    (Logged lmodel, _, ProcessPortFunnelVal value) ->
+      case
+        PortFunnel.processValue funnels
+            appTrampoline
+            value
+            lmodel.funnelState
+            model
+      of
+          Err error ->
+              model
+              |> (Alert.put << Just << Alert.invalidImputAlert) error
+              |> withNoCmd
+
+          Ok res ->
+              res
 
     _ -> ( model, Cmd.none )
 
@@ -1350,6 +1379,7 @@ retreiveAccountResultHandler result model cmd =
       , cmd |> Cmd.map AccountRetrievalForm
       )
 
+
 -- report and block
 
 submitBlock : Int -> Cmd Msg
@@ -1383,6 +1413,67 @@ breakAppartGeoInfo newGInfo =
     GeoAuthGranted latitude longitude -> (True, latitude, longitude)
     GeoAuthRefused latitude longitude -> (False, latitude, longitude)
 
+
+port cmdPort : Value -> Cmd msg
+port subPort : (Value -> msg) -> Sub msg
+
+type alias FunnelState =
+    { geolocation : Geolocation.State }
+
+geolocationAccessors : StateAccessors FunnelState Geolocation.State
+geolocationAccessors =
+    StateAccessors .geolocation (\substate state -> { state | geolocation = substate })
+
+type alias AppFunnel substate message response =
+    FunnelSpec FunnelState substate message response Model Msg
+
+type Funnel
+    = GeolocationFunnel (AppFunnel Geolocation.State Geolocation.Message Geolocation.Response)
+
+
+funnels : Dict String Funnel
+funnels =
+    Dict.fromList
+        [ ( Geolocation.moduleName
+          , GeolocationFunnel <|
+                FunnelSpec geolocationAccessors
+                    Geolocation.moduleDesc
+                    Geolocation.commander
+                    geolocationHandler
+          )
+        ]
+
+geolocationHandler : Geolocation.Response -> FunnelState -> Model -> ( Model, Cmd Msg )
+geolocationHandler response state model =
+    case (response, model.access) of
+      (LocationResponse location, Logged lmodel) ->
+        let (geoAuth, _, _) = breakAppartGeoInfo lmodel.settingsGeoInfo in
+        if not geoAuth
+        then model |> withNoCmd
+        else
+          { model | access = Logged { lmodel | settingsGeoInfo =
+              GeoAuthGranted location.latitude location.longitude
+          } }
+          |> withNoCmd
+
+      (ErrorResponse error, _) ->
+        model
+        |> (Alert.put << Just << Alert.invalidImputAlert)
+              (Geolocation.errorToString error)
+        |> withNoCmd
+
+      _ ->
+        model |> withNoCmd
+
+appTrampoline : GenericMessage -> Funnel -> FunnelState -> Model -> Result String ( Model, Cmd Msg )
+appTrampoline genericMessage funnel state model =
+    case funnel of
+        GeolocationFunnel geolocationFunnel ->
+            PortFunnel.appProcess cmdPort
+                genericMessage
+                geolocationFunnel
+                state
+                model
 
 -- settings
 
@@ -2835,9 +2926,13 @@ subscriptions model =
     Anonymous amodel ->
       Sub.none
     Logged lmodel ->
+      let (geoAuth, _, _) = breakAppartGeoInfo lmodel.settingsGeoInfo in
       [ Time.every 3000 Tick
       , MultiInput.subscriptions lmodel.settingsTagsState
         |> Sub.map InputSettingsTags
+      , if geoAuth
+        then subPort ProcessPortFunnelVal
+        else Sub.none
       ] |> Sub.batch
 
 

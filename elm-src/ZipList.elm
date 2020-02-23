@@ -12,7 +12,7 @@ module ZipList exposing
 
 {-| A `ZipList` is a list that has a single selected element. We call it current as "the one that is currently selected".
 
-To get more explicit examples, I'm gona represent `ZipList`s as `List`s that have the selected element between "<...>":
+**To get more explicit** examples, I'm gona represent `ZipList`s as `List`s that have the selected element between "<...>":
     let
       myZL = fromList ["a", "b", "c"]
     in
@@ -39,7 +39,7 @@ To get more explicit examples, I'm gona represent `ZipList`s as `List`s that hav
     currentIndex ["a", <"b">, "c"] == Just 1
 
     toList ["a", <"b">, "c"] == ["a", "b", "c"]
-This representation will not compile but it makes the documentation way more enjoyable.
+**This representation will not compile** but it will make the documentation way more enjoyable.
 
 # ZipLists
 @docs ZipList
