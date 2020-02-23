@@ -117,6 +117,7 @@ type alias LModel =
   , settingsBirthMonth : ZipList (Date.Month, String)
   , settingsBirthYear : ZipList (Int, String)
   , settingsGeoInfo : GeolocationInfo
+  , settingsPopularity : Int
   -- funnels
   , funnelState : FunnelState
   -- pictures settings
@@ -263,6 +264,7 @@ loggedAccessInit route pseudo picture =
           ZipList.fromList yearList
           |> ZipList.goToFirst (Tuple.first >> (==) (Date.year date))
       , settingsGeoInfo = GeoAuthRefused 0 0
+      , settingsPopularity = 0
       , funnelState = { geolocation = Geolocation.initialState }
       , pictures = Nothing
       }
@@ -920,6 +922,21 @@ update msg model =
                 , formCmd |> Cmd.map AccountRetrievalForm
                 )
 
+    (Anonymous amodel, _, AccountConfirmationForm formMsg) ->
+      case amodel.accountConfirmationForm of
+        Nothing -> ( model, Cmd.none )
+        Just accountConfirmationForm ->
+          let
+            (newForm, formCmd, response) = Form.update formMsg accountConfirmationForm
+          in
+            case response of
+              Just result ->
+                confirmAccountResultHandler result { model | access = Anonymous { amodel | accountConfirmationForm = Just newForm } } formCmd
+              Nothing ->
+                ( { model | access = Anonymous { amodel | accountConfirmationForm = Just newForm } }
+                , formCmd |> Cmd.map AccountConfirmationForm
+                )
+
     (Logged lmodel, _, SubmitSignout) ->
       (model, requestSignout)
 
@@ -1166,7 +1183,9 @@ update msg model =
           , Cmd.none
           )
         NoData alert ->
-          ( model |> Alert.put alert
+          ( { model | access = Logged
+              { lmodel | discution = Nothing }
+            } |> Alert.put alert
           , Cmd.none
           )
         Error error ->
@@ -1223,6 +1242,7 @@ update msg model =
                       |> ZipList.goToFirst (Tuple.first >> (==) (Date.year currentSettings.birth))
                   , settingsGeoInfo =
                       currentSettings.geolocationInfo
+                  , settingsPopularity = currentSettings.popularity_score
                 }
               } |> Alert.put alert
             , if geoAuth
@@ -1368,7 +1388,9 @@ retreiveAccountResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
       ( model |> (Alert.put << Just) (Alert.successAlert message)
-      , cmd |> Cmd.map AccountRetrievalForm
+      , [ cmd |> Cmd.map AccountRetrievalForm
+        , Nav.pushUrl model.key "/signin"
+        ] |> Cmd.batch
       )
     Ok (Err message) ->
       ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
@@ -1377,6 +1399,23 @@ retreiveAccountResultHandler result model cmd =
     Err error ->
       ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
       , cmd |> Cmd.map AccountRetrievalForm
+      )
+
+confirmAccountResultHandler result model cmd =
+  case result of
+    Ok (Ok message) ->
+      ( model |> (Alert.put << Just) (Alert.successAlert message)
+      , [ cmd |> Cmd.map AccountConfirmationForm
+        , Nav.pushUrl model.key "/signin"
+        ] |> Cmd.batch
+      )
+    Ok (Err message) ->
+      ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
+      , cmd |> Cmd.map AccountConfirmationForm
+      )
+    Err error ->
+      ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+      , cmd |> Cmd.map AccountConfirmationForm
       )
 
 
@@ -1554,6 +1593,7 @@ type alias SettingsModel a =
   , settingsBirthMonth : ZipList (Date.Month, String)
   , settingsBirthYear : ZipList (Int, String)
   , settingsGeoInfo : GeolocationInfo
+  , settingsPopularity : Int
   }
 
 submitSettings : SettingsModel a -> Cmd Msg
@@ -2711,6 +2751,7 @@ settingsView model =
                     [] model.settingsTagsItems model.settingsTagsState
                   |> El.html
                 )
+          , El.text ("Popularity score: " ++ String.fromInt model.settingsPopularity)
           , Inp.checkbox
                 [ padding 8 ]
                 { onChange = InputSettingsGeoAuth
@@ -2908,6 +2949,7 @@ viewUserDetails ud =
                               Now -> "Is logged in"
                               AWhileAgo date -> "Last log : " ++ date
                         ]
+        , Block.text [] [ Html.text ("Popularity score: " ++ String.fromInt ud.popularity_score) ]
         , Block.custom <|
             viewLikeButton ud.id ud.liked
         , Block.custom <|
