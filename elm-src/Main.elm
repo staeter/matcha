@@ -978,7 +978,8 @@ update msg model =
           in
             case response of
               Just (Ok { data, alert }) ->
-                ( { model | alert = alert, access = Logged (receivePageContentUpdate True data lmodel) }
+                ( { model | access = Logged (receivePageContentUpdate True data lmodel) }
+                  |> Alert.put alert
                 , formCmd |> Cmd.map FiltersForm
                 )
               Just (Err error) ->

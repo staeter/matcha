@@ -243,7 +243,7 @@ update msg myForm =
               myNewForm = { myForm | fields = myForm.fields |> Array.set id myNewField }
               submitionCmd =
                 case myForm.submition of
-                  LiveUpdate -> submit myForm
+                  LiveUpdate -> submit myNewForm
                   OnSubmit _ -> Cmd.none
 
               cmd = Cmd.batch [Cmd.map (Input id) fieldCmd, submitionCmd]
