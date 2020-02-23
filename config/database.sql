@@ -28,7 +28,7 @@ SET time_zone = "+00:00";
 -- Structure de la table `account_retrieval_requests`
 --
 
-CREATE TABLE `account_retrieval_requests` (
+CREATE TABLE IF NOT EXISTS `account_retrieval_requests` (
   `account_retrieval_request_key` int(10) UNSIGNED NOT NULL,
   `id_user` int(10) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -39,7 +39,7 @@ CREATE TABLE `account_retrieval_requests` (
 -- Structure de la table `account_verification`
 --
 
-CREATE TABLE `account_verification` (
+CREATE TABLE IF NOT EXISTS `account_verification` (
   `account_verification_key` int(10) UNSIGNED NOT NULL,
   `id_user` int(10) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -57,7 +57,7 @@ INSERT INTO `account_verification` (`account_verification_key`, `id_user`) VALUE
 -- Structure de la table `intrests`
 --
 
-CREATE TABLE `intrests` (
+CREATE TABLE IF NOT EXISTS `intrests` (
   `id_user` int(10) UNSIGNED DEFAULT NULL,
   `tag` varchar(64) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -80,7 +80,7 @@ INSERT INTO `intrests` (`id_user`, `tag`) VALUES
 -- Structure de la table `like`
 --
 
-CREATE TABLE `like` (
+CREATE TABLE IF NOT EXISTS `like` (
   `id_user_liking` int(10) UNSIGNED DEFAULT NULL,
   `id_user_liked` int(10) UNSIGNED DEFAULT NULL,
   `liked` tinyint(1) DEFAULT '1',
@@ -108,7 +108,7 @@ INSERT INTO `like` (`id_user_liking`, `id_user_liked`, `liked`, `date`) VALUES
 -- Structure de la table `messages`
 --
 
-CREATE TABLE `messages` (
+CREATE TABLE IF NOT EXISTS `messages` (
   `id_message` int(10) UNSIGNED NOT NULL,
   `id_user_sending` int(10) UNSIGNED DEFAULT NULL,
   `id_user_receiving` int(10) UNSIGNED DEFAULT NULL,
@@ -153,7 +153,7 @@ INSERT INTO `messages` (`id_message`, `id_user_sending`, `id_user_receiving`, `d
 -- Structure de la table `notifications`
 --
 
-CREATE TABLE `notifications` (
+CREATE TABLE IF NOT EXISTS `notifications` (
   `id_user` int(10) UNSIGNED NOT NULL,
   `notification` varchar(254) NOT NULL DEFAULT 'Something happened.',
   `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -408,7 +408,7 @@ INSERT INTO `notifications` (`id_user`, `notification`, `date`, `readed`) VALUES
 -- Structure de la table `picture`
 --
 
-CREATE TABLE `picture` (
+CREATE TABLE IF NOT EXISTS `picture` (
   `id_picture` int(10) UNSIGNED NOT NULL,
   `id_user` int(10) UNSIGNED DEFAULT NULL,
   `is_profile-picture` tinyint(1) DEFAULT '0',
@@ -467,7 +467,7 @@ INSERT INTO `picture` (`id_picture`, `id_user`, `is_profile-picture`, `path`) VA
 -- Structure de la table `profile_viewed`
 --
 
-CREATE TABLE `profile_viewed` (
+CREATE TABLE IF NOT EXISTS `profile_viewed` (
   `id_user_viewing` int(10) UNSIGNED DEFAULT NULL,
   `id_user_viewed` int(10) UNSIGNED DEFAULT NULL,
   `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -490,7 +490,7 @@ INSERT INTO `profile_viewed` (`id_user_viewing`, `id_user_viewed`, `date`) VALUE
 -- Structure de la table `report`
 --
 
-CREATE TABLE `report` (
+CREATE TABLE IF NOT EXISTS `report` (
   `id_user_reporting` int(10) UNSIGNED DEFAULT NULL,
   `id_user_reported` int(10) UNSIGNED DEFAULT NULL,
   `description` text,
@@ -510,7 +510,7 @@ INSERT INTO `report` (`id_user_reporting`, `id_user_reported`, `description`, `d
 -- Structure de la table `user`
 --
 
-CREATE TABLE `user` (
+CREATE TABLE IF NOT EXISTS `user` (
   `id_user` int(10) UNSIGNED NOT NULL,
   `pseudo` varchar(64) NOT NULL,
   `email` varchar(254) NOT NULL,
