@@ -117,6 +117,7 @@ type alias LModel =
   , settingsBirthMonth : ZipList (Date.Month, String)
   , settingsBirthYear : ZipList (Int, String)
   , settingsGeoInfo : GeolocationInfo
+  , settingsPopularity : Int
   -- funnels
   , funnelState : FunnelState
   -- pictures settings
@@ -263,6 +264,7 @@ loggedAccessInit route pseudo picture =
           ZipList.fromList yearList
           |> ZipList.goToFirst (Tuple.first >> (==) (Date.year date))
       , settingsGeoInfo = GeoAuthRefused 0 0
+      , settingsPopularity = 0
       , funnelState = { geolocation = Geolocation.initialState }
       , pictures = Nothing
       }
@@ -1223,6 +1225,7 @@ update msg model =
                       |> ZipList.goToFirst (Tuple.first >> (==) (Date.year currentSettings.birth))
                   , settingsGeoInfo =
                       currentSettings.geolocationInfo
+                  , settingsPopularity = currentSettings.popularity_score
                 }
               } |> Alert.put alert
             , if geoAuth
@@ -1554,6 +1557,7 @@ type alias SettingsModel a =
   , settingsBirthMonth : ZipList (Date.Month, String)
   , settingsBirthYear : ZipList (Int, String)
   , settingsGeoInfo : GeolocationInfo
+  , settingsPopularity : Int
   }
 
 submitSettings : SettingsModel a -> Cmd Msg
@@ -2711,6 +2715,7 @@ settingsView model =
                     [] model.settingsTagsItems model.settingsTagsState
                   |> El.html
                 )
+          , El.text ("Popularity score: " ++ String.fromInt model.settingsPopularity)
           , Inp.checkbox
                 [ padding 8 ]
                 { onChange = InputSettingsGeoAuth
@@ -2908,6 +2913,7 @@ viewUserDetails ud =
                               Now -> "Is logged in"
                               AWhileAgo date -> "Last log : " ++ date
                         ]
+        , Block.text [] [ Html.text ("Popularity score: " ++ String.fromInt ud.popularity_score) ]
         , Block.custom <|
             viewLikeButton ud.id ud.liked
         , Block.custom <|
