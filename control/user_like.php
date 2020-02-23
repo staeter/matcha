@@ -49,7 +49,7 @@ else {
   }
   echo '{
   "data" : {
-    "id" : "'.$_POST['id'].'",
+    "id" : '.$_POST['id'].',
     "newLikeStatus" : false
   },
   "alert" : {
@@ -73,7 +73,7 @@ if ($ret == 2)
     //recrée un chat
     echo '{
     "data" : {
-      "id" : "'.$_POST['id'].'",
+      "id" : '.$_POST['id'].',
       "newLikeStatus" : true
     },
     "alert" : {
@@ -95,7 +95,7 @@ if ($ret == 3)
   //verifier si like en retour si oui notif pour match + creation du chat
   echo '{
   "data" : {
-    "id" : "'.$_POST['id'].'",
+    "id" : '.$_POST['id'].',
     "newLikeStatus" : true
   },
   "alert" : {
