@@ -922,6 +922,21 @@ update msg model =
                 , formCmd |> Cmd.map AccountRetrievalForm
                 )
 
+    (Anonymous amodel, _, AccountConfirmationForm formMsg) ->
+      case amodel.accountConfirmationForm of
+        Nothing -> ( model, Cmd.none )
+        Just accountConfirmationForm ->
+          let
+            (newForm, formCmd, response) = Form.update formMsg accountConfirmationForm
+          in
+            case response of
+              Just result ->
+                confirmAccountResultHandler result { model | access = Anonymous { amodel | accountConfirmationForm = Just newForm } } formCmd
+              Nothing ->
+                ( { model | access = Anonymous { amodel | accountConfirmationForm = Just newForm } }
+                , formCmd |> Cmd.map AccountConfirmationForm
+                )
+
     (Logged lmodel, _, SubmitSignout) ->
       (model, requestSignout)
 
@@ -1371,7 +1386,9 @@ retreiveAccountResultHandler result model cmd =
   case result of
     Ok (Ok message) ->
       ( model |> (Alert.put << Just) (Alert.successAlert message)
-      , cmd |> Cmd.map AccountRetrievalForm
+      , [ cmd |> Cmd.map AccountRetrievalForm
+        , Nav.pushUrl model.key "/signin"
+        ] |> Cmd.batch
       )
     Ok (Err message) ->
       ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
@@ -1380,6 +1397,23 @@ retreiveAccountResultHandler result model cmd =
     Err error ->
       ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
       , cmd |> Cmd.map AccountRetrievalForm
+      )
+
+confirmAccountResultHandler result model cmd =
+  case result of
+    Ok (Ok message) ->
+      ( model |> (Alert.put << Just) (Alert.successAlert message)
+      , [ cmd |> Cmd.map AccountConfirmationForm
+        , Nav.pushUrl model.key "/signin"
+        ] |> Cmd.batch
+      )
+    Ok (Err message) ->
+      ( model |> (Alert.put << Just) (Alert.invalidImputAlert message)
+      , cmd |> Cmd.map AccountConfirmationForm
+      )
+    Err error ->
+      ( model |> (Alert.put << Just) (Alert.serverNotReachedAlert error)
+      , cmd |> Cmd.map AccountConfirmationForm
       )
 
 
