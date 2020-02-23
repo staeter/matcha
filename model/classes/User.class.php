@@ -459,6 +459,11 @@
 		return $row;
 	}
 
+	public function set_profile_viewed($id)
+	{
+		$query = 'INSERT INTO `profile_viewed`(`id_user_viewing`, `id_user_viewed`) VALUES (:idco, :id)';
+		$this->_db->query($query, array(':idco' => $this->_id, 'id' => $id));
+	}
 
 	public function set_a_like($idli)
 		{
