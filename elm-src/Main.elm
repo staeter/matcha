@@ -1183,7 +1183,9 @@ update msg model =
           , Cmd.none
           )
         NoData alert ->
-          ( model |> Alert.put alert
+          ( { model | access = Logged
+              { lmodel | discution = Nothing }
+            } |> Alert.put alert
           , Cmd.none
           )
         Error error ->
