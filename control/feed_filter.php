@@ -96,31 +96,129 @@ $profile_liked = $_POST['liked'];
 
 // var_dump($array1);
 // return;
-if ($profile_viewed == 'true')
+
+if ($_POST['tags'] != '[]')
+{
+
+  $string_tag = $_POST['tags'];
+  $string_tag = substr($string_tag, 1, -1);
+
+  $array_tag = explode(',', $string_tag);
+  foreach ($array_tag as $key => $value) {
+    $array_tag[$key] = substr($array_tag[$key], 1, -1);
+  }
+
+  foreach ($array_tag as $key => $value){
+    $row[$key] = $usr->get_users_who_have_this_tag($array_tag[$key]);}
+
+  function array_empty($a)
+  {
+      foreach($a as $k => $v)
+          if(empty($v))
+              return false;
+      return true;
+  }
+  if (array_empty($row) == false)
+  {
+    echo '{
+      "data" : {
+        "pageAmount" : 1,
+        "elemAmount" : 1,
+        "users" : []
+      },
+      "alert" : {
+        "color" : "DarkRed",
+        "message" : "There is no profil who match ur query of TAGS"
+      }
+    }';
+    return;
+  }
+// ok  jai donc row qui contient tout les occurence des id qui on like le tag
+//$row[$key]['id_user'] =
+  else {
+     $array1 = array();
+    foreach ($row as $key => $value) {
+      $array1[$key] = $usr->get_all_details_of_this_id($row[$key][0]['id_user']);
+    }
+  }
+}
+
+if ($profile_viewed == 'True' && $profile_liked == 'False')
 {
   //trier array 1 pour ne contenir que les raw contenant une occurence dans profile viewed
 }
 
 
 
-if ($profile_liked == 'True')
+if ($profile_liked == 'True' && $profile_viewed == 'False')
 {
-  $row_like = $usr->list_of_like_of_user_connected();
-//   var_dump($row_like);
-//   // row like contient un tableau des occurence de like entre des users et lui
-//
-//   echo '<br>';
-//   var_dump($row_to_clear);
-//   echo '<br>';
-// var_dump($array1);
-  // donc le tableau a renvoye doit contenir uniquement ces occurences la
+
+  // je vais tenter une methode qui prend en compte le tri separement pour viewed & liked
+
+  $row_like = $usr->get_who_liked_the_connected_user();
+
+  // je retourne cette liste
+$i = 0;
 $array1 = array();
-  foreach ($row_like as $key => $value) {
-    if ($row_like[$key]['id_user_liked'] == $row_to_clear[$key]['id_user'])
-    $array1[$key] = $row_to_clear[$key];
+foreach ($row_like as $key => $value) {
+  // code...
+    $array1[$key] = $usr->get_all_details_of_this_id($row_like[$key]['id_user_liking']);
   }
+// var_dump($arraysosa);
+// echo '<br>';
+// return;
+}
+
+if ($profile_liked == 'True' && $profile_viewed == 'True')
+{
+  echo '{
+    "data" : {
+      "pageAmount" : 1,
+      "elemAmount" : 1,
+      "users" : []
+    },
+    "alert" : {
+      "color" : "DarkRed",
+      "message" : "Select betwen viewed or liked, both isnt set yet(not asked by school)"
+    }
+  }';
+
+  return;
 
 }
+
+
+//   $row_like = $usr->list_of_like_of_user_connected();
+// //   var_dump($row_like);
+// //   // row like contient un tableau des occurence de like entre des users et lui
+// //
+// //   echo '<br>';
+// //   var_dump($row_to_clear);
+// //   echo '<br>';
+// // var_dump($array1);
+//   // donc le tableau a renvoye doit contenir uniquement ces occurences la
+//   $arrayc = array();
+//
+// //  var_dump($row_like);
+//
+// //  var_dump($array1);
+//
+//   foreach ($array1 as $key => $value) {
+//     // if ($row_like[$key]['id_user_liking'] == $array1[$key]['id_user'] && $row_like[$key]['id_user_liked'] == 5)
+//     // {
+//     // $arrayc[$key] = $array1[$key];
+//     //
+//     // }
+//       foreach ($row_like as $key => $value) {
+//         if ($row_like[$key]['id_user_liking'] == $array1[$key]['id_user'] && $row_like[$key]['id_user_liked'] == 5)
+//          {
+//          $arrayc[$key] = $array1[$key];
+//          }
+//       }
+//   }
+//   var_dump($arrayc);
+//   return;
+
 
 
 
@@ -138,6 +236,11 @@ $array1 = array();
   //       }
   //   }
   //  }
+
+
+
+
+// je verifie avant d envoyer le tableau qu il reste des occurences
 if (empty($array1))
   {
     echo '{
@@ -159,11 +262,13 @@ if (empty($array1))
 ///////////////////////////////////////////////////////////////////////
 ////////////////////// CE FOREACH RENVOI LE MSG JSON //////////////////
 
+
+// la je renvoi les occurences contenu dans array 1
 foreach ($array1 as $key => $value)
 {
 
-    $path = $usr->get_picture_profil($row_to_clear[$key]['id_user']);
-    $liked = $usr->get_if_liked($row_to_clear[$key]['id_user']);
+    $path = $usr->get_picture_profil($array1[$key]['id_user']);
+    $liked = $usr->get_if_liked($array1[$key]['id_user']);
     if ($liked == 1)
       $liked = 'true';
     else

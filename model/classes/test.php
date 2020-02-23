@@ -207,7 +207,11 @@ $string = "so sosa  s      s         ";
 // // $row = $usr->get_gender();
 // print_r($row);
 
-$usr->set_sexuality_orientation(2);
+// $usr->set_sexuality_orientation(2);
+
+$row = $usr->get_users_who_have_this_tag('test');
+var_dump($row);
+
 echo "string";
 return;
 ?>

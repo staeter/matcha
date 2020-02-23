@@ -172,8 +172,8 @@ $string .= ']
 }
 },
 "alert" : {
-"color" : "DarkBlue",
-"message" : "feed open call"
+"color" : "DarkGreen",
+"message" : "There is a list of users we suggest you, u will find love sooner that you think !"
 }
 }';
 echo $string;

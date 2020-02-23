@@ -450,7 +450,17 @@
 				}
 				return False;
 	}
-		public function set_a_like($idli)
+
+	public	function get_who_liked_the_connected_user()
+	{
+		$query = 'SELECT * FROM `like` WHERE `id_user_liked` = :id AND `liked` = :true';
+		$this->_db->query($query, array(':id' => $this->_id, 'true' => 1));
+		$row = $this->_db->fetchAll();
+		return $row;
+	}
+
+
+	public function set_a_like($idli)
 		{
 			// id user liking
 			// id user liked
@@ -725,6 +735,17 @@
 			{
 				$query = 'SELECT * FROM `intrests` WHERE id_user = :id';
 				$this->_db->query($query, array(':id' => $this->_id));
+				$row = $this->_db->fetchAll();
+			 	if ($row === false) {
+				 throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			 	}
+				return $row;
+			}
+
+			public function get_users_who_have_this_tag($tag)
+			{
+				$query = 'SELECT * FROM `intrests` WHERE `tag` = :tag';
+				$this->_db->query($query, array(':tag' => $tag));
 				$row = $this->_db->fetchAll();
 			 	if ($row === false) {
 				 throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
