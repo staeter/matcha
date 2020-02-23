@@ -2,17 +2,25 @@
 //
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
-
 $usr = unserialize($_SESSION['user']);
 
 
 $row = $usr->get_all_messages_between_two_user($_POST['id']);
 
+if (empty($row))
+  {
+    echo '{
+    "data": {},
+  	"alert": {
+  		"color": "DarkBlue",
+  		"message": "You dont have any conversation"
+  	}}';
+    return;
+  }
+
 $row2 = $usr->get_all_details_of_this_id($_POST['id']);
 
 $row3 = $usr->get_picture_profil($_SESSION['id']);
-//print_r($row);
 
 if ($row2['is_loged'] == 1)
   $stringlastlog = "Now";

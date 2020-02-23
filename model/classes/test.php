@@ -209,9 +209,7 @@ $string = "so sosa  s      s         ";
 
 // $usr->set_sexuality_orientation(2);
 
-$row = $usr->get_users_who_have_this_tag('test');
-var_dump($row);
-
+$row = $usr->set_profile_viewed(7);
 echo "string";
 return;
 ?>

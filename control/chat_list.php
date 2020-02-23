@@ -2,22 +2,9 @@
 //
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
-
-$db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
 $usr = unserialize($_SESSION['user']);
 
 $raw_message = $usr->get_all_messages_of_user_connected();
-
-
-
-
-
-
-
-
-
-
 
 // je dois renvoyer dans un foreach pour chaque conversation avec un User
 // un tableau contenant l id du gars / pseudo / picture / last log/ last message / unread(regle dans bdd ca)
@@ -43,65 +30,7 @@ $raw_message = $usr->get_all_messages_of_user_connected();
 // je dois traiter ca pour faire mon foreach
 // print_r($raw_message);
 
-function is_not_yet_in_array($arraymult, $arraysimple)
-{
 
-  $i = 0;
-  $j = 0;
-  $x = 0;
-  while (isset($arraymult[$i]))
-  {
-    // cette condition n est pas juste !
-    // si je fixe ca le fichier est OK
-
-      if ( ($arraymult[$i]['id_user_sending'] == $arraysimple['id_user_sending'])
-      ||  ($arraymult[$i]['id_user_receiving'] == $arraysimple['id_user_receiving']))
-        return 0;
-    $i++;
-  }
-  return 1;
-}
-
-
-function rend_moi_une_occurence_par_conv($raw_message)
-{
-  $array = array();
-  $i = 0;
-  $j = 0;
-
-  while (isset($raw_message[$i]))
-  {
-
-    if (is_not_yet_in_array($array, $raw_message[$i]) == 1)
-    {
-      $array[$j] =  $raw_message[$i];
-      $j++;
-    }
-    $i++;
-  }
-  return ($array);
-}
-
-// $finalArray = [];
-// foreach($array as $arr){
-//
-//     if(isset($finalArray[$arr['id_user_sending'].'-'.$arr['id_user_receiving']])){
-//         if(strtotime($finalArray[$arr['id_user_sending'].'-'.$arr['id_user_receiving']]['date']) <= strtotime($arr['date'])){
-//
-//             $finalArray[$arr['id_user_sending'].'-'.$arr['id_user_receiving']] = $arr;
-//         }
-//
-//
-//     }else{
-//
-//         $finalArray[$arr['id_user_sending'].'-'.$arr['id_user_receiving']] = $arr;
-//     }
-//
-// }
-//
-// $finalArray = array_values($raw_message);
-// print_r($finalArray);
-// return;
 function getLatestMessages(array $messages, $receiverId) {
     $times = [];
     $chats = [];
@@ -186,109 +115,5 @@ $jsondata = substr($jsondata, 0, -4);
 $jsondata .= $findestring;
 
 echo $jsondata;
-
-//$x = '{ "data" : [ { "id" : 1, "pseudo" : "reda", "picture" : "/Pictures/def.jpg", "last_log" : "Now", "last_message" : "test message yo ma poule ", "unread" : true }], "alert" : { "color" : "DarkBlue", "message" : "chat list alert" } }';
-//echo $x;
-  //     $x = 0;
-  //
-  //     $tableau;
-  //
-  //     foreach ($raw_message as $key => $value) {
-  //
-  //       // je dois ici concatener mes strings, dans une variable a condition
-  //       // qu elle a pas deja été concatener
-  //       $tab .= '{
-  //         "id" : '.$raw_message[$key]['id_user_sending'].',
-  //         "pseudo" : "'.$raw_user['pseudo'].'",
-  //         "picture" : "/data/joneysPick.png",
-  //         "last_log" : "'.$raw_user['last_log'].'",
-  //         "last_message" : "'.$raw_message[0]['content'].'",
-  //         "unread" : '.$unread.'
-  //       },
-  //       ';
-  //
-  // };
-  //echo($tab);
-
-    // echo '{
-    //   "data" : [
-    //     {
-    //       "id" : '.$raw_message[1]['id_user_sending'].',
-    //       "pseudo" : "'.$raw_user['pseudo'].'",
-    //       "picture" : "/data/joneysPick.png",
-    //       "last_log" : "'.$raw_user['last_log'].'",
-    //       "last_message" : "'.$raw_message[0]['content'].'",
-    //       "unread" : '.$unread.'
-    //     },
-    //     {
-    //       "id" : 12,
-    //       "pseudo" : "Francis",
-    //       "picture" : "/data/franc.png",
-    //       "last_log" : "03-01-2020",
-    //       "last_message" : "wow lol!",
-    //       "unread" : true
-    //     },
-    //     {
-    //       "id" : 14,
-    //       "pseudo" : "lisa",
-    //       "picture" : "/data/lizProfile.png",
-    //       "last_log" : "29-12-2020",
-    //       "last_message" : "hey! Lov u bro",
-    //       "unread" : false
-    //     }
-    //   ],
-    //   "alert" : {
-    //     "color" : "DarkBlue",
-    //     "message" : "chat list alert"
-    //   }
-    // }';
-
-
-    //print_r($raw_user);
-
-// 4.
-    //    $picture_path = $usr->get_profile_picture_of_an_user();
-
-
-    // de la je fais un foreacht key as value je fais un echo avec les infos
-    // mmmmh je pense le message json sera mal formaté du coup je concatene
-    // par ce que quand c le dernier je dois pas mettre de , apres l accolade
-    // et jdois fermer le crochet + alert
-
-// print_r($row);
-//
-// if ($row['is_loged'] == 1)
-// {
-//   $toprint = 'Now';
-// }
-// else {
-//   $toprint = $row['last_log'];
-// }
-//
-// echo '<br><br><br>';
-//
-// echo
-// '{
-//   "result" : "Success",
-//    "message" : [
-//     {
-//       "id" : "'.$row['id_user'].'",
-//       "pseudo" : "'.$row['pseudo'].'",
-//       "picture" : "/data/name.png",
-//       "last_log" : '.$toprint.',
-//       "last_message" : "blabla!",
-//       "unread" : "True"
-//     }
-//   ]
-//   -- mamybe "alert" : {
-//     "color" : "DarkRed",
-//     "message" : "message for the user"
-//   }';
-//
-//
-//
-// echo '{
-//   "result" : "",
-//   "message" : "sisi la famille"
-// }';
+return;
 ?>
