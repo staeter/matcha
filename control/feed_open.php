@@ -7,6 +7,31 @@
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);
+$row_test = $usr->get_all_details_of_this_id($_SESSION['id']);
+if ($row_test['biography'] == NULL)
+{
+  echo'{
+"data": {
+  "filtersEdgeValues": {
+    "ageMin": 16,
+    "ageMax": 120,
+    "distanceMax": 100,
+    "popularityMin": 0,
+    "popularityMax": 100
+  },
+  "pageContent": {
+    "pageAmount": 1,
+    "elemAmount": 1,
+    "users": []
+  }
+},
+"alert": {
+  "color": "DarkRed",
+  "message": "Go set some information of ur account and come back to find ur future love !"
+}
+}';
+  return;
+}
 $row = $usr->get_all_details_of_all_id();
 
 $string = '{
