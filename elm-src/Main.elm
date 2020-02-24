@@ -54,6 +54,8 @@ import Bootstrap.Carousel as Carousel exposing (..)
 import Bootstrap.Carousel.Slide as Slide exposing (..)
 import Bootstrap.Button as Button exposing (..)
 import Bootstrap.Utilities.Spacing as Spacing exposing (mt2)
+import Bootstrap.Grid as Grid exposing (container, row, col)
+import Bootstrap.Grid.Col as Col exposing (..)
 
 
 -- modules
@@ -2085,10 +2087,17 @@ view model =
         [ CDN.stylesheet
         , viewHeader model.route lmodel
         , Alert.view model
-        , Maybe.map Form.view lmodel.filtersForm
-          |> Maybe.map (Html.map FiltersForm)
-          |> Maybe.withDefault (Html.text "Loading...")
-        , viewFeed lmodel
+        , Grid.container [] [ Grid.row []
+            [ Grid.col
+                [ Col.sm3 ]
+                [ Maybe.map Form.view lmodel.filtersForm
+                  |> Maybe.map (Html.map FiltersForm)
+                  |> Maybe.withDefault (Html.text "Loading...")
+                ]
+            , Grid.col
+                [ Col.lg9 ]
+                [ viewFeed lmodel ]
+            ] ]
         ]
       }
 
@@ -2681,7 +2690,7 @@ settingsView model =
                             [ centerY ]
                             (El.text "firstname : ")
                 }
-          , row []
+          , El.row []
                 [ El.el
                       [ onEnter SubmitSettings
                       , padding 8
@@ -2803,9 +2812,11 @@ settingsView model =
 
 viewProfile : Profile -> Card.Config Msg
 viewProfile profile =
-  Card.config [ Card.attrs [ style "width" "20rem" ] ]
+  Card.config [ Card.attrs [ style "width" "240px" ] ]
     |> Card.header [ class "text-center" ]
-        [ img [ src profile.picture ] []
+        [ img [ src profile.picture
+              , style "max-width" "200px"
+              ] []
         , h3  [ Spacing.mt2
               , Html.Events.onClick (NavToUser profile.id)
               ] [ Html.text profile.pseudo ]
