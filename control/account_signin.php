@@ -7,7 +7,7 @@ require_once $_SERVER["DOCUMENT_ROOT"] . '/config/database.php';
 
 $x = -1;
 try {
-  $db = new Database($dsn, $username, $password);
+  $db = new Database($dsn . ";dbname=" . $dbname, $username, $password);
   $usr = new User($_POST['pseudo'], hash_password($_POST['password']), $db);
 
 

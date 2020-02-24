@@ -6,7 +6,7 @@ session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/config/database.php';
-  $db = new Database($dsn, $username, $password);
+  $db = new Database($dsn . ";dbname=" . $dbname, $username, $password);
 
 if (empty($_POST['email']))
 {
