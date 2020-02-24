@@ -9,12 +9,13 @@
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/doubleslider.css">
   <link rel="stylesheet" href="/css/footer.css">
+  <link rel="stylesheet" href="/css/chat.css">
   <script src="/index.js"></script>
   <script type='text/javascript' src='/js/PortFunnel.js'></script>
   <script type='text/javascript' src='/js/PortFunnel/Geolocation.js'></script>
 </head>
 
-<body style="font-family: Sans-serif, Monospace">
+<body>
   <div id="elm"></div>
   <script>
 

@@ -2168,8 +2168,23 @@ view model =
       , body =
         [ viewHeader model.route lmodel
         , Alert.view model
-        , viewChats lmodel.chats
-        , viewDiscution lmodel.discution
+        , div [ id "frame"
+              , style "display" "flex"
+              , style "align-items" "center"
+              , style "justify-content" "center"
+              , style "min-height" "100vh"
+              , style "font-size" "1em"
+              , style "letter-spacing" "0.1px"
+              , style "color" "#32465a"
+              , style "text-rendering" "optimizeLegibility"
+              , style "text-shadow" "1px 1px 1px rgba(0, 0, 0, 0.004)"
+              , style "-webkit-font-smoothing" "antialiased"
+              ]
+              [ viewChats lmodel.chats
+              , lmodel.discution
+                |> Maybe.map (viewDiscution lmodel.picture)
+                |> Maybe.withDefault (Html.text "No discution selected.")
+              ]
         , viewFooter
         ]
       }
@@ -2299,38 +2314,68 @@ viewPictUpdate model =
 
 viewChats : List Chat -> Html Msg
 viewChats chatList =
-  div [] (List.map viewChat chatList)
+  div [ id "sidepanel" ]
+      [ div [ id "contacts" ]
+            [ ul  []
+                  ( chatList
+                    |> List.map viewChat
+                  )
+            ]
+      ]
 
 viewChat : Chat -> Html Msg
 viewChat chat =
-  div [ if chat.unread
-        then style "background-color" "LightBlue"
-        else style "background-color" "White"
+  li  [ class "contact"
+      , if chat.unread
+        then style "background-color" "#ae9b61"
+        else style "background-color" "#2C3E50"
       , Html.Events.onClick (AccessDiscution chat.id)
       ]
-      [ img [ src chat.picture ] []
-      , Html.text chat.pseudo
-      ]
-
-viewDiscution : Maybe Discution -> Html Msg
-viewDiscution maybeDiscution =
-  maybeDiscution
-  |> Maybe.map
-      (\discution ->
-        div []
-            [ div [] (List.map viewMessage discution.messages)
-            , (Form.view discution.sendMessageForm |> Html.map SendMessageForm)
+      [ div [ class "wrap" ]
+            [ span  [ if chat.last_log == Now
+                      then class "contact-status online"
+                      else class "contact-status"
+                    ]
+                    []
+            , img [ src chat.picture ] []
+            , div [ class "meta" ]
+                  [ p [ class "name"] [ Html.text chat.pseudo ]
+                  , p [ class "preview" ] [ Html.text chat.last_message ]
+                  ]
             ]
-      )
-  |> Maybe.withDefault (div [] [ Html.text "Loading..." ])
-
-viewMessage : Message -> Html Msg
-viewMessage message =
-  div [ if message.sent
-        then style "background-color" "LightBlue"
-        else style "background-color" "LightGrey"
       ]
-      [ Html.text message.content
+
+viewDiscution : String -> Discution -> Html Msg
+viewDiscution myProfilePict discution =
+  div [ class "content" ]
+      [ div [ class "contact-profile" ]
+            [ img [ src discution.picture ] []
+            , p [] [ Html.text discution.pseudo ]
+            ]
+      , div [ class "messages"]
+            [ ul  []
+                  ( discution.messages
+                    |> List.map (viewMessage myProfilePict discution.picture)
+                  )
+            ]
+      , div [ class "message-input" ]
+            [ -- //ni
+            ]
+      , Form.view discution.sendMessageForm |> Html.map SendMessageForm
+      ]
+
+
+viewMessage : String -> String -> Message -> Html Msg
+viewMessage myProfilePict hisProfilePict message =
+  li  [ if message.sent
+        then class "sent"
+        else class "replies"
+      ]
+      [ img [ if message.sent
+              then src myProfilePict
+              else src hisProfilePict
+            ] []
+      , p [] [ Html.text message.content ]
       ]
 
 viewNotifs : List Notif -> Html Msg
