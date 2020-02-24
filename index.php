@@ -14,7 +14,7 @@
   <script type='text/javascript' src='/js/PortFunnel/Geolocation.js'></script>
 </head>
 
-<body>
+<body style="font-family: Sans-serif, Monospace">
   <div id="elm"></div>
   <script>
 

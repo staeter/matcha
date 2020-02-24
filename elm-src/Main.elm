@@ -2094,7 +2094,7 @@ view model =
         , Alert.view model
         , Grid.container [] [ Grid.row []
             [ Grid.col
-                [ Col.sm3 ]
+                [ Col.lg3 ]
                 [ Maybe.map Form.view lmodel.filtersForm
                   |> Maybe.map (Html.map FiltersForm)
                   |> Maybe.withDefault (Html.text "Loading...")
