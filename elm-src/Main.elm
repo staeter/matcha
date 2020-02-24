@@ -54,6 +54,8 @@ import Bootstrap.Carousel as Carousel exposing (..)
 import Bootstrap.Carousel.Slide as Slide exposing (..)
 import Bootstrap.Button as Button exposing (..)
 import Bootstrap.Utilities.Spacing as Spacing exposing (mt2)
+import Bootstrap.Grid as Grid exposing (container, row, col)
+import Bootstrap.Grid.Col as Col exposing (..)
 
 
 -- modules
@@ -978,7 +980,8 @@ update msg model =
           in
             case response of
               Just (Ok { data, alert }) ->
-                ( { model | alert = alert, access = Logged (receivePageContentUpdate True data lmodel) }
+                ( { model | access = Logged (receivePageContentUpdate True data lmodel) }
+                  |> Alert.put alert
                 , formCmd |> Cmd.map FiltersForm
                 )
               Just (Err error) ->
@@ -2028,6 +2031,7 @@ view model =
         [ Alert.view model
         , signinView amodel
           |> El.layout []
+        , viewFooter
         ]
       }
 
@@ -2037,15 +2041,16 @@ view model =
         [ Alert.view model
         , signupView amodel
           |> El.layout []
+        , viewFooter
         ]
       }
 
     (Anonymous _, Home) ->
       { title = "matcha - home"
       , body =
-        [ Html.text "Welcome to Matcha. The best site too meet your future love!"
-        , br [] [], a [ href "/signin" ] [ Html.text "Signin" ]
-        , Html.text " or ", a [ href "/signup" ] [ Html.text "Signup" ]
+        [ welcomeView
+          |> El.layout []
+        , viewFooter
         ]
       }
 
@@ -2055,6 +2060,7 @@ view model =
         [ Alert.view model
         , retreivealRequestView amodel
           |> El.layout []
+        , viewFooter
         ]
       }
 
@@ -2065,6 +2071,7 @@ view model =
         , amodel.accountRetrievalForm
           |> Maybe.map (Form.view >> Html.map AccountRetrievalForm)
           |> Maybe.withDefault (div [] [])
+        , viewFooter
         ]
       }
 
@@ -2075,6 +2082,7 @@ view model =
         , amodel.accountConfirmationForm
           |> Maybe.map (Form.view >> Html.map AccountConfirmationForm)
           |> Maybe.withDefault (div [] [])
+        , viewFooter
         ]
       }
 
@@ -2084,10 +2092,18 @@ view model =
         [ CDN.stylesheet
         , viewHeader model.route lmodel
         , Alert.view model
-        , Maybe.map Form.view lmodel.filtersForm
-          |> Maybe.map (Html.map FiltersForm)
-          |> Maybe.withDefault (Html.text "Loading...")
-        , viewFeed lmodel
+        , Grid.container [] [ Grid.row []
+            [ Grid.col
+                [ Col.lg3 ]
+                [ Maybe.map Form.view lmodel.filtersForm
+                  |> Maybe.map (Html.map FiltersForm)
+                  |> Maybe.withDefault (Html.text "Loading...")
+                ]
+            , Grid.col
+                [ Col.lg9 ]
+                [ viewFeed lmodel ]
+            ] ]
+        , viewFooter
         ]
       }
 
@@ -2102,6 +2118,7 @@ view model =
       , body =
           [ [ CDN.stylesheet
             , viewHeader model.route lmodel
+            , viewFooter
             ]
           , case lmodel.userDetails of
               Success ud ->
@@ -2142,6 +2159,7 @@ view model =
         [ viewHeader model.route lmodel
         , Alert.view model
         , viewNotifs lmodel.notifs
+        , viewFooter
         ]
       }
 
@@ -2150,8 +2168,24 @@ view model =
       , body =
         [ viewHeader model.route lmodel
         , Alert.view model
-        , viewChats lmodel.chats
-        , viewDiscution lmodel.discution
+        , div [ id "frame"
+              , style "display" "flex"
+              , style "align-items" "center"
+              , style "justify-content" "center"
+              , style "min-height" "100vh"
+              , style "font-size" "1em"
+              , style "letter-spacing" "0.1px"
+              , style "color" "#32465a"
+              , style "text-rendering" "optimizeLegibility"
+              , style "text-shadow" "1px 1px 1px rgba(0, 0, 0, 0.004)"
+              , style "-webkit-font-smoothing" "antialiased"
+              ]
+              [ viewChats lmodel.chats
+              , lmodel.discution
+                |> Maybe.map (viewDiscution lmodel.picture)
+                |> Maybe.withDefault (Html.text "No discution selected.")
+              ]
+        , viewFooter
         ]
       }
 
@@ -2194,6 +2228,7 @@ view model =
                   (viewPwUpdate lmodel)
             ]
           |> El.layout []
+          , viewFooter
         ]
       }
 
@@ -2279,38 +2314,68 @@ viewPictUpdate model =
 
 viewChats : List Chat -> Html Msg
 viewChats chatList =
-  div [] (List.map viewChat chatList)
+  div [ id "sidepanel" ]
+      [ div [ id "contacts" ]
+            [ ul  []
+                  ( chatList
+                    |> List.map viewChat
+                  )
+            ]
+      ]
 
 viewChat : Chat -> Html Msg
 viewChat chat =
-  div [ if chat.unread
-        then style "background-color" "LightBlue"
-        else style "background-color" "White"
+  li  [ class "contact"
+      , if chat.unread
+        then style "background-color" "#ae9b61"
+        else style "background-color" "#2C3E50"
       , Html.Events.onClick (AccessDiscution chat.id)
       ]
-      [ img [ src chat.picture ] []
-      , Html.text chat.pseudo
-      ]
-
-viewDiscution : Maybe Discution -> Html Msg
-viewDiscution maybeDiscution =
-  maybeDiscution
-  |> Maybe.map
-      (\discution ->
-        div []
-            [ div [] (List.map viewMessage discution.messages)
-            , (Form.view discution.sendMessageForm |> Html.map SendMessageForm)
+      [ div [ class "wrap" ]
+            [ span  [ if chat.last_log == Now
+                      then class "contact-status online"
+                      else class "contact-status"
+                    ]
+                    []
+            , img [ src chat.picture ] []
+            , div [ class "meta" ]
+                  [ p [ class "name"] [ Html.text chat.pseudo ]
+                  , p [ class "preview" ] [ Html.text chat.last_message ]
+                  ]
             ]
-      )
-  |> Maybe.withDefault (div [] [ Html.text "Loading..." ])
-
-viewMessage : Message -> Html Msg
-viewMessage message =
-  div [ if message.sent
-        then style "background-color" "LightBlue"
-        else style "background-color" "LightGrey"
       ]
-      [ Html.text message.content
+
+viewDiscution : String -> Discution -> Html Msg
+viewDiscution myProfilePict discution =
+  div [ class "content" ]
+      [ div [ class "contact-profile" ]
+            [ img [ src discution.picture ] []
+            , p [] [ Html.text discution.pseudo ]
+            ]
+      , div [ class "messages"]
+            [ ul  []
+                  ( discution.messages
+                    |> List.map (viewMessage myProfilePict discution.picture)
+                  )
+            ]
+      , div [ class "message-input" ]
+            [ -- //ni
+            ]
+      , Form.view discution.sendMessageForm |> Html.map SendMessageForm
+      ]
+
+
+viewMessage : String -> String -> Message -> Html Msg
+viewMessage myProfilePict hisProfilePict message =
+  li  [ if message.sent
+        then class "sent"
+        else class "replies"
+      ]
+      [ img [ if message.sent
+              then src myProfilePict
+              else src hisProfilePict
+            ] []
+      , p [] [ Html.text message.content ]
       ]
 
 viewNotifs : List Notif -> Html Msg
@@ -2391,6 +2456,38 @@ onEnter msg =
   |> Html.Events.on "keyup"
   |> El.htmlAttribute
 
+welcomeView : Element Msg
+welcomeView =
+  column  [ spacing 32
+          , centerX
+          , centerY
+          ]
+          [ El.text "Welcome to Matcha. The best site too meet your future love!"
+          , a [ href "/signin" ]
+              [ Html.text "Signin" ]
+            |> El.html
+            |> El.el  [ centerX
+                      , centerY
+                      , paddingEach
+                          { top = 32
+                          , right = 32
+                          , left = 32
+                          , bottom = 2
+                          }
+                      ]
+          , a [ href "/signup" ]
+              [ Html.text "Signup" ]
+            |> El.html
+            |> El.el  [ centerX
+                      , centerY
+                      , paddingEach
+                          { top = 2
+                          , right = 32
+                          , left = 32
+                          , bottom = 32
+                          }
+                      ]
+          ]
 
 signinView : SigninModel a -> Element Msg
 signinView model =
@@ -2680,7 +2777,7 @@ settingsView model =
                             [ centerY ]
                             (El.text "firstname : ")
                 }
-          , row []
+          , El.row []
                 [ El.el
                       [ onEnter SubmitSettings
                       , padding 8
@@ -2802,18 +2899,20 @@ settingsView model =
 
 viewProfile : Profile -> Card.Config Msg
 viewProfile profile =
-  Card.config [ Card.attrs [ style "width" "20rem" ] ]
+  Card.config [ Card.attrs [ style "width" "240px" ] ]
     |> Card.header [ class "text-center" ]
-        [ img [ src profile.picture ] []
+        [ img [ src profile.picture
+              , style "max-width" "200px"
+              ] []
         , h3  [ Spacing.mt2
               , Html.Events.onClick (NavToUser profile.id)
               ] [ Html.text profile.pseudo ]
         ]
     |> Card.block []
-        [ Block.titleH4 [] [ Html.text "Card title" ]
-        , Block.text [] [ Html.text
+        [ Block.text [] [ Html.text
                             ( List.intersperse " " profile.tags
                               |> sumStringList
+                              |> (++) "TAGS: "
                             )
                         ]
         , Block.custom <|
@@ -2959,6 +3058,11 @@ viewUserDetails ud =
         ]
     |> Card.view
 
+viewFooter : Html Msg
+viewFooter =
+  Html.div
+      [ class "footer" ]
+      [ Html.text "© reelbour and staeter 2020"]
 
 -- subscriptions
 
