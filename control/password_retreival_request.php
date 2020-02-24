@@ -5,8 +5,8 @@
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
-$db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
-
+require_once $_SERVER["DOCUMENT_ROOT"] . '/config/database.php';
+  $db = new Database($dsn, $username, $password);
 
 if (empty($_POST['email']))
 {

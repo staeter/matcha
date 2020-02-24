@@ -3,10 +3,11 @@
 session_start();
 require '../model/classes/User.class.php';
 require '../model/functions/hash_password.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/config/database.php';
 
 $x = -1;
 try {
-  $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
+  $db = new Database($dsn, $username, $password);
   $usr = new User($_POST['pseudo'], hash_password($_POST['password']), $db);
 
 

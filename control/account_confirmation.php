@@ -1,14 +1,14 @@
 <?php
   session_start();
 
-  // 
+  //
   // print_r($_POST);
   // return;
-
+  require_once $_SERVER["DOCUMENT_ROOT"] . '/config/database.php';
+  $db = new Database($dsn, $username, $password);
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/classes/Database.class.php';
-  $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
-
+  
   $x = 0;
 
 	try {
