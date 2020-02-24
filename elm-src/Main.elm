@@ -1427,7 +1427,7 @@ confirmAccountResultHandler result model cmd =
 submitBlock : Int -> Cmd Msg
 submitBlock id =
   Http.post
-      { url = "http://localhost/control/user_block.php"
+      { url = "http://localhost:8080/control/user_block.php"
       , body = multipartBody
                 [ stringPart "id" (String.fromInt id) ]
       , expect = Http.expectJson ReceiveBlockUpdate resultMessageDecoder
@@ -1436,7 +1436,7 @@ submitBlock id =
 submitReport : Int -> Cmd Msg
 submitReport id =
   Http.post
-      { url = "http://localhost/control/user_report.php"
+      { url = "http://localhost:8080/control/user_report.php"
       , body = multipartBody
                 [ stringPart "id" (String.fromInt id) ]
       , expect = Http.expectJson ReceiveReportUpdate resultMessageDecoder
@@ -1537,7 +1537,7 @@ type alias CurrentSettings =
 requestCurrentSettings : (Result Http.Error (DataAlert CurrentSettings) -> msg) -> Cmd msg
 requestCurrentSettings toMsg =
   Http.post
-      { url = "http://localhost/control/settings_current.php"
+      { url = "http://localhost:8080/control/settings_current.php"
       , body = emptyBody
       , expect = Http.expectJson toMsg (dataAlertDecoder currentSettingsDecoder)
       }
@@ -1603,7 +1603,7 @@ submitSettings : SettingsModel a -> Cmd Msg
 submitSettings model =
   let (geoAuth, longitude, latitude) = breakAppartGeoInfo model.settingsGeoInfo in
   Http.post
-      { url = "http://localhost/control/settings_update.php"
+      { url = "http://localhost:8080/control/settings_update.php"
       , body = multipartBody
                 [ stringPart "pseudo" model.settingsPseudo
                 , stringPart "first_name" model.settingsFirstname
@@ -1655,7 +1655,7 @@ removePicture pictures toMsg =
     Nothing -> Cmd.none
     Just id ->
       Http.post
-        { url = "http://localhost/control/picture_remove.php"
+        { url = "http://localhost:8080/control/picture_remove.php"
         , body = multipartBody [stringPart "id" (String.fromInt id)]
         , expect = Http.expectJson toMsg (dataAlertDecoder (zipListDecoder pictureDecoder))
         }
@@ -1671,7 +1671,7 @@ replacePicture pictures pictureFile toMsg =
     Nothing -> Cmd.none
     Just id ->
       Http.post
-        { url = "http://localhost/control/picture_replace.php"
+        { url = "http://localhost:8080/control/picture_replace.php"
         , body = multipartBody
                   [ stringPart "id" (String.fromInt id)
                   , filePart "pictureFile" pictureFile
@@ -1691,7 +1691,7 @@ type alias PwUpdateModel a =
 submitPwUpdate : PwUpdateModel a -> Cmd Msg
 submitPwUpdate model =
   Http.post
-      { url = "http://localhost/control/password_update.php"
+      { url = "http://localhost:8080/control/password_update.php"
       , body = multipartBody
                 [ stringPart "oldpw" model.pwUpdateOld
                 , stringPart "newpw" model.pwUpdateNew
@@ -1730,7 +1730,7 @@ type alias Message =
 requestChats : (Result Http.Error (DataAlert (List Chat)) -> msg) -> Cmd msg
 requestChats toMsg =
   Http.post
-      { url = "http://localhost/control/chat_list.php"
+      { url = "http://localhost:8080/control/chat_list.php"
       , body = emptyBody
       , expect = Http.expectJson toMsg (Decode.list chatDecoder |> dataAlertDecoder)
       }
@@ -1738,7 +1738,7 @@ requestChats toMsg =
 requestDiscution : Int -> (Result Http.Error (DataAlert Discution) -> msg) -> Cmd msg
 requestDiscution id toMsg =
   Http.post
-      { url = "http://localhost/control/chat_discution.php"
+      { url = "http://localhost:8080/control/chat_discution.php"
       , body = multipartBody [stringPart "id" (String.fromInt id)]
       , expect = Http.expectJson toMsg (dataAlertDecoder discutionDecoder)
       }
@@ -1795,7 +1795,7 @@ messageDecoder =
 
 requestSendMessageForm : Int -> Form ConfirmAlert
 requestSendMessageForm id =
-  Form.form confirmAlertDecoder (OnSubmit "Send message to that id") "http://localhost/control/chat_message.php" [("id", String.fromInt id)]
+  Form.form confirmAlertDecoder (OnSubmit "Send message to that id") "http://localhost:8080/control/chat_message.php" [("id", String.fromInt id)]
   |> Form.textField "content"
 
 confirmAlertDecoder : Decoder { confirm: Bool, alert: Maybe Alert }
@@ -1817,7 +1817,7 @@ type alias SigninModel a =
 submitSignin : SigninModel a -> Cmd Msg
 submitSignin model =
   Http.post
-      { url = "http://localhost/control/account_signin.php"
+      { url = "http://localhost:8080/control/account_signin.php"
       , body = multipartBody
                 [ stringPart "pseudo" model.signinPseudo
                 , stringPart "password" model.signinPassword
@@ -1844,7 +1844,7 @@ type alias SignupModel a =
 submitSignup : SignupModel a -> Cmd Msg
 submitSignup model =
   Http.post
-      { url = "http://localhost/control/account_signup.php"
+      { url = "http://localhost:8080/control/account_signup.php"
       , body = multipartBody
                 [ stringPart "pseudo" model.signupPseudo
                 , stringPart "lastname" model.signupLastname
@@ -1859,7 +1859,7 @@ submitSignup model =
 requestSignout : Cmd Msg
 requestSignout =
   Http.post
-      { url = "http://localhost/control/account_signout.php"
+      { url = "http://localhost:8080/control/account_signout.php"
       , body = emptyBody
       , expect = Http.expectJson ResultSignout resultMessageDecoder
       }
@@ -1870,7 +1870,7 @@ requestSignout =
 requestUnreadNotifsAmount : Cmd Msg
 requestUnreadNotifsAmount =
   Http.post
-      { url = "http://localhost/control/account_notifs_amount.php"
+      { url = "http://localhost:8080/control/account_notifs_amount.php"
       , body = emptyBody
       , expect = Http.expectJson ReceiveUnreadNotifsAmount (dataAlertDecoder unreadNotifsAmountDecoder)
       }
@@ -1893,7 +1893,7 @@ type alias Notif =
 requestNotifs : ((Result Http.Error (DataAlert (List Notif))) -> msg) -> Cmd msg
 requestNotifs myMsg =
   Http.post
-      { url = "http://localhost/control/account_notifs.php"
+      { url = "http://localhost:8080/control/account_notifs.php"
       , body = emptyBody
       , expect = Http.expectJson myMsg (Decode.list notifDecoder |> dataAlertDecoder)
       }
@@ -1918,7 +1918,7 @@ notifDecoder =
 requestLike : Int -> (Result Http.Error (DataAlert (Int, Bool)) -> msg) -> Cmd msg
 requestLike id toMsg =
   Http.post
-      { url = "http://localhost/control/user_like.php"
+      { url = "http://localhost:8080/control/user_like.php"
       , body = multipartBody [stringPart "id" (String.fromInt id)]
       , expect = Http.expectJson toMsg (dataAlertDecoder likeStatusDecoder)
       }
@@ -1934,7 +1934,7 @@ likeStatusDecoder =
 
 requestAccountRetrievalForm : Int -> Int -> Form (Result String String)
 requestAccountRetrievalForm a b =
-  Form.form resultMessageDecoder (OnSubmit "Retrieve password") "http://localhost/control/password_retrieval.php" [("a", String.fromInt a), ("b", String.fromInt b)]
+  Form.form resultMessageDecoder (OnSubmit "Retrieve password") "http://localhost:8080/control/password_retrieval.php" [("a", String.fromInt a), ("b", String.fromInt b)]
   |> Form.passwordField "newpw"
   |> Form.passwordField "confirm"
 
@@ -1944,7 +1944,7 @@ type alias RetreivalRequestModel a =
 submitRetreivalRequest : RetreivalRequestModel a -> Cmd Msg
 submitRetreivalRequest model =
   Http.post
-      { url = "http://localhost/control/password_retreival_request.php"
+      { url = "http://localhost:8080/control/password_retreival_request.php"
       , body = multipartBody
                 [ stringPart "email" model.retreivalRequestEmail ]
       , expect = Http.expectJson ResultRetreivalRequest resultMessageDecoder
@@ -1955,7 +1955,7 @@ submitRetreivalRequest model =
 
 requestAccountConfirmationForm : Int -> Int -> Form (Result String String)
 requestAccountConfirmationForm a b =
-  Form.form resultMessageDecoder (OnSubmit "confirm account") "http://localhost/control/account_confirmation.php" [("a", String.fromInt a), ("b", String.fromInt b)]
+  Form.form resultMessageDecoder (OnSubmit "confirm account") "http://localhost:8080/control/account_confirmation.php" [("a", String.fromInt a), ("b", String.fromInt b)]
 
 
 -- user details
@@ -1980,7 +1980,7 @@ type alias UserDetails =
 requestUserDetails : Int -> (Result Http.Error (DataAlert UserDetails) -> msg) -> Cmd msg
 requestUserDetails id toMsg =
   Http.post
-      { url = "http://localhost/control/user_info.php"
+      { url = "http://localhost:8080/control/user_info.php"
       , body = multipartBody [stringPart "id" (String.fromInt id)]
       , expect = Http.expectJson toMsg (dataAlertDecoder userDetailsDecoder)
       }

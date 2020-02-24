@@ -5839,7 +5839,7 @@ var $author$project$Main$requestAccountConfirmationForm = F2(
 			$author$project$Form$form,
 			$author$project$Main$resultMessageDecoder,
 			$author$project$Form$OnSubmit('confirm account'),
-			'http://localhost/control/account_confirmation.php',
+			'http://localhost:8080/control/account_confirmation.php',
 			_List_fromArray(
 				[
 					_Utils_Tuple2(
@@ -5969,7 +5969,7 @@ var $author$project$Main$requestAccountRetrievalForm = F2(
 					$author$project$Form$form,
 					$author$project$Main$resultMessageDecoder,
 					$author$project$Form$OnSubmit('Retrieve password'),
-					'http://localhost/control/password_retrieval.php',
+					'http://localhost:8080/control/password_retrieval.php',
 					_List_fromArray(
 						[
 							_Utils_Tuple2(
@@ -7428,7 +7428,7 @@ var $author$project$Main$requestChats = function (toMsg) {
 				toMsg,
 				$author$project$Alert$dataAlertDecoder(
 					$elm$json$Json$Decode$list($author$project$Main$chatDecoder))),
-			url: 'http://localhost/control/chat_list.php'
+			url: 'http://localhost:8080/control/chat_list.php'
 		});
 };
 var $author$project$Main$GeoAuthGranted = F2(
@@ -8322,7 +8322,7 @@ var $author$project$Main$requestCurrentSettings = function (toMsg) {
 				$elm$http$Http$expectJson,
 				toMsg,
 				$author$project$Alert$dataAlertDecoder($author$project$Main$currentSettingsDecoder)),
-			url: 'http://localhost/control/settings_current.php'
+			url: 'http://localhost:8080/control/settings_current.php'
 		});
 };
 var $author$project$Feed$filtersEdgeValuesDecoder = A3(
@@ -8576,7 +8576,7 @@ var $author$project$Feed$filtersFormInit = function (_v0) {
 								$author$project$Form$form,
 								$author$project$Alert$dataAlertDecoder($author$project$Feed$pageContentDecoder),
 								$author$project$Form$LiveUpdate,
-								'http://localhost/control/feed_filter.php',
+								'http://localhost:8080/control/feed_filter.php',
 								_List_Nil)))))));
 };
 var $author$project$Feed$feedOpenDecoder = A3(
@@ -8603,7 +8603,7 @@ var $author$project$Feed$requestFeedInit = function (toMsg) {
 				$elm$http$Http$expectJson,
 				toMsg,
 				$author$project$Alert$dataAlertDecoder($author$project$Feed$feedOpenDecoder)),
-			url: 'http://localhost/control/feed_open.php'
+			url: 'http://localhost:8080/control/feed_open.php'
 		});
 };
 var $author$project$Main$notifDecoder = A3(
@@ -8641,7 +8641,7 @@ var $author$project$Main$requestNotifs = function (myMsg) {
 				myMsg,
 				$author$project$Alert$dataAlertDecoder(
 					$elm$json$Json$Decode$list($author$project$Main$notifDecoder))),
-			url: 'http://localhost/control/account_notifs.php'
+			url: 'http://localhost:8080/control/account_notifs.php'
 		});
 };
 var $elm$http$Http$multipartBody = function (parts) {
@@ -8778,7 +8778,7 @@ var $author$project$Main$requestUserDetails = F2(
 					$elm$http$Http$expectJson,
 					toMsg,
 					$author$project$Alert$dataAlertDecoder($author$project$Main$userDetailsDecoder)),
-				url: 'http://localhost/control/user_info.php'
+				url: 'http://localhost:8080/control/user_info.php'
 			});
 	});
 var $author$project$Main$yearList = A2(
@@ -10529,7 +10529,7 @@ var $author$project$Main$removePicture = F2(
 						toMsg,
 						$author$project$Alert$dataAlertDecoder(
 							$author$project$ZipList$zipListDecoder($author$project$Main$pictureDecoder))),
-					url: 'http://localhost/control/picture_remove.php'
+					url: 'http://localhost:8080/control/picture_remove.php'
 				});
 		}
 	});
@@ -10560,7 +10560,7 @@ var $author$project$Main$replacePicture = F3(
 						toMsg,
 						$author$project$Alert$dataAlertDecoder(
 							$author$project$ZipList$zipListDecoder($author$project$Main$pictureDecoder))),
-					url: 'http://localhost/control/picture_replace.php'
+					url: 'http://localhost:8080/control/picture_replace.php'
 				});
 		}
 	});
@@ -10617,7 +10617,7 @@ var $author$project$Main$requestSendMessageForm = function (id) {
 			$author$project$Form$form,
 			$author$project$Main$confirmAlertDecoder,
 			$author$project$Form$OnSubmit('Send message to that id'),
-			'http://localhost/control/chat_message.php',
+			'http://localhost:8080/control/chat_message.php',
 			_List_fromArray(
 				[
 					_Utils_Tuple2(
@@ -10680,7 +10680,7 @@ var $author$project$Main$requestDiscution = F2(
 					$elm$http$Http$expectJson,
 					toMsg,
 					$author$project$Alert$dataAlertDecoder($author$project$Main$discutionDecoder)),
-				url: 'http://localhost/control/chat_discution.php'
+				url: 'http://localhost:8080/control/chat_discution.php'
 			});
 	});
 var $author$project$Feed$requestFeedPage = F3(
@@ -10704,7 +10704,7 @@ var $author$project$Feed$requestFeedPage = F3(
 							$elm$http$Http$expectJson,
 							toMsg,
 							$author$project$Alert$dataAlertDecoder($author$project$Feed$pageContentDecoder)),
-						url: 'http://localhost/control/feed_page.php'
+						url: 'http://localhost:8080/control/feed_page.php'
 					}))) : $elm$core$Maybe$Nothing;
 	});
 var $author$project$Main$likeStatusDecoder = A3(
@@ -10737,7 +10737,7 @@ var $author$project$Main$requestLike = F2(
 					$elm$http$Http$expectJson,
 					toMsg,
 					$author$project$Alert$dataAlertDecoder($author$project$Main$likeStatusDecoder)),
-				url: 'http://localhost/control/user_like.php'
+				url: 'http://localhost:8080/control/user_like.php'
 			});
 	});
 var $author$project$Main$ResultSignout = function (a) {
@@ -10747,7 +10747,7 @@ var $author$project$Main$requestSignout = $elm$http$Http$post(
 	{
 		body: $elm$http$Http$emptyBody,
 		expect: A2($elm$http$Http$expectJson, $author$project$Main$ResultSignout, $author$project$Main$resultMessageDecoder),
-		url: 'http://localhost/control/account_signout.php'
+		url: 'http://localhost:8080/control/account_signout.php'
 	});
 var $author$project$Main$ReceiveUnreadNotifsAmount = function (a) {
 	return {$: 'ReceiveUnreadNotifsAmount', a: a};
@@ -10766,7 +10766,7 @@ var $author$project$Main$requestUnreadNotifsAmount = $elm$http$Http$post(
 			$elm$http$Http$expectJson,
 			$author$project$Main$ReceiveUnreadNotifsAmount,
 			$author$project$Alert$dataAlertDecoder($author$project$Main$unreadNotifsAmountDecoder)),
-		url: 'http://localhost/control/account_notifs_amount.php'
+		url: 'http://localhost:8080/control/account_notifs_amount.php'
 	});
 var $author$project$Main$retreiveAccountResultHandler = F3(
 	function (result, model, cmd) {
@@ -10885,7 +10885,7 @@ var $author$project$Main$submitBlock = function (id) {
 						$elm$core$String$fromInt(id))
 					])),
 			expect: A2($elm$http$Http$expectJson, $author$project$Main$ReceiveBlockUpdate, $author$project$Main$resultMessageDecoder),
-			url: 'http://localhost/control/user_block.php'
+			url: 'http://localhost:8080/control/user_block.php'
 		});
 };
 var $author$project$Main$ResultPwUpdate = function (a) {
@@ -10902,7 +10902,7 @@ var $author$project$Main$submitPwUpdate = function (model) {
 						A2($elm$http$Http$stringPart, 'confirm', model.pwUpdateConfirm)
 					])),
 			expect: A2($elm$http$Http$expectJson, $author$project$Main$ResultPwUpdate, $author$project$Main$resultMessageDecoder),
-			url: 'http://localhost/control/password_update.php'
+			url: 'http://localhost:8080/control/password_update.php'
 		});
 };
 var $author$project$Main$ReceiveReportUpdate = function (a) {
@@ -10920,7 +10920,7 @@ var $author$project$Main$submitReport = function (id) {
 						$elm$core$String$fromInt(id))
 					])),
 			expect: A2($elm$http$Http$expectJson, $author$project$Main$ReceiveReportUpdate, $author$project$Main$resultMessageDecoder),
-			url: 'http://localhost/control/user_report.php'
+			url: 'http://localhost:8080/control/user_report.php'
 		});
 };
 var $author$project$Main$ResultRetreivalRequest = function (a) {
@@ -10935,7 +10935,7 @@ var $author$project$Main$submitRetreivalRequest = function (model) {
 						A2($elm$http$Http$stringPart, 'email', model.retreivalRequestEmail)
 					])),
 			expect: A2($elm$http$Http$expectJson, $author$project$Main$ResultRetreivalRequest, $author$project$Main$resultMessageDecoder),
-			url: 'http://localhost/control/password_retreival_request.php'
+			url: 'http://localhost:8080/control/password_retreival_request.php'
 		});
 };
 var $author$project$Main$genderToString = function (gender) {
@@ -11694,7 +11694,7 @@ var $author$project$Main$submitSettings = function (model) {
 						$elm$core$String$fromFloat(longitude))
 					])),
 			expect: A2($elm$http$Http$expectJson, $author$project$Main$ResultPwUpdate, $author$project$Main$resultMessageDecoder),
-			url: 'http://localhost/control/settings_update.php'
+			url: 'http://localhost:8080/control/settings_update.php'
 		});
 };
 var $author$project$Main$ResultSignin = function (a) {
@@ -11727,7 +11727,7 @@ var $author$project$Main$submitSignin = function (model) {
 				$elm$http$Http$expectJson,
 				$author$project$Main$ResultSignin,
 				$author$project$Alert$dataAlertDecoder($author$project$Main$signinDecoder)),
-			url: 'http://localhost/control/account_signin.php'
+			url: 'http://localhost:8080/control/account_signin.php'
 		});
 };
 var $author$project$Main$ResultSignup = function (a) {
@@ -11747,7 +11747,7 @@ var $author$project$Main$submitSignup = function (model) {
 						A2($elm$http$Http$stringPart, 'confirm', model.signupConfirm)
 					])),
 			expect: A2($elm$http$Http$expectJson, $author$project$Main$ResultSignup, $author$project$Main$resultMessageDecoder),
-			url: 'http://localhost/control/account_signup.php'
+			url: 'http://localhost:8080/control/account_signup.php'
 		});
 };
 var $elm$core$String$toFloat = _String_toFloat;

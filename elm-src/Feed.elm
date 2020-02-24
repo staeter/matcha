@@ -45,7 +45,7 @@ type alias FiltersEdgeValues =
 
 filtersFormInit : FiltersEdgeValues -> FiltersForm
 filtersFormInit {ageMin, ageMax, distanceMax, popularityMin, popularityMax} =
-  Form.form (dataAlertDecoder pageContentDecoder) LiveUpdate "http://localhost/control/feed_filter.php" []
+  Form.form (dataAlertDecoder pageContentDecoder) LiveUpdate "http://localhost:8080/control/feed_filter.php" []
   |> Form.doubleSliderField "age" (ageMin, ageMax)
   |> Form.doubleSliderField "popularity" (popularityMin, popularityMax)
   |> Form.singleSliderField "distanceMax" (3, distanceMax)
@@ -56,7 +56,7 @@ filtersFormInit {ageMin, ageMax, distanceMax, popularityMin, popularityMax} =
 requestFeedInit : (Result Http.Error (DataAlert (FiltersForm, PageContent)) -> msg) -> Cmd msg
 requestFeedInit toMsg =
   Http.post
-      { url = "http://localhost/control/feed_open.php"
+      { url = "http://localhost:8080/control/feed_open.php"
       , body = emptyBody
       , expect = Http.expectJson toMsg (dataAlertDecoder feedOpenDecoder)
       }
@@ -69,7 +69,7 @@ requestFeedPage requestedPageNumber toMsg umodel =
   then Just
     ( { umodel | feedPageNumber = requestedPageNumber, feedContent = [] }
     , Http.post
-        { url = "http://localhost/control/feed_page.php"
+        { url = "http://localhost:8080/control/feed_page.php"
         , body = multipartBody [stringPart "page" (String.fromInt requestedPageNumber)]
         , expect = Http.expectJson toMsg (dataAlertDecoder pageContentDecoder)
         }
