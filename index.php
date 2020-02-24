@@ -26,7 +26,7 @@
                 ?>null<?php
               }
               else {
-                ?>{ pseudo: .$_SESSION['pseudo']., picture: "/Pictures/rick.png" }<?php
+                ?>{ pseudo: "<?=$_SESSION['pseudo']?>", picture: "/Pictures/rick.png" }<?php
               }
             ?>
   });
