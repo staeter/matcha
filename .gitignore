@@ -1,4 +1,4 @@
 elm-stuff/*
 index.js
 *test*
-index.html
+*.DS_Store*
