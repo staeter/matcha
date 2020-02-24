@@ -164,7 +164,22 @@ CREATE TABLE IF NOT EXISTS `report` (
   ON UPDATE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS `block` (
+  `id_user_blocking` INT UNSIGNED,
+  `id_user_blocked` INT UNSIGNED,
+  `description` TEXT,
+  `date` DATETIME NOT NULL DEFAULT NOW(),
 
+  FOREIGN KEY (`id_user_blocking`)
+  REFERENCES `user`(`id_user`)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE,
+
+  FOREIGN KEY (`id_user_blocked`)
+  REFERENCES `user`(`id_user`)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE
+);
 
 
 CREATE TABLE IF NOT EXISTS `messages` (

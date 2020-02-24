@@ -208,22 +208,66 @@ $string = "so sosa  s      s         ";
 // print_r($row);
 
 // $usr->set_sexuality_orientation(2);
-function get_distance_m($lat1, $lng1, $lat2, $lng2) {
-     $earth_radius = 6378137;   // Terre = sphère de 6378km de rayon
-     $rlo1 = deg2rad($lng1);
-     $rla1 = deg2rad($lat1);
-     $rlo2 = deg2rad($lng2);
-     $rla2 = deg2rad($lat2);
-     $dlo = ($rlo2 - $rlo1) / 2;
-     $dla = ($rla2 - $rla1) / 2;
-     $a = (sin($dla) * sin($dla)) + cos($rla1) * cos($rla2) * (sin($dlo) * sin(
-$dlo));
-     $d = 2 * atan2(sqrt($a), sqrt(1 - $a));
-     return ($earth_radius * $d);
-   }
+// function get_distance_m($lat1, $lng1, $lat2, $lng2) {
+//      $earth_radius = 6378137;   // Terre = sphère de 6378km de rayon
+//      $rlo1 = deg2rad($lng1);
+//      $rla1 = deg2rad($lat1);
+//      $rlo2 = deg2rad($lng2);
+//      $rla2 = deg2rad($lat2);
+//      $dlo = ($rlo2 - $rlo1) / 2;
+//      $dla = ($rla2 - $rla1) / 2;
+//      $a = (sin($dla) * sin($dla)) + cos($rla1) * cos($rla2) * (sin($dlo) * sin(
+// $dlo));
+//      $d = 2 * atan2(sqrt($a), sqrt(1 - $a));
+//      return ($earth_radius * $d);
+//    }
+//
+//    $distance = (round(get_distance_m(0, 0, 0, 0) / 1000,
+// 3)). ' km';
+// echo $distance;
+// return;
 
-   $distance = (round(get_distance_m(0, 0, 0, 0) / 1000,
-3)). ' km';
-echo $distance;
-return;
+//
+// $row = $usr->get_all_users_blocked_by_user_connected();
+// print_r($row);
+
+$row = $usr->get_all_details_of_all_id();
+
+//print_r($row);
+$row_usr_blocked = $usr->get_all_users_blocked_by_user_connected();
+// print_r($row_usr_blocked);
+//
+// $turn = 0;
+// foreach ($row_usr_blocked as $i => $value) {
+//   foreach ($row as $key => $value) {
+//     $x = in_array($row_usr_blocked[$i]['id_user_blocked'], $row[0]);
+//     if ($x == true)
+//       echo 'true turn = ' . $turn;
+//     else
+//       echo 'false turn =' . $turn;
+//
+//     $turn++;
+//   }
+// }
+// $i = 0;
+
+
+foreach ($row_usr_blocked as $key => $value) {
+  // code...
+  $id_user_blocked = $row_usr_blocked[$key]['id_user_blocked'];
+
+  foreach ($row as $key => $value) {
+    if ($row[$key]['id_user'] == $id_user_blocked)
+        {
+          $row[$key] = NULL;
+          array_values($row);
+          break;
+      }
+    }
+}
+
+print_r($row);
+
+  //array_values($row)
+
 ?>

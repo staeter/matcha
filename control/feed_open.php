@@ -3,6 +3,15 @@ session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);
 $row_test = $usr->get_all_details_of_this_id($_SESSION['id']);
+
+function array_empty($a)
+{
+    foreach($a as $k => $v)
+        if(empty($v))
+            return false;
+    return true;
+}
+
 if ($row_test['biography'] == NULL)
 {
   echo'{
@@ -29,6 +38,8 @@ if ($row_test['biography'] == NULL)
 }
 $row = $usr->get_all_details_of_all_id();
 
+$row_usr_blocked = $usr->get_all_users_blocked_by_user_connected();
+
 $string = '{
   "data" : {
     "filtersEdgeValues" : {
@@ -44,41 +55,69 @@ $string = '{
       "users" : [';
 
       // ici j enleve l occurence de l user connecté  //
-$arrayxx = array();
+
 foreach ($row as $key => $value) {
   if ($row[$key]['id_user'] != $_SESSION['id'])
       $arrayxx[$key] = $row[$key];}
 
-
 foreach ($arrayxx as $key => $value) {
   if ($arrayxx[$key]['biography'] != NULL)
-      $array[$key] = $arrayxx[$key];}
+      $arrayso[$key] = $arrayxx[$key];}
 // la j ai trier tout les users sans l user connecté & sans les users qui nont pas de bio
 
-if (empty($row) || empty($array))
+// foreach ($row_usr_blocked as $keyx => $value) {
+//     foreach ($arrayso as $key => $value) {
+//         if($row_usr_blocked[$keyx]['id_user_blocked'] != $arrayso[$key]['id_user'])
+//           $array[$key] = $arrayso[$key];
+//     }
+// }
+if (array_empty($row_usr_blocked) == true)
 {
-    echo'{
-	"data": {
-		"filtersEdgeValues": {
-			"ageMin": 16,
-			"ageMax": 120,
-			"distanceMax": 100,
-			"popularityMin": 0,
-			"popularityMax": 100
-		},
-		"pageContent": {
-			"pageAmount": 1,
-			"elemAmount": 1,
-			"users": []
-		}
-	},
-	"alert": {
-		"color": "DarkRed",
-		"message": "There isnt enoff users on our database come back later !"
-	}
-}';
-    return;
+  foreach ($row_usr_blocked as $key => $value) {
+    // code...
+    $id_user_blocked = $row_usr_blocked[$key]['id_user_blocked'];
+
+    foreach ($arrayso as $key => $value) {
+      if ($arrayso[$key]['id_user'] == $id_user_blocked)
+          {
+            $arrayso[$key] = NULL;
+            array_values($row);
+            break;
+        }
+      }
+  }
+
 }
+//print_r($row_usr_blocked);
+
+// j enleve mtn les users bloqué
+// print_r($arrayso);
+// return;
+//
+// if (array_empty($arrayso) == FALSE)
+// {
+//     echo'{
+// 	"data": {
+// 		"filtersEdgeValues": {
+// 			"ageMin": 16,
+// 			"ageMax": 120,
+// 			"distanceMax": 100,
+// 			"popularityMin": 0,
+// 			"popularityMax": 100
+// 		},
+// 		"pageContent": {
+// 			"pageAmount": 1,
+// 			"elemAmount": 1,
+// 			"users": []
+// 		}
+// 	},
+// 	"alert": {
+// 		"color": "DarkRed",
+// 		"message": "There isnt enoff users on our database come back later 2222!"
+// 	}
+// }';
+//     return;
+// }
 // ici je devrais faire 3 condition de retour de
 // message selon l orientation de l $usr
 
@@ -95,20 +134,65 @@ else
   $gender_int = 0;
   //women
 
+  // if (array_empty($arrayso) == FALSE)
+  // {
+  //     echo'{
+  // 	"data": {
+  // 		"filtersEdgeValues": {
+  // 			"ageMin": 16,
+  // 			"ageMax": 120,
+  // 			"distanceMax": 100,
+  // 			"popularityMin": 0,
+  // 			"popularityMax": 100
+  // 		},
+  // 		"pageContent": {
+  // 			"pageAmount": 1,
+  // 			"elemAmount": 1,
+  // 			"users": []
+  // 		}
+  // 	},
+  // 	"alert": {
+  // 		"color": "DarkRed",
+  // 		"message": "There isnt enoff users on our database come back later 333 !"
+  // 	}
+  // }';
+  //     return;
+  // }
+
+foreach ($arrayso as $key => $value) {
+    $array[$key] = $arrayso[$key];
+}
+
+
 if ($orientation_int['orientation'] == 0)
 {
 ///////////////////////////////
-foreach ($array as $key => $value)
-{
 
-    $path = $usr->get_picture_profil($row[$key]['id_user']);
-    $liked = $usr->get_if_liked($row[$key]['id_user']);
+$tab = array_values($array);
+
+foreach ($tab as $key => $value) {
+  if ($tab[$key] == NULL)
+    {
+        unset($tab[$key]);
+    }
+  }
+  $tab = array_values($tab);
+  // print_r($tab);
+  // return;
+  //
+foreach ($tab as $key => $value)
+{
+  $id =  $tab[$key]['id_user'];
+  $pseudo = $tab[$key]['pseudo'];
+
+    $path = $usr->get_picture_profil($id);
+    $liked = $usr->get_if_liked($id);
     if ($liked == 1)
       $liked = 'true';
     else
       $liked = 'false';
 
-    $rowtag = $usr->get_tag_of_this_id($row[$key]['id_user']);
+    $rowtag = $usr->get_tag_of_this_id($id);
       $output =' "tags" : [';
       $x = 0;
       foreach ($rowtag as $key => $value) {
@@ -122,8 +206,8 @@ foreach ($array as $key => $value)
 
 
     $string .= '{
-      "id" : '.$row[$key]['id_user'].',
-      "pseudo" : "'.$row[$key]['pseudo'].'",
+      "id" : '.$id.',
+      "pseudo" : "'.$pseudo.'",
       "picture" : "'.$path['path'].'",
       '.$output.',
       "liked" : '.$liked.'
@@ -155,18 +239,40 @@ foreach ($array as $key => $value) {
       $arraytoreturn[$key] = $array[$key];}
 
 
+      $tab = array_values($arraytoreturn);
 
-foreach ($arraytoreturn as $key => $value)
+      foreach ($tab as $key => $value) {
+        if ($tab[$key] == NULL)
+          {
+              unset($tab[$key]);
+          }
+        }
+        $tab = array_values($tab);
+        // print_r($tab);
+        // return;
+
+
+
+foreach ($tab as $key => $value)
 {
+    $id =  $tab[$key]['id_user'];
+    $pseudo = $tab[$key]['pseudo'];
 
-    $path = $usr->get_picture_profil($row[$key]['id_user']);
-    $liked = $usr->get_if_liked($row[$key]['id_user']);
+    // echo 'sosa';
+    // return;
+
+    // echo $id . ', ' . $pseudo . '<br><br>';
+    //
+    // return;
+    $path = $usr->get_picture_profil($id);
+    $liked = $usr->get_if_liked($id);
     if ($liked == 1)
       $liked = 'true';
     else
       $liked = 'false';
 
-    $rowtag = $usr->get_tag_of_this_id($row[$key]['id_user']);
+
+    $rowtag = $usr->get_tag_of_this_id($id);
       $output =' "tags" : [';
       $x = 0;
       foreach ($rowtag as $key => $value) {
@@ -180,8 +286,8 @@ foreach ($arraytoreturn as $key => $value)
 
 
     $string .= '{
-      "id" : '.$row[$key]['id_user'].',
-      "pseudo" : "'.$row[$key]['pseudo'].'",
+      "id" : '.$id.',
+      "pseudo" : "'.$pseudo.'",
       "picture" : "'.$path['path'].'",
       '.$output.',
       "liked" : '.$liked.'
@@ -193,9 +299,10 @@ $string .= ']
 },
 "alert" : {
 "color" : "DarkGreen",
-"message" : "There is a list of users we suggest you, u will find love sooner that you think !"
+"message" : "There is a list of users we suggest you !"
 }
 }';
+
 echo $string;
 return;
 }
@@ -205,21 +312,42 @@ else if ($orientation_int['orientation'] == 2)
 {
 ///////////////////////////////
 
-foreach ($array as $key => $value) {
-  if ($array[$key]['gender'] == $gender_int)
-      $arraytoreturn[$key] = $array[$key];}
-
-foreach ($arraytoreturn as $key => $value)
+foreach ($array as $key => $value)
 {
+  if ($array[$key]['gender'] == $gender_int)
+      {
+        $arrayto[$key] = $array[$key];
+      }
+}
 
-    $path = $usr->get_picture_profil($row[$key]['id_user']);
-    $liked = $usr->get_if_liked($row[$key]['id_user']);
+
+$tab = array_values($arrayto);
+
+foreach ($tab as $key => $value) {
+  if ($tab[$key] == NULL)
+    {
+        unset($tab[$key]);
+
+    }
+  }
+  $tab = array_values($tab);
+
+
+
+foreach ($tab as $key => $value)
+{
+    $id_user = $tab[$key]['id_user'];
+    $pseudo = $tab[$key]['pseudo'];
+
+  //  echo $id_user. ', ' . $pseudo . '<br><br>';
+    $path = $usr->get_picture_profil($tab[$key]['id_user']);
+    $liked = $usr->get_if_liked($tab[$key]['id_user']);
     if ($liked == 1)
       $liked = 'true';
     else
       $liked = 'false';
 
-    $rowtag = $usr->get_tag_of_this_id($row[$key]['id_user']);
+    $rowtag = $usr->get_tag_of_this_id($tab[$key]['id_user']);
       $output =' "tags" : [';
       $x = 0;
       foreach ($rowtag as $key => $value) {
@@ -233,8 +361,8 @@ foreach ($arraytoreturn as $key => $value)
 
 
     $string .= '{
-      "id" : '.$row[$key]['id_user'].',
-      "pseudo" : "'.$row[$key]['pseudo'].'",
+      "id" : '.$id_user.',
+      "pseudo" : "'.$pseudo.'",
       "picture" : "'.$path['path'].'",
       '.$output.',
       "liked" : '.$liked.'
@@ -275,7 +403,13 @@ else {
 }';
   return;
 }
-//
+//END OF PROGRAMMMMMM
+
+
+
+
+
+
 // echo '{
 //   "data" : {
 //     "filtersEdgeValues" : {

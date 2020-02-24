@@ -476,6 +476,11 @@
 		$query = 'INSERT INTO `report`(`id_user_reporting`, `id_user_reported`, `description`) VALUES (:idco, :id, :string)';
 		$this->_db->query($query, array(':idco' => $this->_id, 'id' => $id, 'string' => 'Default Description By now'));
 	}
+	public function set_a_block($id)
+	{
+		$query = 'INSERT INTO `block`(`id_user_blocking`, `id_user_blocked`, `description`) VALUES (:idco, :id, :string)';
+		$this->_db->query($query, array(':idco' => $this->_id, 'id' => $id, 'string' => 'Default Description By now'));
+	}
 
 	public function add_popularity()
 	{
@@ -1029,6 +1034,14 @@
 			$this->_db->query($query, array('id' => $id, ':idco' => $this->_id));
 			$row = $this->_db->fetch();
 
+			return $row;
+		}
+
+		public function get_all_users_blocked_by_user_connected()
+		{
+			$query = 'SELECT `id_user_blocked` FROM `block` WHERE `id_user_blocking` =:idco';
+			$this->_db->query($query, array(':idco' => $this->_id));
+			$row = $this->_db->fetchAll();
 			return $row;
 		}
 
