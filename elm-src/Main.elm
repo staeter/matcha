@@ -2031,6 +2031,7 @@ view model =
         [ Alert.view model
         , signinView amodel
           |> El.layout []
+        , viewFooter
         ]
       }
 
@@ -2040,15 +2041,16 @@ view model =
         [ Alert.view model
         , signupView amodel
           |> El.layout []
+        , viewFooter
         ]
       }
 
     (Anonymous _, Home) ->
       { title = "matcha - home"
       , body =
-        [ Html.text "Welcome to Matcha. The best site too meet your future love!"
-        , br [] [], a [ href "/signin" ] [ Html.text "Signin" ]
-        , Html.text " or ", a [ href "/signup" ] [ Html.text "Signup" ]
+        [ welcomeView
+          |> El.layout []
+        , viewFooter
         ]
       }
 
@@ -2058,6 +2060,7 @@ view model =
         [ Alert.view model
         , retreivealRequestView amodel
           |> El.layout []
+        , viewFooter
         ]
       }
 
@@ -2068,6 +2071,7 @@ view model =
         , amodel.accountRetrievalForm
           |> Maybe.map (Form.view >> Html.map AccountRetrievalForm)
           |> Maybe.withDefault (div [] [])
+        , viewFooter
         ]
       }
 
@@ -2078,6 +2082,7 @@ view model =
         , amodel.accountConfirmationForm
           |> Maybe.map (Form.view >> Html.map AccountConfirmationForm)
           |> Maybe.withDefault (div [] [])
+        , viewFooter
         ]
       }
 
@@ -2098,6 +2103,7 @@ view model =
                 [ Col.lg9 ]
                 [ viewFeed lmodel ]
             ] ]
+        , viewFooter
         ]
       }
 
@@ -2112,6 +2118,7 @@ view model =
       , body =
           [ [ CDN.stylesheet
             , viewHeader model.route lmodel
+            , viewFooter
             ]
           , case lmodel.userDetails of
               Success ud ->
@@ -2152,6 +2159,7 @@ view model =
         [ viewHeader model.route lmodel
         , Alert.view model
         , viewNotifs lmodel.notifs
+        , viewFooter
         ]
       }
 
@@ -2162,6 +2170,7 @@ view model =
         , Alert.view model
         , viewChats lmodel.chats
         , viewDiscution lmodel.discution
+        , viewFooter
         ]
       }
 
@@ -2204,6 +2213,7 @@ view model =
                   (viewPwUpdate lmodel)
             ]
           |> El.layout []
+          , viewFooter
         ]
       }
 
@@ -2401,6 +2411,38 @@ onEnter msg =
   |> Html.Events.on "keyup"
   |> El.htmlAttribute
 
+welcomeView : Element Msg
+welcomeView =
+  column  [ spacing 32
+          , centerX
+          , centerY
+          ]
+          [ El.text "Welcome to Matcha. The best site too meet your future love!"
+          , a [ href "/signin" ]
+              [ Html.text "Signin" ]
+            |> El.html
+            |> El.el  [ centerX
+                      , centerY
+                      , paddingEach
+                          { top = 32
+                          , right = 32
+                          , left = 32
+                          , bottom = 2
+                          }
+                      ]
+          , a [ href "/signup" ]
+              [ Html.text "Signup" ]
+            |> El.html
+            |> El.el  [ centerX
+                      , centerY
+                      , paddingEach
+                          { top = 2
+                          , right = 32
+                          , left = 32
+                          , bottom = 32
+                          }
+                      ]
+          ]
 
 signinView : SigninModel a -> Element Msg
 signinView model =
@@ -2822,10 +2864,10 @@ viewProfile profile =
               ] [ Html.text profile.pseudo ]
         ]
     |> Card.block []
-        [ Block.titleH4 [] [ Html.text "Card title" ]
-        , Block.text [] [ Html.text
+        [ Block.text [] [ Html.text
                             ( List.intersperse " " profile.tags
                               |> sumStringList
+                              |> (++) "TAGS: "
                             )
                         ]
         , Block.custom <|
@@ -2971,6 +3013,11 @@ viewUserDetails ud =
         ]
     |> Card.view
 
+viewFooter : Html Msg
+viewFooter =
+  Html.div
+      [ class "footer" ]
+      [ Html.text "© reelbour and staeter 2020"]
 
 -- subscriptions
 
