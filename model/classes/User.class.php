@@ -261,7 +261,7 @@
 				$id_user,
 				$db,
 				"Matcha: account retrieval link.",
-				$server_url . '?a=' . $id_user . '&b=' . $account_retrieval_request_key
+				$server_url . '/' . $id_user . '/' . $account_retrieval_request_key
 			);
 		}
 		public static function receive_account_retrieval($a, $b, $db)
