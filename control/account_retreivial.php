@@ -6,7 +6,7 @@
   $db = new Database('mysql:host=localhost:3306;dbname=matcha', 'root', 'rootroot');
 
 try {
-		$usr = User::receive_account_retrieval($_GET['a'], $_GET['b'], $db);
+		$usr = User::receive_account_retrieval($_POST['a'], $_GET['b'], $db);
 	} catch (Exception $e) {
     echo '{
       "result" : "Failure",
