@@ -12,10 +12,6 @@ function array_empty($a)
 }
 // function gestion de la localisation
 
-$array_gps = $usr->get_all_details();
-$latitude_id_co = $array_gps['latitude'];
-$longitude_id_co = $array_gps['longitude'];
-
 function get_distance_m($lat1, $lng1, $lat2, $lng2) {
      $earth_radius = 6378137;   // Terre = sphère de 6378km de rayon
      $rlo1 = deg2rad($lng1);
@@ -27,9 +23,13 @@ function get_distance_m($lat1, $lng1, $lat2, $lng2) {
      $a = (sin($dla) * sin($dla)) + cos($rla1) * cos($rla2) * (sin($dlo) * sin($dlo));
      $d = 2 * atan2(sqrt($a), sqrt(1 - $a));
      return ($earth_radius * $d);
-   }
+}
 
-  //
+
+  $array_gps = $usr->get_all_details();
+  $latitude_id_co = $array_gps['latitude'];
+  $longitude_id_co = $array_gps['longitude'];
+
 
   $age_min = $_POST['ageMin'];
   $age_max = $_POST['ageMax'];
@@ -66,7 +66,7 @@ function get_distance_m($lat1, $lng1, $lat2, $lng2) {
         },
         "alert" : {
           "color" : "DarkRed",
-          "message" : "There is no profil who match ur query 1111114"
+          "message" : "There is no profil who match ur query of age min/max"
         }
       }';
 
@@ -106,6 +106,57 @@ foreach ($arrayx as $key => $value) {
         // return;
         //
 
+
+$row_usr_blocked = $usr->get_all_users_blocked_by_user_connected();
+
+if (array_empty($row_usr_blocked) == true)
+{
+  foreach ($row_usr_blocked as $key => $value) {
+    // code...
+    $id_user_blocked = $row_usr_blocked[$key]['id_user_blocked'];
+
+    foreach ($tab as $key => $value) {
+      if ($tab[$key]['id_user'] == $id_user_blocked)
+          {
+            $tab[$key] = NULL;
+            array_values($row);
+            break;
+        }
+      }
+  }
+
+}
+$tab = array_values($tab);
+
+foreach ($tab as $key => $value) {
+  if ($tab[$key] == NULL)
+    {
+        unset($tab[$key]);
+    }
+  }
+  $tab = array_values($tab);
+
+if (array_empty($tab) == false || empty($tab))
+  {
+    echo '{
+      "data" : {
+        "pageAmount" : 1,
+        "elemAmount" : 1,
+        "users" : []
+      },
+      "alert" : {
+        "color" : "DarkRed",
+        "message" : "There is no profil who match ur query 1111114"
+      }
+    }';
+
+    return;
+  }
+//foreach a faire a
+
+// print_r($tab);
+// return;
+//
   //ici c ok
   // j ai un tableau a l index verifier
 /////////////////////////////////////////////////
@@ -123,8 +174,6 @@ foreach ($tab as $key => $value)
   if ($tab[$key]['popularity_score'] >= $popularity_min && $tab[$key]['popularity_score'] <= $popularity_max)
       $array1[$key] = $tab[$key];
 
-
-
 if (array_empty($array1) == false || empty($array1))
 {
           echo '{
@@ -135,72 +184,102 @@ if (array_empty($array1) == false || empty($array1))
             },
             "alert" : {
               "color" : "DarkRed",
-              "message" : "There is no profil who match ur query 1111112"
+              "message" : "There is no profil who match ur query of popularity score"
             }
           }';
+    return;
+}
 
-          return;
-        }
-        $tab = array_values($array1);
+$tab = array_values($array1);
 
-        foreach ($tab as $key => $value) {
-          if ($tab[$key] == NULL)
-            {
-                unset($tab[$key]);
-            }
-          }
-          $tab = array_values($tab);
-    //ici tab contient les occurences sans l id connecte sans les users sans bio
-    //deja trier par
+foreach ($tab as $key => $value) {
+  if ($tab[$key] == NULL)
+      {
+        unset($tab[$key]);
+      }
+  }
+  $tab = array_values($tab);
+  // print_r($tab);
+  // return;
 
-    //  ----> age min max
-    // -----> popularité min max
+//////DERNIER TEST REUSSI ICI
 
 
-    // reste distance + tags
-
-        /// RESET LE TABLEAU
 //gestion des distance en km ici
 $distance_max_filtre = $_POST['distanceMax'];
 
+//
 foreach ($tab as $key => $value) {
   // recuperer la valeur de longitude et latitude
 $latitude = $tab[$key]['latitude'];
 $longitude = $tab[$key]['longitude'];
-$distance = (round(get_distance_m($latitude_id_co, $longitude_id_co, $latitude, $longitude) / 1000, 3)). ' km';
+$distance = (round(get_distance_m($latitude_id_co, $longitude_id_co, $latitude, $longitude) / 1000));
+
+// echo $longitude . '<br>' . $latitude;
+// echo '<br>';
+// echo $distance;
+// echo '<br>';
+
 
 if ($distance <= $distance_max_filtre)
   $array_tab[$key] = $array1[$key];
-
 }
+// echo 'sosa';
+// print_r($array_tab);
+// return;
 
-$tab = array_values($array_tab);
+// aray_tab contient tout les users a moins de $distance_max_filtre km
+//
+if (array_empty($array_tab) == false || empty($array_tab))
+  {
+    echo '{
+      "data" : {
+        "pageAmount" : 1,
+        "elemAmount" : 1,
+        "users" : []
+      },
+      "alert" : {
+        "color" : "DarkRed",
+        "message" : "There is no profil who match ur query of distance"
+      }
+    }';
 
-foreach ($tab as $key => $value) {
-  if ($tab[$key] == NULL)
-    {
-        unset($tab[$key]);
-    }
+    return;
   }
-  $tab = array_values($tab);
 
-
-  if (array_empty($tab) == false || empty($tab))
-    {
-      echo '{
-        "data" : {
-          "pageAmount" : 1,
-          "elemAmount" : 1,
-          "users" : []
-        },
-        "alert" : {
-          "color" : "DarkRed",
-          "message" : "There is no profil who match ur query 1111113"
-        }
-      }';
-
-      return;
-    }
+//   // echo 'sosa<br>';
+//   // var_dump($array_tab);
+//   // return;
+//
+// $tab = NULL;
+// $tab = array_values($array_tab);
+//
+// foreach ($tab as $key => $value) {
+//   if ($tab[$key] == NULL)
+//     {
+//         unset($tab[$key]);
+//     }
+//   }
+//   $tab = array_values($tab);
+//
+//
+//
+//   if (array_empty($tab) == false || empty($tab))
+//     {
+//       echo '{
+//         "data" : {
+//           "pageAmount" : 1,
+//           "elemAmount" : 1,
+//           "users" : []
+//         },
+//         "alert" : {
+//           "color" : "DarkRed",
+//           "message" : "There is no profil who match ur query of distance"
+//         }
+//       }';
+//
+//       return;
+//     }
 // donc distance gerer
 // ----> distance min max ok
 
@@ -233,7 +312,7 @@ if ($_POST['tags'] != '[]')
   }
 
   foreach ($array_tag as $key => $value){
-    $row = $usr->get_users_who_have_this_tag($array_tag[$key]);}
+    $row_tag_multidim[$key] = $usr->get_users_who_have_this_tag($array_tag[$key]);}
 
 
 // $tab = array_values($row);
@@ -246,8 +325,11 @@ if ($_POST['tags'] != '[]')
 //   }
 //   $tab = array_values($tab);
 //
+// print_r($row);
+// return;
 
-  if (array_empty($row) == false || empty($row))
+
+  if (array_empty($row_tag_multidim) == false)
   {
     echo '{
       "data" : {
@@ -262,16 +344,61 @@ if ($_POST['tags'] != '[]')
     }';
     return;
   }
-// ok  jai donc row qui contient tout les occurence des id qui on like le tag
-//$row[$key]['id_user'] =
-  else {
-    foreach ($row as $key => $value) {
-      $array1[$key] = $usr->get_all_details_of_this_id($row[$key]['id_user']);
+$i = 0;
+
+while(isset($row_tag_multidim[$i]))
+  $i++;
+
+
+
+
+$taille = 0;
+$xx = 0;
+while($taille < $i)
+{
+
+  $j = 0;
+  while(isset($row_tag_multidim[$i][$j][id_user]))
+    {
+
+    $arrayredaa[$xx] = $row_tag_multidim[$i][$j];
+    $j++;
+
     }
-  }
+    $taille++;
 }
 
+  //$row_tag_multidim = array_merge($row_tag_multidim);
+
+  var_dump($arrayredaa);
+  return;
+
+// ok  jai donc row qui contient tout les occurence des id qui on like le tag
+//$row[$key]['id_user'] =
+//   else {
+//
+// foreach ($row as $key => $value)
+// {
+//   foreach ($row[$key] as $key1 => $value) {
+//     $array1[$key1] = $usr->get_all_details_of_this_id($row[$key1]['id_user']);
+//   }
+
+}
+
+// print_r($array1);
+// return;
+//   }
+// }
+
 //$tab = array_unique($array1);
+
+
+
+
+
+
+
+
 
 function super_unique($array,$key)
     {

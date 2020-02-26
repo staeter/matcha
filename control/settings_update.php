@@ -182,7 +182,7 @@ if (!empty($_POST['geoAuth']))
   else
     $accord_loc = 0;
 
-  $usr->set_location($accord_loc, $_POST['longitude'], $_POST['latitude']);
+  $usr->set_location($accord_loc, $_POST['latitude'], $_POST['longitude']);
 }
 
 
