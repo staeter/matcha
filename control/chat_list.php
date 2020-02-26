@@ -86,7 +86,7 @@ foreach ($arraytoconvertinJson as $key => $value) {
     $ret = $usr->get_all_details_of_this_id($arraytoconvertinJson[$key]['id_user_receiving']);
     $id_pic = $arraytoconvertinJson[$key]['id_user_receiving'];
 
-  if ($raw_message[$key]['msg_read'] != 0)
+  if ($raw_message[0]['msg_read'] != 0)
     $unread = 'false';
   else
     $unread = 'true';
@@ -98,13 +98,18 @@ $row = $usr->get_picture_profil($id_pic);
     $stringlastlog = $ret['last_log'];
   }
 
+
+  $lastmsg = $raw_message[0]['content'];
+
+
+
   $jsondata .='
   {
         "id" : '.$arraytoconvertinJson[$key]['id_user_receiving'].',
         "pseudo" : "'.$ret['pseudo'].'",
         "picture" : "'.$row['path'].'",
         "last_log" : "'.$stringlastlog.'",
-        "last_message" : "'.$raw_message[$key]['content'].'",
+        "last_message" : "'.$lastmsg.'",
         "unread" : '.$unread.'
       },
   ';

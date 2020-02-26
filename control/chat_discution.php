@@ -20,7 +20,7 @@ if (empty($row))
 
 $row2 = $usr->get_all_details_of_this_id($_POST['id']);
 
-$row3 = $usr->get_picture_profil($_SESSION['id']);
+$row3 = $usr->get_picture_profil($_POST['id']);
 
 if ($row2['is_loged'] == 1)
   $stringlastlog = "Now";
@@ -35,12 +35,21 @@ $string = '{
     "last_log" : "'.$stringlastlog.'",
     "messages" : [';
 
+// print_r($row);
+// return;
+
+
+
+// true id send == userconnected
+// false if id reive == otheruser
 foreach ($row as $key => $value)
 {
-    if ($row[$key]['msg_read'] == true)
-      $readed = 'true';
-    else
+    if ($row[$key]['id_user_sending'] == $_SESSION['id'])
       $readed = 'false';
+    else
+      $readed = 'true';
+
+
     $string .= '{
       "sent" : '.$readed.',
       "date" : "'.$row[$key]['date'].'",

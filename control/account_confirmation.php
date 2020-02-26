@@ -4,11 +4,12 @@
   //
   // print_r($_POST);
   // return;
-  require_once $_SERVER["DOCUMENT_ROOT"] . '/config/database.php';
-  $db = new Database($dsn . ";dbname=" . $dbname, $username, $password);
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/classes/Database.class.php';
 
+
+  require_once $_SERVER["DOCUMENT_ROOT"] . '/config/database.php';
+  require_once $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/classes/Database.class.php';
+  $db = new Database($dsn . ";dbname=" . $dbname, $username, $password);
   $x = 0;
 
 	try {

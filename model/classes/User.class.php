@@ -177,7 +177,7 @@
 			send_mail(
 				$this,
 				"Matcha: account confirmation link.",
-				$server_url . '?a=' . $this->get_id() . '&b=' . $row['account_verification_key']
+				$server_url . '/' . $this->get_id() . '/' . $row['account_verification_key']
 			);
 		}
 		public static function receive_account_verification_request($a, $b, $db)

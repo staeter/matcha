@@ -4,8 +4,7 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);
 $row = $usr->get_all_details();
 
-// var_dump($_POST);
-// return;
+
 
 if (empty($_POST['pseudo']) || empty($_POST['email']) || empty($_POST['last_name']) || empty($_POST['first_name']))
 {

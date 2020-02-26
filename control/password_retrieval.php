@@ -36,19 +36,32 @@ return;
 else {
       try {
         $usr = new User($_POST['a'], $db);
-        $usr->set_password(hash_password($_POST['confirm']));
-        //User::send_account_retrieval($_POST['b'], $db, "http://localhost/control/account_retreivial.php");
-      //  User::
+      $x =  $usr->is_valid_password($_POST['newpw']);
+      if ($x == TRUE)
+      {
+        $usr->set_password(hash_password($_POST['newpw']));
 
-      echo '{
-      "result": "Success",
-      "message": "Ur password have been updated!",
-      "alert": {
-        "color": "DarkGreen",
-        "message": "Ur password have been updated!!"
+        echo '{
+        "result": "Success",
+        "message": "Votre password a bien ete modifie!",
+        "alert": {
+          "color": "DarkGreen",
+          "message": "Votre password a bien ete modifie!"
+      }
+      }';
+
+  		}
+      else {
+        echo '{
+        "result": "Failure",
+        "message": "New Password insecure!",
+        "alert": {
+          "color": "DarkRed",
+          "message": "New Password insecure!"
+      }
+      }';
+      }
     }
-    }';
-         }
         catch (Exception $e) {
           echo '{
             "result" : "Failure",

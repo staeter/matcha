@@ -23,7 +23,7 @@ return;
 }
 else {
       try {
-        User::send_account_retrieval($_POST['email'], $db, "http://localhost/retreive");
+        User::send_account_retrieval($_POST['email'], $db, "http://localhost:8080/retreive");
 
       echo  '{
         "result": "Success",

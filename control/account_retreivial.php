@@ -15,15 +15,28 @@ try {
 
 	if ($_POST['newpw'] != '' && $_POST['confirmpw'] != '' && $_POST['newpw'] == $_POST['confirmpw']) {
 		try {
-			$usr->set_password(hash_password($_POST['newpw']));
+
+      $x = $usr->is_valid_password($_POST['newpw']);
+			if ($x == true)
+      {
+        $usr->set_password(hash_password($_POST['newpw']));
       echo '{
         "result" : "Succes",
         "message" : "Votre mot de passe à été modifié avec succès !"
       }';
-		} catch (Exception $e) {
+      }
+    else
+    {
       echo '{
         "result" : "Failure",
-        "message" : "'.$e->getMessage().'"
+        "message" : "Votre mot de passe n est pas valide !"
+      }';
+    }
+		}
+    catch (Exception $e) {
+      echo '{
+        "result" : "Failure",
+        "message" : "sosa"
       }';
     }
 	}

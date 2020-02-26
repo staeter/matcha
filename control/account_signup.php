@@ -33,7 +33,7 @@ else {
 
   try {
     $usr = new User($_POST['pseudo'], $_POST['firstname'], $_POST['lastname'], $_POST['email'], hash_password($_POST['password']), $db);
-    $usr->send_account_verification_request("http://localhost/control/account_confirmation.php");
+    $usr->send_account_verification_request("http://localhost:8080/confirm");
     $usr->set_picture();
     $x = 1;
       }
