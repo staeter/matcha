@@ -13,6 +13,7 @@ try {
   $_SESSION['pseudo'] = NULL;
   $_SESSION['mail'] = NULL;
   $_SESSION['user'] = NULL;
+  $_SESSION['picture'] = NULL;
   $x = 1;
   session_destroy();
 

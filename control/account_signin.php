@@ -22,6 +22,8 @@ try {
     $_SESSION['pseudo'] = $usr->get_pseudo();
     $_SESSION['mail'] = $usr->get_email();
     $_SESSION['user'] = serialize($usr);
+    $pic = $usr->get_picture_profil($_SESSION['id']);
+    $_SESSION['picture'] = $pic['path'];
     $usr->set_log(true);
   }
 
@@ -41,8 +43,8 @@ if ($x == 1){
 
   echo '{
     "data" : {
-      "pseudo" : "sosa",
-      "picture" : "Pictures/default-profile-picture.jpg"
+      "pseudo" : "'.$_SESSION['pseudo'].'",
+      "picture" : "'.$_SESSION['picture'].'"
     },
     "alert" : {
       "color" : "DarkGreen",
