@@ -3,6 +3,18 @@ session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);
 
+
+function super_unique($array,$key)
+{
+    $temp_array = [];
+    foreach ($array as &$v) {
+      if (!isset($temp_array[$v[$key]]))
+          $temp_array[$v[$key]] =& $v;
+      }
+    $array = array_values($temp_array);
+    return $array;
+}
+
 function array_empty($a)
 {
     foreach($a as $k => $v)
@@ -230,7 +242,26 @@ if ($distance <= $distance_max_filtre)
 
 // aray_tab contient tout les users a moins de $distance_max_filtre km
 //
-if (array_empty($array_tab) == false || empty($array_tab))
+
+//faire un array values ici
+
+
+foreach ($tab as $key => $value) {
+  if ($tab[$key] == NULL)
+    {
+        unset($tab[$key]);
+    }
+  }
+  $tab = array_values($tab);
+
+//
+// print_r($tab);
+// return;
+
+
+
+
+if (array_empty($tab) == false)
   {
     echo '{
       "data" : {
@@ -240,7 +271,7 @@ if (array_empty($array_tab) == false || empty($array_tab))
       },
       "alert" : {
         "color" : "DarkRed",
-        "message" : "There is no profil who match ur query of distance"
+        "message" : "There is no profil who match ur query of i forget"
       }
     }';
 
@@ -252,15 +283,7 @@ if (array_empty($array_tab) == false || empty($array_tab))
 //   // return;
 //
 // $tab = NULL;
-// $tab = array_values($array_tab);
-//
-// foreach ($tab as $key => $value) {
-//   if ($tab[$key] == NULL)
-//     {
-//         unset($tab[$key]);
-//     }
-//   }
-//   $tab = array_values($tab);
+
 //
 //
 //
@@ -296,11 +319,6 @@ if (array_empty($array_tab) == false || empty($array_tab))
 $profile_viewed = $_POST['viewed'];
 $profile_liked = $_POST['liked'];
 
-// var_dump($array1);
-// return;
-
-
-
 if ($_POST['tags'] != '[]')
 {
   $string_tag = $_POST['tags'];
@@ -314,20 +332,9 @@ if ($_POST['tags'] != '[]')
   foreach ($array_tag as $key => $value){
     $row_tag_multidim[$key] = $usr->get_users_who_have_this_tag($array_tag[$key]);}
 
-
-// $tab = array_values($row);
 //
-// foreach ($tab as $key => $value) {
-//   if ($tab[$key] == NULL)
-//     {
-//         unset($tab[$key]);
-//     }
-//   }
-//   $tab = array_values($tab);
-//
-// print_r($row);
+// print_r($row_tag_multidim);
 // return;
-
 
   if (array_empty($row_tag_multidim) == false)
   {
@@ -344,34 +351,83 @@ if ($_POST['tags'] != '[]')
     }';
     return;
   }
+
+
 $i = 0;
 
-while(isset($row_tag_multidim[$i]))
+while($row_tag_multidim[$i])
   $i++;
 
 
+  $raw_to_clean = $tab;
+  // print_r($tab_ret);
+  // return;
+  $index_tri = 0;
+  $fin_tri = 0;
+  while ($raw_to_clean[$fin_tri])
+    $fin_tri++;
 
+  $index_tab = 0;
 
-$taille = 0;
-$xx = 0;
-while($taille < $i)
+//echo $fin_tri;
+$start = 0;
+$index = 0;
+while ($start < $i)
 {
+  foreach ($row_tag_multidim[$start] as $key => $value) {
+    $tab_ret[$index++] = $row_tag_multidim[$start][$key];
 
-  $j = 0;
-  while(isset($row_tag_multidim[$i][$j][id_user]))
-    {
-
-    $arrayredaa[$xx] = $row_tag_multidim[$i][$j];
-    $j++;
-
-    }
-    $taille++;
+  }
+$start++;
 }
+
+$tab = array();
+
+  while($index_tri < $fin_tri)
+  {
+    foreach ($raw_to_clean as $key => $value) {
+      if ($raw_to_clean[$key]['id_user'] == $tab_ret[$index_tab]['id_user'])
+        $tab_to_unify[$index_tab] = $raw_to_clean[$key];
+    }
+    $index_tab++;
+    $index_tri++;
+  }
+  // print_r($tab_to_unify);
+  // return;
+
+  $tab = super_unique($tab_to_unify, 'id_user');
+
+
+
+// $taille = 0;
+// $xx = 0;
+// while($taille < $i)
+// {
+//
+//   $j = 0;
+//   while(isset($row_tag_multidim[$i][$j][id_user]))
+//     {
+//
+//     $arrayredaa[$xx] = $row_tag_multidim[$i][$j];
+//     $j++;
+//
+//     }
+//     $taille++;
+//     $i = 0;
+// while ($row_tag_multidim[$i])
+//   $i++;
+//
+//
+//
+//
+//
+// }
 
   //$row_tag_multidim = array_merge($row_tag_multidim);
 
-  var_dump($arrayredaa);
-  return;
+// $tabss = super_unique($tab, 'id_user');
+//   var_dump($tabss);
+//   return;
 
 // ok  jai donc row qui contient tout les occurence des id qui on like le tag
 //$row[$key]['id_user'] =
@@ -390,28 +446,7 @@ while($taille < $i)
 //   }
 // }
 
-//$tab = array_unique($array1);
-
-
-
-
-
-
-
-
-
-function super_unique($array,$key)
-    {
-       $temp_array = [];
-       foreach ($array as &$v) {
-           if (!isset($temp_array[$v[$key]]))
-           $temp_array[$v[$key]] =& $v;
-       }
-       $array = array_values($temp_array);
-       return $array;
-
-    }
-  $tab = super_unique($array1, 'id_user');
+//$tab = super_unique($array1, 'id_user');
 
 //
 // print_r($tab);
