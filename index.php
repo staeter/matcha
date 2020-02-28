@@ -1,3 +1,4 @@
+<?php session_start(); ?>
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -26,7 +27,7 @@
                 ?>null<?php
               }
               else {
-                ?>{ pseudo: "<?=$_SESSION['pseudo']?>", picture: "/Pictures/rick.png" }<?php
+                ?>{ pseudo: "<?=$_SESSION['pseudo']?>", picture: "<?=$_SESSION['picture']?>" }<?php
               }
             ?>
   });

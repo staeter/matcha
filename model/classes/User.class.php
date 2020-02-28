@@ -457,6 +457,18 @@
 				return False;
 	}
 
+	public function remove_like($id)
+	{
+		$query = "DELETE FROM `like` WHERE `id_user_liking` = :id AND `id_user_liked` = :idco ";
+		$this->_db->query($query, array(':id' => $id, 'idco' => $this->_id));
+	}
+
+	public function remove_like2($id)
+	{
+		$query = "DELETE FROM `like` WHERE `id_user_liking` = :idco AND `id_user_liked` = :id ";
+		$this->_db->query($query, array(':id' => $id, 'idco' => $this->_id));
+	}
+
 	public	function get_who_liked_the_connected_user()
 	{
 		$query = 'SELECT * FROM `like` WHERE `id_user_liked` = :id AND `liked` = :true';

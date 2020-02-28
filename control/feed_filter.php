@@ -547,6 +547,53 @@ foreach ($row_like as $key => $value) {
   // code...
     $tab[$key] = $usr->get_all_details_of_this_id($row_like[$key]['id_user_liking']);
   }
+
+
+   $row_usr_blocked = $usr->get_all_users_blocked_by_user_connected();
+
+  if (array_empty($row_usr_blocked) == true)
+  {
+    foreach ($row_usr_blocked as $key => $value) {
+      // code...
+      $id_user_blocked = $row_usr_blocked[$key]['id_user_blocked'];
+
+      foreach ($tab as $key => $value) {
+        if ($tab[$key]['id_user'] == $id_user_blocked)
+            {
+              $tab[$key] = NULL;
+              array_values($row);
+              break;
+          }
+        }
+    }
+
+  }
+  $tab = array_values($tab);
+
+  foreach ($tab as $key => $value) {
+    if ($tab[$key] == NULL)
+      {
+          unset($tab[$key]);
+      }
+    }
+    $tab = array_values($tab);
+
+  if (array_empty($tab) == false || empty($tab))
+    {
+      echo '{
+        "data" : {
+          "pageAmount" : 1,
+          "elemAmount" : 1,
+          "users" : []
+        },
+        "alert" : {
+          "color" : "DarkRed",
+          "message" : "There is no profil who match ur query 1111114"
+        }
+      }';
+
+      return;
+    }
 // var_dump($arraysosa);
 // echo '<br>';
 // return;
