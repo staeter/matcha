@@ -338,6 +338,7 @@ type Route
   | Confirm Int Int
   | Settings
   | Test
+  | Signout
   | Unknown
 
 routeParser : Parser.Parser (Route -> a) a
@@ -353,6 +354,7 @@ routeParser =
     , Parser.map RetreiveLink (Parser.s "retreive" </> Parser.int </> Parser.int)
     , Parser.map Confirm  (Parser.s "confirm" </> Parser.int </> Parser.int)
     , Parser.map Settings (Parser.s "settings")
+    , Parser.map Signout (Parser.s "signout")
     , Parser.map Test (Parser.s "test")
     ]
 
@@ -492,6 +494,8 @@ update msg model =
           ( { model | route = newRoute }
           , requestCurrentSettings ReceiveCurrentSettings |> Debug.log "send request CurrentSettings"
           )
+        Signout ->
+          (model, requestSignout)
         _ ->
           ({ model | route = newRoute }, Cmd.none)
 
@@ -2385,7 +2389,7 @@ viewNotifs notifs =
 
 viewNotif : Notif -> Html Msg
 viewNotif notif =
-  div [ if notif.unread
+  div [ if not notif.unread
         then style "background-color" "LightBlue"
         else style "background-color" "White"
       ]
@@ -2423,7 +2427,7 @@ viewHeader route lmodel =
                   then class "active"
                   else class ""
                 ] [ Html.text "settings" ]
-            , a [ Html.Events.onClick SubmitSignout
+            , a [ href "/signout"
                 , style "color" "DarkRed"
                 ] [ Html.text "signout" ]
             -- , Form.view lmodel.signoutForm |> Html.map SignoutForm

@@ -9009,6 +9009,7 @@ var $author$project$Main$RetreiveLink = F2(
 	});
 var $author$project$Main$Settings = {$: 'Settings'};
 var $author$project$Main$Signin = {$: 'Signin'};
+var $author$project$Main$Signout = {$: 'Signout'};
 var $author$project$Main$Signup = {$: 'Signup'};
 var $author$project$Main$Test = {$: 'Test'};
 var $author$project$Main$User = function (a) {
@@ -9203,6 +9204,10 @@ var $author$project$Main$routeParser = $elm$url$Url$Parser$oneOf(
 			$elm$url$Url$Parser$map,
 			$author$project$Main$Settings,
 			$elm$url$Url$Parser$s('settings')),
+			A2(
+			$elm$url$Url$Parser$map,
+			$author$project$Main$Signout,
+			$elm$url$Url$Parser$s('signout')),
 			A2(
 			$elm$url$Url$Parser$map,
 			$author$project$Main$Test,
@@ -13291,6 +13296,8 @@ var $author$project$Main$update = F2(
 										$elm$core$Debug$log,
 										'send request CurrentSettings',
 										$author$project$Main$requestCurrentSettings($author$project$Main$ReceiveCurrentSettings)));
+							case 'Signout':
+								return _Utils_Tuple2(model, $author$project$Main$requestSignout);
 							default:
 								return _Utils_Tuple2(
 									_Utils_update(
@@ -25086,7 +25093,6 @@ var $author$project$Main$viewFooter = A2(
 		[
 			$elm$html$Html$text('© reelbour and staeter 2020')
 		]));
-var $author$project$Main$SubmitSignout = {$: 'SubmitSignout'};
 var $author$project$Main$viewHeader = F2(
 	function (route, lmodel) {
 		return A2(
@@ -25154,7 +25160,7 @@ var $author$project$Main$viewHeader = F2(
 							$elm$html$Html$a,
 							_List_fromArray(
 								[
-									$elm$html$Html$Events$onClick($author$project$Main$SubmitSignout),
+									$elm$html$Html$Attributes$href('/signout'),
 									A2($elm$html$Html$Attributes$style, 'color', 'DarkRed')
 								]),
 							_List_fromArray(
@@ -25169,7 +25175,7 @@ var $author$project$Main$viewNotif = function (notif) {
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				notif.unread ? A2($elm$html$Html$Attributes$style, 'background-color', 'LightBlue') : A2($elm$html$Html$Attributes$style, 'background-color', 'White')
+				(!notif.unread) ? A2($elm$html$Html$Attributes$style, 'background-color', 'LightBlue') : A2($elm$html$Html$Attributes$style, 'background-color', 'White')
 			]),
 		_List_fromArray(
 			[
