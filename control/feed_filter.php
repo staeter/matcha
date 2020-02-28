@@ -297,7 +297,7 @@ if (array_empty($tab) == false)
       },
       "alert" : {
         "color" : "DarkRed",
-        "message" : "There is no profil who match ur query of i forget"
+        "message" : "There is no profil who match ur query with distance"
       }
     }';
 
