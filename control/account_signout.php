@@ -18,7 +18,7 @@ try {
   session_destroy();
 
 
-} catch (\Exception $e) {
+} catch (Exception $e) {
   $x = 0;
 
 }
@@ -36,5 +36,7 @@ else {
   }';
 
 }
+
+
 
 ?>
