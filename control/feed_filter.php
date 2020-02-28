@@ -24,6 +24,30 @@ function array_empty($a)
 }
 // function gestion de la localisation
 
+function get_distance($lat1, $lon1, $lat2, $lon2, $unit) {
+  if (($lat1 == $lat2) && ($lon1 == $lon2)) {
+    return 0;
+  }
+  else {
+    $theta = $lon1 - $lon2;
+    $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) +  cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
+    $dist = acos($dist);
+    $dist = rad2deg($dist);
+    $miles = $dist * 60 * 1.1515;
+    $unit = strtoupper($unit);
+
+    if ($unit == "K") {
+      return ($miles * 1.609344);
+    } else if ($unit == "N") {
+      return ($miles * 0.8684);
+    } else {
+      return $miles;
+    }
+  }
+}
+
+
+
 function get_distance_m($lat1, $lng1, $lat2, $lng2) {
      $earth_radius = 6378137;   // Terre = sphère de 6378km de rayon
      $rlo1 = deg2rad($lng1);
@@ -225,8 +249,10 @@ foreach ($tab as $key => $value) {
   // recuperer la valeur de longitude et latitude
 $latitude = $tab[$key]['latitude'];
 $longitude = $tab[$key]['longitude'];
-$distance = (round(get_distance_m($latitude_id_co, $longitude_id_co, $latitude, $longitude) / 1000));
+//$distance = (round(get_distance_m($latitude_id_co, $longitude_id_co, $latitude, $longitude) / 1000));
 
+$distance = get_distance($latitude_id_co, $longitude_id_co, $latitude, $longitude, "K");
+// echo $longitude_id_co . '<br>' . $latitude_id_co;
 // echo $longitude . '<br>' . $latitude;
 // echo '<br>';
 // echo $distance;
@@ -237,8 +263,8 @@ if ($distance <= $distance_max_filtre)
   $array_tab[$key] = $array1[$key];
 }
 // echo 'sosa';
-// print_r($array_tab);
-// return;
+ // print_r($array_tab);
+ // return;
 
 // aray_tab contient tout les users a moins de $distance_max_filtre km
 //
@@ -246,13 +272,13 @@ if ($distance <= $distance_max_filtre)
 //faire un array values ici
 
 
-foreach ($tab as $key => $value) {
-  if ($tab[$key] == NULL)
+foreach ($array_tab as $key => $value) {
+  if ($array_tab[$key] == NULL)
     {
-        unset($tab[$key]);
+        unset($array_tab[$key]);
     }
   }
-  $tab = array_values($tab);
+  $tab = array_values($array_tab);
 
 //
 // print_r($tab);
@@ -271,7 +297,7 @@ if (array_empty($tab) == false)
       },
       "alert" : {
         "color" : "DarkRed",
-        "message" : "There is no profil who match ur query of i forget"
+        "message" : "There is no profil who match ur query with distance"
       }
     }';
 

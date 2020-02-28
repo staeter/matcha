@@ -1,4 +1,6 @@
 <?php
+
+session_start();
 // ob_start();
 // var_dump($_POST);
 //
