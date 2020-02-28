@@ -466,7 +466,7 @@
 	public function remove_like2($id)
 	{
 		$query = "DELETE FROM `like` WHERE `id_user_liking` = :idco AND `id_user_liked` = :id ";
-		$this->_db->query($query, array(':id' => $id, 'idco' => $this->_id));
+		$this->_db->query($query, array('idco' => $this->_id,':id' => $id));
 	}
 
 	public	function get_who_liked_the_connected_user()
