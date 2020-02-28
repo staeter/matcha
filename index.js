@@ -8291,7 +8291,7 @@ var $author$project$Main$currentSettingsDecoder = A3(
 																															email: email,
 																															first_name: first_name,
 																															gender: gender,
-																															geolocationInfo: geoAuth ? A2($author$project$Main$GeoAuthGranted, longitude, latitude) : A2($author$project$Main$GeoAuthRefused, longitude, latitude),
+																															geolocationInfo: geoAuth ? A2($author$project$Main$GeoAuthGranted, latitude, longitude) : A2($author$project$Main$GeoAuthRefused, latitude, longitude),
 																															last_name: last_name,
 																															orientation: orientation,
 																															pictures: $author$project$ZipList$fromList(pictures),
@@ -11643,8 +11643,8 @@ var $justinmimbs$date$Date$toIsoString = $justinmimbs$date$Date$format('yyyy-MM-
 var $author$project$Main$submitSettings = function (model) {
 	var _v0 = $author$project$Main$breakAppartGeoInfo(model.settingsGeoInfo);
 	var geoAuth = _v0.a;
-	var longitude = _v0.b;
-	var latitude = _v0.c;
+	var latitude = _v0.b;
+	var longitude = _v0.c;
 	return $elm$http$Http$post(
 		{
 			body: $elm$http$Http$multipartBody(
@@ -24374,7 +24374,7 @@ var $author$project$Main$viewMessage = F3(
 					$elm$html$Html$img,
 					_List_fromArray(
 						[
-							message.sent ? $elm$html$Html$Attributes$src(myProfilePict) : $elm$html$Html$Attributes$src(hisProfilePict)
+							message.sent ? $elm$html$Html$Attributes$src(hisProfilePict) : $elm$html$Html$Attributes$src(myProfilePict)
 						]),
 					_List_Nil),
 					A2(
@@ -24430,10 +24430,11 @@ var $author$project$Main$viewDiscution = F2(
 							A2(
 							$elm$html$Html$ul,
 							_List_Nil,
-							A2(
-								$elm$core$List$map,
-								A2($author$project$Main$viewMessage, myProfilePict, discution.picture),
-								discution.messages))
+							$elm$core$List$reverse(
+								A2(
+									$elm$core$List$map,
+									A2($author$project$Main$viewMessage, myProfilePict, discution.picture),
+									discution.messages)))
 						])),
 					A2(
 					$elm$html$Html$div,

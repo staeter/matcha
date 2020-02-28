@@ -1576,8 +1576,8 @@ currentSettingsDecoder =
         , tags = tags
         , geolocationInfo =
             if geoAuth
-            then GeoAuthGranted longitude latitude
-            else GeoAuthRefused longitude latitude
+            then GeoAuthGranted latitude longitude
+            else GeoAuthRefused latitude longitude
         }
 
 type alias SettingsModel a =
@@ -1601,7 +1601,7 @@ type alias SettingsModel a =
 
 submitSettings : SettingsModel a -> Cmd Msg
 submitSettings model =
-  let (geoAuth, longitude, latitude) = breakAppartGeoInfo model.settingsGeoInfo in
+  let (geoAuth, latitude, longitude) = breakAppartGeoInfo model.settingsGeoInfo in
   Http.post
       { url = "http://localhost:8080/control/settings_update.php"
       , body = multipartBody
@@ -2356,6 +2356,7 @@ viewDiscution myProfilePict discution =
             [ ul  []
                   ( discution.messages
                     |> List.map (viewMessage myProfilePict discution.picture)
+                    |> List.reverse
                   )
             ]
       , div [ class "message-input" ]
@@ -2372,8 +2373,8 @@ viewMessage myProfilePict hisProfilePict message =
         else class "replies"
       ]
       [ img [ if message.sent
-              then src myProfilePict
-              else src hisProfilePict
+              then src hisProfilePict
+              else src myProfilePict
             ] []
       , p [] [ Html.text message.content ]
       ]

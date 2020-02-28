@@ -22,7 +22,7 @@
   var app = Elm.Main.init({
     node: document.getElementById('elm'),
     flags:  <?php
-              if (!(isset($_SESSION['id']))) {
+              if (!array_key_exists('id', $_SESSION)) {
                 ?>null<?php
               }
               else {
