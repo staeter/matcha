@@ -344,18 +344,18 @@ type Route
 routeParser : Parser.Parser (Route -> a) a
 routeParser =
   Parser.oneOf
-    [ Parser.map Home     (Parser.top)
-    , Parser.map Signin   (Parser.s "signin")
-    , Parser.map Signup   (Parser.s "signup")
-    , Parser.map User     (Parser.s "user" </> Parser.int)
-    , Parser.map Notifs   (Parser.s "notifs")
-    , Parser.map Chats    (Parser.s "chat")
-    , Parser.map Retreive (Parser.s "retreive")
+    [ Parser.map Home         (Parser.top)
+    , Parser.map Signin       (Parser.s "signin")
+    , Parser.map Signup       (Parser.s "signup")
+    , Parser.map User         (Parser.s "user" </> Parser.int)
+    , Parser.map Notifs       (Parser.s "notifs")
+    , Parser.map Chats        (Parser.s "chat")
+    , Parser.map Retreive     (Parser.s "retreive")
     , Parser.map RetreiveLink (Parser.s "retreive" </> Parser.int </> Parser.int)
-    , Parser.map Confirm  (Parser.s "confirm" </> Parser.int </> Parser.int)
-    , Parser.map Settings (Parser.s "settings")
-    , Parser.map Signout (Parser.s "signout")
-    , Parser.map Test (Parser.s "test")
+    , Parser.map Confirm      (Parser.s "confirm" </> Parser.int </> Parser.int)
+    , Parser.map Settings     (Parser.s "settings")
+    , Parser.map Signout      (Parser.s "signout")
+    , Parser.map Test         (Parser.s "test")
     ]
 
 urlToRoute : Url -> Route
@@ -473,10 +473,10 @@ update msg model =
 
     (Logged lmodel, _, UrlChange url) ->
       let newRoute = urlToRoute url in
-      case newRoute |> Debug.log "urlChange" of
+      case newRoute of
         Home ->
           ( { model | route = newRoute }
-          , requestFeedInit ReceiveFeedInit |> Debug.log "send request FeedInit"
+          , requestFeedInit ReceiveFeedInit
           )
         User id ->
           ( { model | route = newRoute }
@@ -492,7 +492,7 @@ update msg model =
           )
         Settings ->
           ( { model | route = newRoute }
-          , requestCurrentSettings ReceiveCurrentSettings |> Debug.log "send request CurrentSettings"
+          , requestCurrentSettings ReceiveCurrentSettings
           )
         Signout ->
           (model, requestSignout)
@@ -501,7 +501,7 @@ update msg model =
 
     (Anonymous amodel, _, UrlChange url) ->
       let newRoute = urlToRoute url in
-      case newRoute |> Debug.log "urlChange" of
+      case newRoute of
         RetreiveLink a b ->
           let
             accountRetrievalForm = Just
@@ -1022,7 +1022,7 @@ update msg model =
       ( model, likeRequest )
 
     (Logged lmodel, User urlId, Like id) ->
-      if Debug.log "send like request" (urlId == id)
+      if urlId == id
       then
         let likeRequest = requestLike id ReceiveLikeUpdate in
         ( model, likeRequest )
@@ -1045,9 +1045,7 @@ update msg model =
                         Success usrd ->
                           if usrd.id == id
                           then Success { usrd | liked = newLikeStatus }
-                                  |> Debug.log "ud updated"
                           else Success usrd
-                                  |> Debug.log "ud not updated"
                         smthg -> smthg
               }
             }
