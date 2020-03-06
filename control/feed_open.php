@@ -19,7 +19,7 @@ if ($row_test['biography'] == NULL)
   "filtersEdgeValues": {
     "ageMin": 16,
     "ageMax": 120,
-    "distanceMax": 100,
+    "distanceMax": 20000,
     "popularityMin": 0,
     "popularityMax": 100
   },
@@ -45,7 +45,7 @@ $string = '{
     "filtersEdgeValues" : {
       "ageMin" : 16,
       "ageMax" : 120,
-      "distanceMax" : 100,
+      "distanceMax" : 20000,
       "popularityMin" : 0,
       "popularityMax" : 100
     },
@@ -213,6 +213,10 @@ foreach ($tab as $key => $value)
       "liked" : '.$liked.'
     },';
 }
+//echo $string;
+
+//echo 'br';
+//return;
 $string = substr($string, 0, -1);
 $string .= ']
 }
@@ -368,6 +372,8 @@ foreach ($tab as $key => $value)
       "liked" : '.$liked.'
     },';
 }
+echo $string;
+return ;
 $string = substr($string, 0, -1);
 $string .= ']
 }
@@ -386,7 +392,7 @@ else {
 		"filtersEdgeValues": {
 			"ageMin": 16,
 			"ageMax": 120,
-			"distanceMax": 100,
+			"distanceMax": 20000,
 			"popularityMin": 0,
 			"popularityMax": 100
 		},

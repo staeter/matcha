@@ -182,7 +182,7 @@ if (array_empty($tab) == false || empty($tab))
       },
       "alert" : {
         "color" : "DarkRed",
-        "message" : "There is no profil who match ur query 1111114"
+        "message" : "There is no profil who match ur query try to stop block user"
       }
     }';
 
@@ -205,29 +205,19 @@ if (array_empty($tab) == false || empty($tab))
 $popularity_min = $_POST['popularityMin'];
 $popularity_max = $_POST['popularityMax'];
 
-
 foreach ($tab as $key => $value)
   if ($tab[$key]['popularity_score'] >= $popularity_min && $tab[$key]['popularity_score'] <= $popularity_max)
       $array1[$key] = $tab[$key];
 
-if (array_empty($array1) == false || empty($array1))
-{
-          echo '{
-            "data" : {
-              "pageAmount" : 1,
-              "elemAmount" : 1,
-              "users" : []
-            },
-            "alert" : {
-              "color" : "DarkRed",
-              "message" : "There is no profil who match ur query of popularity score"
-            }
-          }';
-    return;
-}
 
 $tab = array_values($array1);
+//ICI CA MARCHE
 
+
+
+
+
+//SOSA
 foreach ($tab as $key => $value) {
   if ($tab[$key] == NULL)
       {
@@ -235,6 +225,23 @@ foreach ($tab as $key => $value) {
       }
   }
   $tab = array_values($tab);
+
+  if (array_empty($tab) == false)
+  {
+            echo '{
+              "data" : {
+                "pageAmount" : 1,
+                "elemAmount" : 1,
+                "users" : []
+              },
+              "alert" : {
+                "color" : "DarkRed",
+                "message" : "There is no profil who match ur query of popularity score"
+              }
+            }';
+      return;
+  }
+
   // print_r($tab);
   // return;
 
@@ -251,20 +258,18 @@ $latitude = $tab[$key]['latitude'];
 $longitude = $tab[$key]['longitude'];
 //$distance = (round(get_distance_m($latitude_id_co, $longitude_id_co, $latitude, $longitude) / 1000));
 
-$distance = get_distance($latitude_id_co, $longitude_id_co, $latitude, $longitude, "K");
-// echo $longitude_id_co . '<br>' . $latitude_id_co;
-// echo $longitude . '<br>' . $latitude;
-// echo '<br>';
+$distance = round(get_distance($latitude_id_co, $longitude_id_co, $latitude, $longitude, "K"));
+
 // echo $distance;
+// echo '///' . $distance_max_filtre . '<br>';
+//
 // echo '<br>';
 
-
-if ($distance <= $distance_max_filtre)
-  $array_tab[$key] = $array1[$key];
+    if ($distance <= $distance_max_filtre)
+      {$array_tab[$key] = $tab[$key];}
 }
 // echo 'sosa';
- // print_r($array_tab);
- // return;
+
 
 // aray_tab contient tout les users a moins de $distance_max_filtre km
 //
@@ -287,7 +292,7 @@ foreach ($array_tab as $key => $value) {
 
 
 
-if (array_empty($tab) == false)
+if (array_empty($tab) == false || empty($tab))
   {
     echo '{
       "data" : {
@@ -303,6 +308,7 @@ if (array_empty($tab) == false)
 
     return;
   }
+
 
 //   // echo 'sosa<br>';
 //   // var_dump($array_tab);
@@ -423,7 +429,8 @@ $tab = array();
 
   $tab = super_unique($tab_to_unify, 'id_user');
 
-
+// print_r($tab);
+// return;
 
 // $taille = 0;
 // $xx = 0;
@@ -675,7 +682,10 @@ if ($profile_liked == 'True' && $profile_viewed == 'True')
 
 
 
-// je verifie avant d envoyer le tableau qu il reste des occurences
+// // je verifie avant d envoyer le tableau qu il reste des occurences
+// print_r($tab);
+// return;
+
 if (empty($tab) || array_empty($tab) == false)
   {
     echo '{
@@ -686,7 +696,7 @@ if (empty($tab) || array_empty($tab) == false)
       },
       "alert" : {
         "color" : "DarkRed",
-        "message" : "There is no profil who match ur query"
+        "message" : "There is no profil who match ur query sosa"
       }
     }';
 
