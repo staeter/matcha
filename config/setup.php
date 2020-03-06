@@ -5,9 +5,6 @@
 
 	// /!\ the present database will be deleted if set to true /!\
 	$reset_db = true;
-	$insert_dumb_data = true; // reset_db has to be true to apply
-	$dumb_data_file = $_SERVER["DOCUMENT_ROOT"] . '/model/testing/dumb_data.sql';
-
 
 
 	echo "Connecting to the database...<br>";
@@ -23,12 +20,6 @@
 
 			$db = new Database($dsn . ";dbname=" . $dbname, $username, $password);
 			$db->exec(file_get_contents($setup_file));
-			if ($insert_dumb_data)
-			{
-				echo "Dumb data insertion...<br>";
-
-				//$db->exec(file_get_contents($dumb_data_file));
-			}
 		}
 		else
 		{

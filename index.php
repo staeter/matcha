@@ -3,7 +3,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Main</title>
+  <title>matcha - index</title>
 
   <link rel="stylesheet" href="/css/galery.css">
   <link rel="stylesheet" href="/css/multi-input.css">
