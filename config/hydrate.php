@@ -29,7 +29,7 @@
 
     echo "Binding values...<br>";
     $bindVal = array();
-    for ($circle = 0; $circle <= intdiv($amount, 1000); $circle++) {
+    for ($circle = 0; $circle <= (int)($amount / 1000); $circle++) {
       shuffle($firstNames);
       shuffle($lastNames);
       shuffle($profilePictures);
@@ -51,7 +51,7 @@
         $bindVal[':prefloc'.$id] = rand(0, 1);
         $bindVal[':lastlog'.$id] = date("Y-m-d H:i:s", rand(1, time()));
         $bindVal[':isloged'.$id] = rand(0, 1);
-        $bindVal[':pop'.$id] = rand(0, 1000);
+        $bindVal[':pop'.$id] = rand(0, 100);
         $bindVal[':prefmailnotif'.$id] = rand(0, 1);
 
         echo
