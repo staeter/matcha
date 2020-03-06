@@ -25011,14 +25011,7 @@ var $author$project$Main$viewHeader = F2(
 								]),
 							_List_fromArray(
 								[
-									$elm$html$Html$text(
-									'home (' + ($elm$core$String$fromInt(
-										A2(
-											$author$project$MyList$countWhere,
-											function ($) {
-												return $.aO;
-											},
-											lmodel.bv)) + ')'))
+									$elm$html$Html$text('home')
 								])),
 							A2(
 							$elm$html$Html$a,
@@ -25029,7 +25022,14 @@ var $author$project$Main$viewHeader = F2(
 								]),
 							_List_fromArray(
 								[
-									$elm$html$Html$text('chat')
+									$elm$html$Html$text(
+									'chat (' + ($elm$core$String$fromInt(
+										A2(
+											$author$project$MyList$countWhere,
+											function ($) {
+												return $.aO;
+											},
+											lmodel.bv)) + ')'))
 								])),
 							A2(
 							$elm$html$Html$a,
