@@ -5,6 +5,27 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 
 
+require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/get_location.php';
+
+
+
+
+
+
+
+
+$usr = unserialize($_SESSION['user']);
+
+
+
+$x = get_client_ip();
+
+//var_dump($x);
+var_dump($x);
+
+//  print_r($x['postal']);
+//echo $x["loc"];
+
 // if (empty($_POST['password']) || empty($_POST['confirm']))
 // {
 //     echo '{
@@ -22,7 +43,7 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 // }
 // else {
 //
-$usr = unserialize($_SESSION['user']);
+
 //   //
 //    try {
 //
@@ -37,12 +58,12 @@ $usr = unserialize($_SESSION['user']);
 
 //echo 'yo sosa sksks';
 
-//$usr->set_picture();
-echo '<br>salut<br>';echo '<br>salut<br>';
-
-echo '<br><br>';
-$id_pic = 1;
+// //$usr->set_picture();
+// echo '<br>salut<br>';echo '<br>salut<br>';
 //
+// echo '<br><br>';
+// $id_pic = 1;
+// //
 // $row = $usr->get_all_details_of_all_id_between_age_min_max("2000-01-01", "2020-01-01");
 // print_r($row);
 //
@@ -268,22 +289,22 @@ $string = "so sosa  s      s         ";
 //
 // print_r($row);
 
-
-function get_distance_m($lat1, $lng1, $lat2, $lng2) {
-     $earth_radius = 6378137;   // Terre = sphère de 6378km de rayon
-     $rlo1 = deg2rad($lng1);
-     $rla1 = deg2rad($lat1);
-     $rlo2 = deg2rad($lng2);
-     $rla2 = deg2rad($lat2);
-     $dlo = ($rlo2 - $rlo1) / 2;
-     $dla = ($rla2 - $rla1) / 2;
-     $a = (sin($dla) * sin($dla)) + cos($rla1) * cos($rla2) * (sin($dlo) * sin($dlo));
-     $d = 2 * atan2(sqrt($a), sqrt(1 - $a));
-     return ($earth_radius * $d);
-}
-
-$x = round(get_distance_m(0,0,5,5) / 1000);
-echo $x;
+//
+// function get_distance_m($lat1, $lng1, $lat2, $lng2) {
+//      $earth_radius = 6378137;   // Terre = sphère de 6378km de rayon
+//      $rlo1 = deg2rad($lng1);
+//      $rla1 = deg2rad($lat1);
+//      $rlo2 = deg2rad($lng2);
+//      $rla2 = deg2rad($lat2);
+//      $dlo = ($rlo2 - $rlo1) / 2;
+//      $dla = ($rla2 - $rla1) / 2;
+//      $a = (sin($dla) * sin($dla)) + cos($rla1) * cos($rla2) * (sin($dlo) * sin($dlo));
+//      $d = 2 * atan2(sqrt($a), sqrt(1 - $a));
+//      return ($earth_radius * $d);
+// }
+//
+// $x = round(get_distance_m(0,0,5,5) / 1000);
+// echo $x;
 
 
   //array_values($row)

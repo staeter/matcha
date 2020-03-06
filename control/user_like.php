@@ -3,6 +3,17 @@ session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = (unserialize($_SESSION['user']));
 
+$path = $usr->get_picture_profil($_SESSION['id']);
+
+
+if ($path['path'] == '/Pictures/def.jpg')
+  $canlike = 0;
+else if ($path['path'] == '/Pictures/addpic.png')
+  $canlike = 0;
+else
+  $canlike = 1;
+
+
 if ($usr->is_valid_id($_POST['id']) === false)
 {
   echo '{
@@ -21,10 +32,25 @@ else {
    echo '{
    "data" : {
 
-   }},
+   },
    "alert" : {
      "color" : "DarkRed",
      "message" : "the id doesnt exist!"
+   }
+ }';
+ return;
+ }
+
+
+ if ($canlike == 0)
+ {
+   echo '{
+   "data" : {
+
+   },
+   "alert" : {
+     "color" : "DarkRed",
+     "message" : "Upload a picture for like an user !"
    }
  }';
  return;
