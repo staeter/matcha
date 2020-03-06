@@ -1,4 +1,4 @@
-module MyList exposing (indexedAny, sumStringList)
+module MyList exposing (indexedAny, sumStringList, countWhere)
 
 indexedAny : (a -> Bool) -> List a -> Maybe Int
 indexedAny condition list =
@@ -13,6 +13,20 @@ indexedAnyLoop index boolList =
       if head
       then Just index
       else indexedAnyLoop (index + 1) queue
+
+countWhere : (a -> Bool) -> List a -> Int
+countWhere condition list =
+  List.map condition list
+  |> countWhereLoop 0
+
+countWhereLoop : Int -> List Bool -> Int
+countWhereLoop count boolList =
+  case boolList of
+    [] -> count
+    head :: queue ->
+      if head
+      then countWhereLoop (count + 1) queue
+      else countWhereLoop count queue
 
 sumStringList : List String -> String
 sumStringList list =

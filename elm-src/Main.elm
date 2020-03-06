@@ -2404,7 +2404,13 @@ viewHeader route lmodel =
                 , if route == Home
                   then class "active"
                   else class ""
-                ] [ Html.text "home" ]
+                ] [ Html.text ( "home ("
+                          ++ ( lmodel.chats
+                               |> countWhere .unread
+                               |> String.fromInt
+                              )
+                          ++ ")"
+                       ) ]
             , a [ href "/chat"
                 , if route == Chats
                   then class "active"
