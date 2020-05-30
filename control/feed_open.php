@@ -220,10 +220,6 @@ foreach ($tab as $key => $value)
 $string = substr($string, 0, -1);
 $string .= ']
 }
-},
-"alert" : {
-"color" : "DarkBlue",
-"message" : "feed open call"
 }
 }';
 echo $string;
@@ -372,15 +368,9 @@ foreach ($tab as $key => $value)
       "liked" : '.$liked.'
     },';
 }
-echo $string;
-return ;
 $string = substr($string, 0, -1);
 $string .= ']
 }
-},
-"alert" : {
-"color" : "DarkBlue",
-"message" : "feed open call"
 }
 }';
 echo $string;

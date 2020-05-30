@@ -27,6 +27,13 @@ else
   $orientation = 'Homosexual';
 
 $rowpic = $usr->get_all_picture();
+$strpic = '';
+foreach ($rowpic as $value) {
+  $strpic .= '{ "id" : ' . $value['id_picture'] . ',
+                "path" :"' . $value['path'] . '"
+              },';
+}
+$strpic = substr($strpic, 0, -1);
 
 $rowtag = $usr->get_tag();
 $output =' "tags" : [';
@@ -42,40 +49,22 @@ $output .= ']';
 
 echo '{
 "data" : {
-  "pseudo" : "'.$row['pseudo'].'",
-  "last_name" : "'.$row['lastname'].'",
-  "first_name" : "'.$row['firstname'].'",
-  "email" : "'.$row['email'].'",
-  "gender" : "'.$gender.'",
-  "orientation" : "'.$orientation.'",
-  "biography" : "'.$row['biography'].'",
-  "birth" : "'.$row['birth'].'",
+  "pseudo" : "' . $row['pseudo'] . '",
+  "last_name" : "' . $row['lastname'] . '",
+  "first_name" : "' . $row['firstname'] . '",
+  "email" : "' . $row['email'] . '",
+  "gender" : "' . $gender . '",
+  "orientation" : "' . $orientation . '",
+  "biography" : "' . $row['biography'] . '",
+  "birth" : "' . $row['birth'] . '",
   "pictures" :
-    [ { "id" : '.$rowpic[0]['id_picture'].',
-        "path" :"'.$rowpic[0]['path'].'"
-      }
-    , { "id" : '.$rowpic[1]['id_picture'].',
-        "path" :"'.$rowpic[1]['path'].'"
-      }
-    , { "id" : '.$rowpic[2]['id_picture'].',
-        "path" :"'.$rowpic[2]['path'].'"
-      }
-    , { "id" : '.$rowpic[3]['id_picture'].',
-        "path" :"'.$rowpic[3]['path'].'"
-      }
-    , { "id" : '.$rowpic[4]['id_picture'].',
-        "path" :"'.$rowpic[4]['path'].'"
-      }
+    [ ' . $strpic . '
     ],
-  "popularity_score" : '.$row['popularity_score'].',
-  '.$output.',
-  "geoAuth" : '.$string_loc.',
-  "latitude" : '.$int_latitude.',
-  "longitude" : '.$int_longitude.'
-},
-"alert" : {
-  "color" : "DarkBlue",
-  "message" : "current settings alert"
+  "popularity_score" : ' . $row['popularity_score'] . ',
+  ' . $output . ',
+  "geoAuth" : ' . $string_loc . ',
+  "latitude" : ' . $int_latitude . ',
+  "longitude" : ' . $int_longitude . '
 }
 }';
 

@@ -973,7 +973,7 @@
 		public function get_all_details_of_all_id()
 		{
 			$query = 'SELECT * FROM user';
-			$this->_db->query($query);
+			$this->_db->query($query, array());
 			$row = $this->_db->fetchAll();
 			if ($row === false) {
 				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
@@ -984,8 +984,8 @@
 
 		public function get_all_details_of_all_id_between_age_min_max($age_min, $age_max)
 		{
-			$query = 'SELECT * FROM user WHERE `birth` BETWEEN "'.$age_min.'" AND "'.$age_max.'" ';
-			$this->_db->query($query);
+			$query = 'SELECT * FROM user WHERE `birth` BETWEEN :ami AND :ama ';
+			$this->_db->query($query, array(':ami' => $age_min, ':ama' => $age_max));
 			$row = $this->_db->fetchAll();
 			if ($row === false) {
 				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
@@ -996,8 +996,8 @@
 
 		public function get_row_filter($age_min, $age_max, $popularity_min, $popularity_max)
 		{
-			$query = 'SELECT * FROM user WHERE `birth` BETWEEN "'.$age_min.'" AND "'.$age_max.'" AND WHERE `popularity_score` BETWEEN "'.$popularity_min.'" AND "'.$popularity_max.'" ';
-			$this->_db->query($query);
+			$query = 'SELECT * FROM user WHERE `birth` BETWEEN :ami AND :ama AND WHERE `popularity_score` BETWEEN :pmi AND :pma';
+			$this->_db->query($query, array(':ami' => $age_min, ':ama' => $age_max, ':pma' => $popularity_min, ':pma' => $popularity_max));
 			$row = $this->_db->fetchAll();
 			if ($row === false) {
 				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");

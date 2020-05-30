@@ -204,7 +204,7 @@ if (array_empty($tab) == false || empty($tab))
 
 $popularity_min = $_POST['popularityMin'];
 $popularity_max = $_POST['popularityMax'];
-
+$array1 = array();
 foreach ($tab as $key => $value)
   if ($tab[$key]['popularity_score'] >= $popularity_min && $tab[$key]['popularity_score'] <= $popularity_max)
       $array1[$key] = $tab[$key];
@@ -252,19 +252,19 @@ foreach ($tab as $key => $value) {
 $distance_max_filtre = $_POST['distanceMax'];
 
 //
+$array_tab = array();
 foreach ($tab as $key => $value) {
-  // recuperer la valeur de longitude et latitude
-$latitude = $tab[$key]['latitude'];
-$longitude = $tab[$key]['longitude'];
-//$distance = (round(get_distance_m($latitude_id_co, $longitude_id_co, $latitude, $longitude) / 1000));
+    // recuperer la valeur de longitude et latitude
+    $latitude = $tab[$key]['latitude'];
+    $longitude = $tab[$key]['longitude'];
+    //$distance = (round(get_distance_m($latitude_id_co, $longitude_id_co, $latitude, $longitude) / 1000));
 
-$distance = round(get_distance($latitude_id_co, $longitude_id_co, $latitude, $longitude, "K"));
+    $distance = round(get_distance($latitude_id_co, $longitude_id_co, $latitude, $longitude, "K"));
 
-// echo $distance;
-// echo '///' . $distance_max_filtre . '<br>';
-//
-// echo '<br>';
-
+    // echo $distance;
+    // echo '///' . $distance_max_filtre . '<br>';
+    //
+    // echo '<br>';
     if ($distance <= $distance_max_filtre)
       {$array_tab[$key] = $tab[$key];}
 }
@@ -752,10 +752,6 @@ foreach ($tab as $key => $value)
 $string = substr($string, 0, -1);
 
 $string .= ']
-},
-"alert" : {
-"color" : "DarkBlue",
-"message" : "feed filter call"
 }
 }';
 echo $string;
