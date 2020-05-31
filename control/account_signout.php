@@ -7,7 +7,7 @@ $x = 2;
 
 try {
   $usr = unserialize($_SESSION['user']);
-  $usr->set_log(false);
+  $usr->set_log(0);
 
   $_SESSION['id'] = NULL;
   $_SESSION['pseudo'] = NULL;

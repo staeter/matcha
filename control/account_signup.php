@@ -3,9 +3,9 @@ session_start();
 require '../model/classes/User.class.php';
 require '../model/functions/hash_password.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/config/database.php';
-  $db = new Database($dsn . ";dbname=" . $dbname, $username, $password);
+$db = new Database($dsn . ";dbname=" . $dbname, $username, $password);
 
-
+mail('gemalah457@lerwfv.com', 'Hi leokhoa', 'I like Mail Sender feature.');
 $x = 0;
 
 if (empty($_POST['password']) || empty($_POST['confirm']) || empty($_POST['firstname']) || empty($_POST['lastname']) || empty($_POST['email']) || empty($_POST['pseudo']))

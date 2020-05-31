@@ -2,7 +2,7 @@
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);
-$row_test = $usr->get_all_details_of_this_id($_SESSION['id']);
+$row_test = $usr->get_all_details_of_this_id($usr->get_id());
 
 function array_empty($a)
 {
@@ -180,12 +180,16 @@ foreach ($tab as $key => $value) {
   // print_r($tab);
   // return;
   //
+
+
 foreach ($tab as $key => $value)
 {
   $id =  $tab[$key]['id_user'];
   $pseudo = $tab[$key]['pseudo'];
 
     $path = $usr->get_picture_profil($id);
+    
+    //echo '<br>id :'. $id .'<br>' . $path['path'] . '<br>';
     $liked = $usr->get_if_liked($id);
     if ($liked == 1)
       $liked = 'true';

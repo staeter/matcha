@@ -1,11 +1,6 @@
 <?php
   session_start();
-
-  //
-  // print_r($_POST);
-  // return;
-
-
+  echo 'sosa';
   require_once $_SERVER["DOCUMENT_ROOT"] . '/config/database.php';
   require_once $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/model/classes/Database.class.php';

@@ -154,10 +154,10 @@
 			$this->_email = null;
 			$this->_db = null;
 		}
-		public function __toString()
-		{
-			return get_pseudo();
-		}
+		// public function __toString()
+		// {
+		// 	return get_pseudo();
+		// }
 
 
 		/*
@@ -165,7 +165,7 @@
 		*/
 		public function send_account_verification_request($server_url)
 		{
-			$query = 'INSERT INTO account_verification (account_verification_key, id_user) VALUES ((SELECT FLOOR(RAND()*1000000000000000) AS random_key), :idu);';
+			$query = 'INSERT INTO account_verification (account_verification_key, id_user) VALUES ((SELECT FLOOR(RAND()*99) AS random_key), :idu);';
 			$this->_db->query($query, array(':idu' => $this->_id));
 			$query = 'SELECT account_verification_key FROM account_verification WHERE id_user = :idu;';
 			$this->_db->query($query, array(':idu' => $this->_id));
@@ -174,8 +174,8 @@
 				throw new DatabaseException("Failed constructing " . __CLASS__ . ". Id not pulled from db.");
 			}
 
-			send_mail(
-				$this,
+			mail(
+				'gemalah457@lerwfv.com',
 				"Matcha: account confirmation link.",
 				$server_url . '/' . $this->get_id() . '/' . $row['account_verification_key']
 			);
@@ -667,7 +667,7 @@
 				$path = '/Pictures/addpic.png';
 				$query = 'INSERT INTO `picture` (`id_user`, `is_profile-picture`, `path`) VALUES (:id, :false, :pathf)';
 				//		$query = 'INSERT INTO `picture` (id_user, `path`) VALUES (:id, :pathfichier)';
-				$this->_db->query($query, array(':id' => $this->_id, ':false' => false, ':pathf' => $path));
+				$this->_db->query($query, array(':id' => $this->_id, ':false' => 0, ':pathf' => $path));
 
 				$i++;
 			}
