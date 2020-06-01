@@ -5,12 +5,6 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/hash_password.php';
 
 
-require $_SERVER["DOCUMENT_ROOT"] . '/model/functions/get_location.php';
-
-
-
-
-
 
 
 
@@ -18,10 +12,10 @@ $usr = unserialize($_SESSION['user']);
 
 
 
-$x = get_client_ip();
+// $x = get_client_ip();
 
-//var_dump($x);
-var_dump($x);
+// //var_dump($x);
+// var_dump($x);
 
 //  print_r($x['postal']);
 //echo $x["loc"];
@@ -309,4 +303,6 @@ $string = "so sosa  s      s         ";
 
   //array_values($row)
 
+  $x = $usr->get_if_a_user_like_user_connected(18);
+  var_dump($x);
 ?>

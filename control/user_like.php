@@ -3,8 +3,7 @@ session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = (unserialize($_SESSION['user']));
 
-$path = $usr->get_picture_profil($_SESSION['id']);
-
+$path = $usr->get_picture_profil($usr->get_id());
 
 if ($path['path'] == '/Pictures/def.jpg')
   $canlike = 0;
@@ -14,7 +13,7 @@ else
   $canlike = 1;
 
 
-if ($usr->is_valid_id($_POST['id']) === false)
+if ($usr->is_valid_id($_POST['id']) == 0)
 {
   echo '{
     "data" : {},
@@ -27,7 +26,7 @@ if ($usr->is_valid_id($_POST['id']) === false)
 }
 else {
 
- if ($usr->is_id_exist($_POST['id']) == FALSE)
+ if ($usr->is_id_exist($_POST['id']) == 0)
  {
    echo '{
    "data" : {
@@ -58,6 +57,8 @@ else {
 
   $ret = $usr->set_a_like($_POST['id']);
   $array_like = $usr->get_if_a_user_like_user_connected($_POST['id']);
+  // var_dump($array_like);
+  // return;
 
   //si like en retour supprimer le chat + notif unmatch
   // supprimer le chat si il y en avais un

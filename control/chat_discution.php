@@ -6,7 +6,6 @@ $usr = unserialize($_SESSION['user']);
 
 
 $row = $usr->get_all_messages_between_two_user($_POST['id']);
-
 if (empty($row))
   {
     echo '{
@@ -20,12 +19,13 @@ if (empty($row))
 
 $row2 = $usr->get_all_details_of_this_id($_POST['id']);
 
+
 $row3 = $usr->get_picture_profil($_POST['id']);
 
 if ($row2['is_loged'] == 1)
   $stringlastlog = "Now";
 else
-  $stringlastlog = $row['last_log'];
+  $stringlastlog = $row2['last_log'];
 
 $string = '{
   "data" : {
@@ -61,7 +61,7 @@ foreach ($row as $key => $value)
 function enleve_virgule($string)
 {
 //$nbchar = strlen($string);
-  $string = substr($string, 0, -6);
+  $string = substr($string, 0, -7);
   $findestring = '
       ]
     },

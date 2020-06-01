@@ -175,7 +175,7 @@
 			}
 
 			mail(
-				'gemalah457@lerwfv.com',
+				$this->_email,
 				"Matcha: account confirmation link.",
 				$server_url . '/' . $this->get_id() . '/' . $row['account_verification_key']
 			);
@@ -244,7 +244,7 @@
 			$db->query($query, array(':idu' => $id_user));
 
 			// query to add an account_retrieval_request to the db
-			$query = 'INSERT INTO account_retrieval_requests (account_retrieval_request_key, id_user) VALUES ((SELECT FLOOR(RAND()*1000000000000000) AS random_key), :idu);';
+			$query = 'INSERT INTO account_retrieval_requests (account_retrieval_request_key, id_user) VALUES ((SELECT FLOOR(RAND()*1000) AS random_key), :idu);';
 			$db->query($query, array(':idu' => $id_user));
 
 			// query to retrieve the account_retrieval_request_key
@@ -1042,7 +1042,7 @@
 
 		public function get_if_a_user_like_user_connected($id)
 		{
-			$query = 'SELECT `liked` FROM `like` WHERE id_user_liking = :id AND id_user_liked = :idco';
+			$query = 'SELECT * FROM `like` WHERE id_user_liking = :idco AND id_user_liked = :id';
 			$this->_db->query($query, array('id' => $id, ':idco' => $this->_id));
 			$row = $this->_db->fetch();
 

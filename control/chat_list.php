@@ -116,7 +116,7 @@ $row = $usr->get_picture_profil($id_pic);
 }
 
 
-$jsondata = substr($jsondata, 0, -4);
+$jsondata = substr($jsondata, 0, -5);
 $jsondata .= $findestring;
 
 echo $jsondata;

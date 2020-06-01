@@ -6,7 +6,8 @@ $usr = unserialize($_SESSION['user']);
 
 // fonction qui recupere toutes les notifs de tel ID_user
 $row = $usr->get_all_notif_of_user_connected();
-
+// var_dump($row);
+// return;
 if (empty($row))
 {
   echo '{
@@ -37,7 +38,7 @@ foreach ($row as $key => $value) {
     {
       "id" : '.$row[$key]['id_user'].',
       "content" : "'.$row[$key]['notification'].'",
-      "date" : "'.$row[$key]['date_notif'].'",
+      "date" : "'.$row[$key]['date'].'",
       "unread" : '.$readed.'
 
         },
@@ -47,9 +48,10 @@ foreach ($row as $key => $value) {
 
 function enleve_virgule($string)
 {
-  $nbchar = strlen($string);
-  $string = substr($string, 0, -10);
-
+  // $nbchar = strlen($string);
+  
+  $string = substr($string, 0, -11);
+  
   $endofstring = '],
   "alert" : {
     "color" : "DarkGreen",
