@@ -74,8 +74,7 @@ CREATE TABLE IF NOT EXISTS `block` (
 
 CREATE TABLE IF NOT EXISTS `intrests` (
   `id_user` int(10) UNSIGNED DEFAULT NULL,
-  `tag` varchar(64) DEFAULT NULL,
-  UNIQUE KEY `id_user` (`id_user`,`tag`)
+  `tag` varchar(64) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
