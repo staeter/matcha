@@ -11,11 +11,15 @@
   if (array_key_exists("amount", $_GET))
     $amount = intval($_GET["amount"]);
   else
-    $amount = 10;
+    $amount = 50;
 
   try {
     echo "Creating db object...<br><br>";
     $db = new Database($dsn . ";dbname=" . $dbname, $username, $password);
+
+
+
+
 
     echo 'Assembling user query...<br>';
     $query = "INSERT INTO `user` (`firstname`, `lastname`, `pseudo`, `email`, `gender`, `orientation`, `password`, `biography`, `birth`, `longitude`, `latitude`, `pref_localisation`, `last_log`, `is_loged`, `popularity_score`, `pref_mail_notifications`) VALUES ";
@@ -76,6 +80,10 @@
     echo "Inserting...<br><br>";
     $db->query($query, $bindVal);
 
+
+
+
+
     echo 'Querying IDs...<br>';
     $query = "SELECT LAST_INSERT_ID() AS `liID`;";
     $db->query($query, array());
@@ -86,6 +94,10 @@
     $firstID = $row['liID'];
     $lastID = $firstID + $amount - 1;
     echo 'Inserted IDs go from '.$firstID.' to '.$lastID.' )<br><br>';
+
+
+
+
 
     echo 'Assembling tags query...<br>';
     $query = "INSERT INTO `intrests` (`id_user`, `tag`) VALUES ";
@@ -125,6 +137,9 @@
     echo "Inserting...<br><br>";
     $db->query($query, $bindVal);
 
+
+
+
     echo 'Assembling pictures query...<br>';
     $query = "INSERT INTO `picture` (`id_user`, `is_profile-picture`, `path`) VALUES ";
     $first = true;
@@ -158,7 +173,96 @@
     echo "Inserting...<br><br>";
     $db->query($query, $bindVal);
 
+
+
+
+
+    echo 'Assembling like query...<br>';
+    $query = "INSERT INTO `like` (`id_user_liking`, `id_user_liked`) VALUES ";
+    $first = true;
+    $amount_of_likes_per_user = 10;
+    for ($i = $firstID; $i <= $lastID; $i++) {
+      for ($j = 0; $j < $amount_of_likes_per_user; $j++) {
+        if ( $first ) $first = false;
+        else $query .= ", ";
+
+        $query .= "(:id_user_liking$j$i, :id_user_liked$j$i)";
+      }
+    }
+
+    echo "Binding values...<br>";
+    $bindVal = array();
+
+    for ($i = $firstID; $i <= $lastID; $i++) {
+      $id_user_alredy_liked = array($i);
+
+      for ($j = 0; $j < $amount_of_likes_per_user; $j++) {
+        $rand_id_usr = -1;
+        while (true) {
+          $rand_id_usr = rand($firstID, $lastID);
+          if (!in_array($rand_id_usr, $id_user_alredy_liked)) {
+            $id_user_alredy_liked[] = $rand_id_usr;
+            break;
+          }
+        }
+
+        $bindVal[":id_user_liking$j$i"] = $i;
+        $bindVal[":id_user_liked$j$i"] = $rand_id_usr;
+
+        echo $i . ' likes ' . $rand_id_usr . '<br>';
+      }
+    }
+
+    echo "Inserting...<br><br>";
+    $db->query($query, $bindVal);
+
+
+
+
+    echo 'Assembling profile viewed query...<br>';
+    $query = "INSERT INTO `profile_viewed` (`id_user_viewing`, `id_user_viewed`) VALUES ";
+    $first = true;
+    $amount_of_views_per_user = 20;
+    for ($i = $firstID; $i <= $lastID; $i++) {
+      for ($j = 0; $j < $amount_of_views_per_user; $j++) {
+        if ( $first ) $first = false;
+        else $query .= ", ";
+
+        $query .= "(:id_user_viewing$j$i, :id_user_viewed$j$i)";
+      }
+    }
+
+    echo "Binding values...<br>";
+    $bindVal = array();
+
+    for ($i = $firstID; $i <= $lastID; $i++) {
+      $id_user_alredy_viewed = array($i);
+
+      for ($j = 0; $j < $amount_of_views_per_user; $j++) {
+        $rand_id_usr = -1;
+        while (true) {
+          $rand_id_usr = rand($firstID, $lastID);
+          if (!in_array($rand_id_usr, $id_user_alredy_viewed)) {
+            $id_user_alredy_viewed[] = $rand_id_usr;
+            break;
+          }
+        }
+
+        $bindVal[":id_user_viewing$j$i"] = $i;
+        $bindVal[":id_user_viewed$j$i"] = $rand_id_usr;
+
+        echo $i . ' viewed ' . $rand_id_usr . '\'s profile<br>';
+      }
+    }
+
+    echo "Inserting...<br><br>";
+    $db->query($query, $bindVal);
+
+
+
+
     echo "Complete!";
+
   } catch (Exception $e) {
     echo $e.'<br>';
     var_dump($e->getTrace());
