@@ -132,17 +132,24 @@
       if ( $first ) $first = false;
       else $query .= ", ";
 
-      $query .= "(:id$i, :ispp$i, :path$i)";
+      $query .= "(:id$i, :pp$i, :path$i), (:id1$i, :npp1$i, :addpic1$i), (:id2$i, :npp2$i, :addpic2$i), (:id3$i, :npp3$i, :addpic3$i), (:id4$i, :npp4$i, :addpic4$i)";
     }
 
     echo "Binding values...<br>";
     $bindVal = array();
+
     for ($i = $firstID; $i <= $lastID; $i++) {
       $randPP = array_rand($profilePictures);
 
       $bindVal[":id$i"] = $i;
-      $bindVal[":ispp$i"] = true;
+      $bindVal[":pp$i"] = true;
       $bindVal[":path$i"] = $profilePictures[$randPP];
+
+      for ($j = 1; $j <= 4; $j++) {
+        $bindVal[":id$j$i"] = $i;
+        $bindVal[":npp$j$i"] = false;
+        $bindVal[":addpic$j$i"] = "/Pictures/addpic.png";
+      }
 
       echo
       $i . ': ' . $bindVal[":path$i"] . '<br>';
