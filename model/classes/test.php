@@ -302,7 +302,43 @@ $string = "so sosa  s      s         ";
 
 
   //array_values($row)
+  $raw_message = $usr->get_all_messages_of_user_connected();
+  //print_r($raw_message);
+  function  tri($array)
+  {
+    var_dump($array);
+    echo '<br><br>';
+    echo "debut fonction: <br>";
 
-  $x = $usr->get_if_a_user_like_user_connected(18);
-  var_dump($x);
+    foreach ($array as $key => $value) 
+    {
+      if ($array[$key]['id_user_receiving'] != 50)
+      {
+        echo 'hey<br>';
+          // $check[$key] = ($array[$key]['id_user_receiving']);
+          // $x = 0;
+          // $i = 0;
+          // while (isset($check[$i]))
+          // {
+          //   echo '<br>' . $i . '<br>';
+          //   if ($check[$i] == ($array[$key]['id_user_receiving']))
+          //   {
+              
+          //     $x = 1;
+          //     break;
+          //   }
+          //   echo 'red' . $i . '<br>';
+          //   $i++;
+          // }
+          // if ($x == 0)
+          //   $red[$key] = $array[$key];
+      }
+  }
+  
+    //var_dump($red);
+  }
+  
+  $reda = tri($raw_message);
+  // $x = $usr->get_if_a_user_like_user_connected(18);
+  // var_dump($x);
 ?>

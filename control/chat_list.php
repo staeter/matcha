@@ -4,33 +4,6 @@ session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);
 
-$raw_message = $usr->get_all_messages_of_user_connected();
-
-// je dois renvoyer dans un foreach pour chaque conversation avec un User
-// un tableau contenant l id du gars / pseudo / picture / last log/ last message / unread(regle dans bdd ca)
-//
-// 1. fonction qui recense toutes les conversation avec un autre user
-// 2. cette fonction renvoi une raw contenant les info de la table messages
-//                    ( last message // unread)
-// 3. je dois recuperer des infos de la table user pour pseudo id last log
-// 4. je gere tjrs pas les pictures donc faudra revenir dessus une fois fait
-//          du coup voir cmt recuperer une raw contenant le picture de profil
-//            mtn j y pense je mettrais une photo de profil de base a tt le monde
-
-// 1. && 2.  fonction a coder
-
-//print_r
-
-//);
-//return;
-
-
-// probleme je recupere un tableau contenant toute les entree corespondant
-// a l id de l user connecte et moi j ai besoin d une occurence avec le dernier messages
-// je dois traiter ca pour faire mon foreach
-// print_r($raw_message);
-
-
 function getLatestMessages(array $messages, $receiverId) {
     $times = [];
     $chats = [];
@@ -50,10 +23,17 @@ function getLatestMessages(array $messages, $receiverId) {
     }
     return $chats;
 }
-$arraytoconvertinJson = getLatestMessages($raw_message, $_SESSION['id']);
 
-//$arraytoconvertinJson = rend_moi_une_occurence_par_conv($raw_message);
+$raw_message = $usr->get_all_messages_of_user_connected();
+$arraytoconvertinJson = getLatestMessages($raw_message, $usr->get_id());
+//print_r($raw_message);
+function  tri($array)
+{
 
+
+}
+
+$reda = tri($raw_message);
 // 3.       fonction deja coder
 $raw_user = $usr->get_all_details();
 

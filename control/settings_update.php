@@ -149,7 +149,7 @@ if (!empty($_POST['tags']))
   $string = trim($string);
   $array = explode(" ", $string);
   $usr->delete_all_tag();
-
+  $tagstocheckifexist = '';
   foreach ($array as $key => $value) {
     if ($array[$key] != '')
     {
