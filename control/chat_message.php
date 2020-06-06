@@ -5,40 +5,43 @@ $usr = unserialize($_SESSION['user']);
 
 if ($usr->is_id_exist($_POST['id']) == false)
 {
-  echo '{
+  echo 
+  '{
     "confirm" : false,
-    "alert" : {
+    "alert" : 
+    {
       "color" : "DarkRed",
-      "message" : "message Not sent the id requested doesnt exist"
+      "message" : "Message Not sent the user requested because he doesnt exist"
     }
   }';
   return;
 }
-
 else if(empty($_POST['content']))
 {
-  echo '{
+  echo 
+  '{
     "confirm" : false,
-    "alert" : {
+    "alert" : 
+    {
       "color" : "DarkRed",
-      "message" : "You cant send a message without character"
+      "message" : "You cant send an empty message"
     }
   }';
   return;
 }
-
-else {
-
-  $usr->send_message_to_id($_POST['id'], $_POST['content']);
+else 
+{
+  $usr->send_message_to_id($_POST['id'], strip_tags($_POST['content']));
   $usr->set_a_notif_for_new_message($_POST['id']);
 
-  echo '{
+  echo 
+  '{
     "confirm" : true,
-    "alert" : {
+    "alert" : 
+    {
       "color" : "DarkGreen",
       "message" : "message sent"
     }
   }';
+  return;
 }
-
-?>
