@@ -78,7 +78,7 @@ if (array_empty($row_usr_blocked) == true)
     $id_user_blocked = $row_usr_blocked[$key]['id_user_blocked'];
 
     foreach ($arrayso as $key => $value) {
-      if ($arrayso[$key]['id_user'] == $id_user_blocked)
+      if (isset($arrayso[$key]['id_user']) && $arrayso[$key]['id_user'] == $id_user_blocked)
           {
             $arrayso[$key] = NULL;
             array_values($row);
@@ -237,9 +237,10 @@ return;
 else if ($orientation_int['orientation'] == 1)
 {
 ///////////////////////////////
-
+// var_dump($array);
+// return;
 foreach ($array as $key => $value) {
-  if ($array[$key]['gender'] != $gender_int)
+  if (isset($array[$key]['gender']) && $array[$key]['gender'] != $gender_int)
       $arraytoreturn[$key] = $array[$key];}
 
 

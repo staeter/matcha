@@ -67,8 +67,8 @@ function get_distance_m($lat1, $lng1, $lat2, $lng2) {
   $longitude_id_co = $array_gps['longitude'];
 
 
-  $age_min = $_POST['ageMin'];
-  $age_max = $_POST['ageMax'];
+  $age_min = round($_POST['ageMin']);
+  $age_max = round($_POST['ageMax']);
 
   // je dois convertir age min & max en valeur AAAA-MM-JJ
   $date = date_create();
@@ -152,10 +152,10 @@ if (array_empty($row_usr_blocked) == true)
     $id_user_blocked = $row_usr_blocked[$key]['id_user_blocked'];
 
     foreach ($tab as $key => $value) {
-      if ($tab[$key]['id_user'] == $id_user_blocked)
+      if (isset($tab[$key]['id_user']) && $tab[$key]['id_user'] == $id_user_blocked)
           {
             $tab[$key] = NULL;
-            array_values($row);
+           // array_values($row);
             break;
         }
       }
