@@ -55,21 +55,6 @@ function get_distance($lat1, $lon1, $lat2, $lon2, $unit)
   }
 }
 
-function get_distance_m($lat1, $lng1, $lat2, $lng2) 
-{
-  $earth_radius = 6378137;   // Terre = sphère de 6378km de rayon
-  $rlo1 = deg2rad($lng1);
-  $rla1 = deg2rad($lat1);
-  $rlo2 = deg2rad($lng2);
-  $rla2 = deg2rad($lat2);
-  $dlo = ($rlo2 - $rlo1) / 2;
-  $dla = ($rla2 - $rla1) / 2;
-  $a = (sin($dla) * sin($dla)) + cos($rla1) * cos($rla2) * (sin($dlo) * sin($dlo));
-  $d = 2 * atan2(sqrt($a), sqrt(1 - $a));
-  return ($earth_radius * $d);
-}
-
-
 $array_gps = $usr->get_all_details();
 $latitude_id_co = $array_gps['latitude'];
 $longitude_id_co = $array_gps['longitude'];
@@ -154,7 +139,7 @@ foreach ($tab as $key => $value){
   if ($tab[$key]['popularity_score'] >= $popularity_min && $tab[$key]['popularity_score'] <= $popularity_max)
        $toclear[$key] = $tab[$key];}
 $tab = NULL;
-//var_dump($toclear);
+
 if (isset($toclear))
   $tab = array_values($toclear);
 
@@ -193,8 +178,7 @@ if (array_empty($tab) == false)
   return;
 }
 
-// $profile_viewed = $_POST['viewed'];
-// $profile_liked = $_POST['liked'];
+
 
 if ($_POST['tags'] != '[]')
 {
@@ -214,13 +198,23 @@ if ($_POST['tags'] != '[]')
     return_error("There is no profil who match with your query of Tags");
     return;
   }
-  // print_r($row_tag_multidim);
-  $i = 0;
-  while (isset($row_tag_multidim[0][$i]['id_user']))
+  
+  $j = 0;
+  $k = 0;
+  //print_r($row_tag_multidim);
+  while (isset($row_tag_multidim[$j]))
   {
-    $aisha[$i] =  $row_tag_multidim[0][$i]['id_user'];
-    $i++;
+    $i = 0;
+    while (isset($row_tag_multidim[$j][$i]['id_user']))
+    {
+      $aisha[$k] =  $row_tag_multidim[$j][$i]['id_user'];
+      $i++;
+      $k++;
+    }
+    $j++;
   }
+  $k = null;
+ // var_dump($aisha);
 
   foreach ($aisha as $k => $value) 
   {
@@ -240,209 +234,77 @@ if ($_POST['tags'] != '[]')
     return;
   }
   $tab = array_values($row_to_return);
-
-  //var_dump($row_to_return);
-  // $i = 0;
-  // while(isset($row_tag_multidim[$i]))
-  //   $i++;
-
-  // $raw_to_clean = $tab;
-  // $index_tri = 0;
-  // $fin_tri = 0;
-  // while ($raw_to_clean[$fin_tri])
-  //   $fin_tri++;
-
-  // $index_tab = 0;
-
-  // $start = 0;
-  // $index = 0;
-  // while ($start < $i)
-  // {
-  //   foreach ($row_tag_multidim[$start] as $key => $value) 
-  //     $tab_ret[$index++] = $row_tag_multidim[$start][$key];
-  //   $start++;
-  // }
-
-  // $tab = array();
-
-  // while($index_tri < $fin_tri)
-  // {
-  //   foreach ($raw_to_clean as $key => $value) {
-  //     if ($raw_to_clean[$key]['id_user'] == $tab_ret[$index_tab]['id_user'])
-  //       $tab_to_unify[$index_tab] = $raw_to_clean[$key];
-  //   }
-  //   $index_tab++;
-  //   $index_tri++;
-  // }
- 
-  // $tab = super_unique($tab_to_unify, 'id_user');
-
 }
-// if ($profile_viewed == 'True' && $profile_liked == 'False')
-// {
-//   //trier array 1 pour ne contenir que les raw contenant une occurence dans profile viewed
 
-//   $row_viewed = $usr->get_who_see_the_profil_of_user_connect();
+$profile_viewed = $_POST['viewed'];
 
+if ($profile_viewed == 'True')
+{
+  $row_viewed = $usr->get_who_see_the_profil_of_user_connect();
+  
+  if (array_empty($row_viewed) == false || empty($row_viewed))
+  {
+    return_error('Sorry, there his not yet a profil who saw ur profile');
+    return;
+  }
+  foreach ($row_viewed as $key2 => $value) 
+  {
+    foreach ($tab as $key => $value) 
+    {
+    if($row_viewed[$key2]['id_user_viewing'] == $tab[$key]['id_user'])
+      {      
+        $array_viewed[$key2] =  $tab[$key];
+        unset($tab[$key]);
+      }       
+    }  
+  }
+  
+  if(!isset($array_viewed) || array_empty($array_viewed) == false)
+  {
+    return_error('Sorry, there his nobody who saw your profile AND match your filters, try with less filters!');
+    return;
+  }
+  $tab = $array_viewed;
+}
 
-//   if (array_empty($row_viewed) == false || empty($row_viewed))
-//   {
-//     echo '{
-//       "data" : {
-//         "pageAmount" : 1,
-//         "elemAmount" : 1,
-//         "users" : []
-//       },
-//       "alert" : {
-//         "color" : "DarkRed",
-//         "message" : "There is no profil who view ur profil sry"
-//       }
-//     }';
-//     return;
-//   }
-//   foreach ($row_viewed as $key => $value) {
-//       $arrayviewed[$key] = $usr->get_all_details_of_this_id($row_viewed[$key]['id_user_viewing']);
-//   }
+$profile_liked = $_POST['liked'];
 
-//   $tab = array();
-//   foreach ($arrayviewed as $key => $value) {
-//     $tab[$key] = $arrayviewed[$key];
-//   }
-// }
-//   // print_r($tab);
-//   // return;
+if ($profile_liked == 'True')
+{
+  $row_like = $usr->get_who_liked_the_connected_user();
 
+  if (array_empty($row_like) == false || empty($row_like))
+  {
+    return_error('Sorry, there his nobody who like your profile !');
+    return;
+  }
 
-// if ($profile_liked == 'True' && $profile_viewed == 'False')
-// {
+  foreach ($tab as $key => $value) 
+  {
+    foreach ($row_like as $key1 => $value) 
+    {
+      if($row_like[$key1]['id_user_liked'] == $_SESSION['id'] && $row_like[$key1]['id_user_liking'] == $tab[$key]['id_user'])
+      {      
+        $array_like[$key] = $tab[$key];
+      } 
+    }
+  
+  }
 
-//   // je vais tenter une methode qui prend en compte le tri separement pour viewed & liked
-
-//   $row_like = $usr->get_who_liked_the_connected_user();
-
-//   // print_r($row_like);
-//   // return;
-
-//   if (array_empty($row_like) == false || empty($row_like))
-//   {
-//     echo '{
-//       "data" : {
-//         "pageAmount" : 1,
-//         "elemAmount" : 1,
-//         "users" : []
-//       },
-//       "alert" : {
-//         "color" : "DarkRed",
-//         "message" : "There is no profil who liked ur profile LOOSER"
-//       }
-//     }';
-//     return;
-//   }
-
-//   // je retourne cette liste
-//   $tab =array();
-
-// foreach ($row_like as $key => $value) {
-//   // code...
-//     $tab[$key] = $usr->get_all_details_of_this_id($row_like[$key]['id_user_liking']);
-//   }
+  if(!isset($array_like) || array_empty($array_like) == false)
+  {
+    return_error('Sorry, there his nobody who Like your profile AND match your filters, try with less filters!');
+    return;
+  }
+  $tab = $array_like;
+}
 
 
-//    $row_usr_blocked = $usr->get_all_users_blocked_by_user_connected();
-
-//   if (array_empty($row_usr_blocked) == true)
-//   {
-//     foreach ($row_usr_blocked as $key => $value) {
-//       // code...
-//       $id_user_blocked = $row_usr_blocked[$key]['id_user_blocked'];
-
-//       foreach ($tab as $key => $value) {
-//         if ($tab[$key]['id_user'] == $id_user_blocked)
-//             {
-//               $tab[$key] = NULL;
-//               array_values($row);
-//               break;
-//           }
-//         }
-//     }
-
-//   }
-//   $tab = array_values($tab);
-
-//   foreach ($tab as $key => $value) {
-//     if ($tab[$key] == NULL)
-//       {
-//           unset($tab[$key]);
-//       }
-//     }
-//     $tab = array_values($tab);
-
-//   if (array_empty($tab) == false || empty($tab))
-//     {
-//       echo '{
-//         "data" : {
-//           "pageAmount" : 1,
-//           "elemAmount" : 1,
-//           "users" : []
-//         },
-//         "alert" : {
-//           "color" : "DarkRed",
-//           "message" : "There is no profil who match ur query 1111114"
-//         }
-//       }';
-
-//       return;
-//     }
-// // var_dump($arraysosa);
-// // echo '<br>';
-// // return;
-// }
-
-// // print_r($tab);
-// // return;
-
-// if ($profile_liked == 'True' && $profile_viewed == 'True')
-// {
-//   echo '{
-//     "data" : {
-//       "pageAmount" : 1,
-//       "elemAmount" : 1,
-//       "users" : []
-//     },
-//     "alert" : {
-//       "color" : "DarkRed",
-//       "message" : "Select betwen viewed or liked, both isnt set yet(not asked by school)"
-//     }
-//   }';
-
-//   return;
-
-// }
-
-
-
-// if (empty($tab) || array_empty($tab) == false)
-//   {
-//     echo '{
-//       "data" : {
-//         "pageAmount" : 1,
-//         "elemAmount" : 1,
-//         "users" : []
-//       },
-//       "alert" : {
-//         "color" : "DarkRed",
-//         "message" : "There is no profil who match ur query sosa"
-//       }
-//     }';
-
-//     return;
-//   }
-
-// //////////// pour l instant je gere popularité & age min/max
-// ///////////////////////////////////////////////////////////////////////
-// ////////////////////// CE FOREACH RENVOI LE MSG JSON //////////////////
-// //
-
+if (array_empty($tab) == false)
+{
+    return_error('No profil match with your research try to select less filters');
+    return;
+}
 
 foreach ($tab as $key => $value)
 {
@@ -452,25 +314,22 @@ foreach ($tab as $key => $value)
     $path = $usr->get_picture_profil($id);
     $liked = $usr->get_if_liked($id);
 
-
     if ($liked == 1)
       $liked = 'true';
     else
       $liked = 'false';
 
-      $rowtag = $usr->get_tag_of_this_id($id);
-        $output =' "tags" : [';
-        $x = 0;
-        foreach ($rowtag as $key => $value) {
-          $x = 1;
-          $output .=  '"'.$rowtag[$key]['tag'].'"';
-          $output .= ', ';
-        }
-        if ($x == 1)
-          $output = substr($output, 0 , -2);
-        $output .= ']';
-
-
+    $rowtag = $usr->get_tag_of_this_id($id);
+      $output =' "tags" : [';
+      $x = 0;
+      foreach ($rowtag as $key => $value) {
+        $x = 1;
+        $output .=  '"'.$rowtag[$key]['tag'].'"';
+        $output .= ', ';
+      }
+      if ($x == 1)
+        $output = substr($output, 0 , -2);
+      $output .= ']';
 
     $string .= '{
       "id" : '.$id.',
