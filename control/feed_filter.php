@@ -196,61 +196,61 @@ if (array_empty($tab) == false)
 // $profile_viewed = $_POST['viewed'];
 // $profile_liked = $_POST['liked'];
 
-if ($_POST['tags'] != '[]')
-{
-  $string_tag = $_POST['tags'];
-  $string_tag = substr($string_tag, 1, -1);
+// if ($_POST['tags'] != '[]')
+// {
+//   $string_tag = $_POST['tags'];
+//   $string_tag = substr($string_tag, 1, -1);
 
-  $array_tag = explode(',', $string_tag);
-  foreach ($array_tag as $key => $value) {
-    $array_tag[$key] = substr($array_tag[$key], 1, -1);
-  }
+//   $array_tag = explode(',', $string_tag);
+//   foreach ($array_tag as $key => $value) {
+//     $array_tag[$key] = substr($array_tag[$key], 1, -1);
+//   }
 
-  foreach ($array_tag as $key => $value){
-    $row_tag_multidim[$key] = $usr->get_users_who_have_this_tag($array_tag[$key]);}
+//   foreach ($array_tag as $key => $value){
+//     $row_tag_multidim[$key] = $usr->get_users_who_have_this_tag($array_tag[$key]);}
 
-  if (array_empty($row_tag_multidim) == false)
-  {
-    return_error("There is no profil who match with your query of Tags");
-    return;
-  }
+//   if (array_empty($row_tag_multidim) == false)
+//   {
+//     return_error("There is no profil who match with your query of Tags");
+//     return;
+//   }
 
-  $i = 0;
-  while(isset($row_tag_multidim[$i]))
-    $i++;
+//   $i = 0;
+//   while(isset($row_tag_multidim[$i]))
+//     $i++;
 
-  $raw_to_clean = $tab;
-  $index_tri = 0;
-  $fin_tri = 0;
-  while ($raw_to_clean[$fin_tri])
-    $fin_tri++;
+//   $raw_to_clean = $tab;
+//   $index_tri = 0;
+//   $fin_tri = 0;
+//   while ($raw_to_clean[$fin_tri])
+//     $fin_tri++;
 
-  $index_tab = 0;
+//   $index_tab = 0;
 
-  $start = 0;
-  $index = 0;
-  while ($start < $i)
-  {
-    foreach ($row_tag_multidim[$start] as $key => $value) 
-      $tab_ret[$index++] = $row_tag_multidim[$start][$key];
-    $start++;
-  }
+//   $start = 0;
+//   $index = 0;
+//   while ($start < $i)
+//   {
+//     foreach ($row_tag_multidim[$start] as $key => $value) 
+//       $tab_ret[$index++] = $row_tag_multidim[$start][$key];
+//     $start++;
+//   }
 
-  $tab = array();
+//   $tab = array();
 
-  while($index_tri < $fin_tri)
-  {
-    foreach ($raw_to_clean as $key => $value) {
-      if ($raw_to_clean[$key]['id_user'] == $tab_ret[$index_tab]['id_user'])
-        $tab_to_unify[$index_tab] = $raw_to_clean[$key];
-    }
-    $index_tab++;
-    $index_tri++;
-  }
+//   while($index_tri < $fin_tri)
+//   {
+//     foreach ($raw_to_clean as $key => $value) {
+//       if ($raw_to_clean[$key]['id_user'] == $tab_ret[$index_tab]['id_user'])
+//         $tab_to_unify[$index_tab] = $raw_to_clean[$key];
+//     }
+//     $index_tab++;
+//     $index_tri++;
+//   }
  
-  $tab = super_unique($tab_to_unify, 'id_user');
+//   $tab = super_unique($tab_to_unify, 'id_user');
 
-}
+
 // if ($profile_viewed == 'True' && $profile_liked == 'False')
 // {
 //   //trier array 1 pour ne contenir que les raw contenant une occurence dans profile viewed
