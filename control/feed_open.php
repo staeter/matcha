@@ -243,9 +243,32 @@ foreach ($array as $key => $value) {
   if (isset($array[$key]['gender']) && $array[$key]['gender'] != $gender_int)
       $arraytoreturn[$key] = $array[$key];}
 
-
-      $tab = array_values($arraytoreturn);
-
+      if (isset($arraytoreturn))
+        $tab = array_values($arraytoreturn);
+      else
+        {
+          echo'{
+            "data": {
+              "filtersEdgeValues": {
+                "ageMin": 16,
+                "ageMax": 120,
+                "distanceMax": 20000,
+                "popularityMin": 0,
+                "popularityMax": 100
+              },
+              "pageContent": {
+                "pageAmount": 1,
+                "elemAmount": 1,
+                "users": []
+              }
+            },
+            "alert": {
+              "color": "DarkRed",
+              "message": "There is no user who can suggest to you, just make some search for find ur future love!"
+            }
+            }';
+              return;
+        }
       foreach ($tab as $key => $value) {
         if ($tab[$key] == NULL)
           {

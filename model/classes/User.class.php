@@ -499,7 +499,7 @@
 		$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
 		$this->_db->query($query, array(':idco' => $this->_id));
 		$row = $this->_db->fetch();
-		$int = 5 + $row['popularity_score'];
+		$int = 1 + $row['popularity_score'];
 		if ($int > 100)
 			$int = 100;
 
@@ -511,7 +511,7 @@
 		$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
 		$this->_db->query($query, array(':idco' => $id));
 		$row = $this->_db->fetch();
-		$int = 5 + $row['popularity_score'];
+		$int = 1 + $row['popularity_score'];
 		if ($int > 100)
 			$int = 100;
 
@@ -524,7 +524,7 @@
 		$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
 		$this->_db->query($query, array(':idco' => $this->_id));
 		$row = $this->_db->fetch();
-		$int = $row['popularity_score'] - 5;
+		$int = $row['popularity_score'] - 1;
 		if ($int < 0)
 			$int = 0;
 
@@ -537,7 +537,7 @@
 		$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
 		$this->_db->query($query, array(':idco' => $id));
 		$row = $this->_db->fetch();
-		$int = $row['popularity_score'] - 5;
+		$int = $row['popularity_score'] - 1;
 		if ($int < 0)
 			$int = 0;
 
