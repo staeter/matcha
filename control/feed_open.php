@@ -12,11 +12,12 @@ function array_empty($a)
     return true;
 }
 
-if ($row_test['biography'] == NULL)
+function return_error($error)
 {
-  echo'{
-"data": {
-  "filtersEdgeValues": {
+  echo
+  '{
+    "data": {
+    "filtersEdgeValues": {
     "ageMin": 16,
     "ageMax": 120,
     "distanceMax": 20000,
@@ -28,16 +29,18 @@ if ($row_test['biography'] == NULL)
     "elemAmount": 1,
     "users": []
   }
-},
-"alert": {
+  },
+  "alert": {
   "color": "DarkRed",
-  "message": "Go set some information of ur account and come back to find ur future love !"
+  "message": "'. $error .'"
+  }
+  }';
 }
-}';
-  return;
+if ($row_test['biography'] == NULL)
+{
+  return_error("Go set some information of ur account and come back to find ur future love ! (like biography)");
 }
 $row = $usr->get_all_details_of_all_id();
-
 $row_usr_blocked = $usr->get_all_users_blocked_by_user_connected();
 
 $string = '{
@@ -54,264 +57,83 @@ $string = '{
       "elemAmount" : 1,
       "users" : [';
 
-      // ici j enleve l occurence de l user connecté  //
-
-foreach ($row as $key => $value) {
+// ici j enleve l occurence de l user connecté  //
+foreach ($row as $key => $value)
   if ($row[$key]['id_user'] != $_SESSION['id'])
-      $arrayxx[$key] = $row[$key];}
+      $arrayxx[$key] = $row[$key];
 
-foreach ($arrayxx as $key => $value) {
+// ici j enleve les users sans bio
+foreach ($arrayxx as $key => $value)
   if ($arrayxx[$key]['biography'] != NULL)
-      $arrayso[$key] = $arrayxx[$key];}
-// la j ai trier tout les users sans l user connecté & sans les users qui nont pas de bio
+      $arrayso[$key] = $arrayxx[$key];
 
-// foreach ($row_usr_blocked as $keyx => $value) {
-//     foreach ($arrayso as $key => $value) {
-//         if($row_usr_blocked[$keyx]['id_user_blocked'] != $arrayso[$key]['id_user'])
-//           $array[$key] = $arrayso[$key];
-//     }
-// }
 if (array_empty($row_usr_blocked) == true)
 {
-  foreach ($row_usr_blocked as $key => $value) {
-    // code...
+  foreach ($row_usr_blocked as $key => $value) 
+  {
     $id_user_blocked = $row_usr_blocked[$key]['id_user_blocked'];
-
-    foreach ($arrayso as $key => $value) {
+    foreach ($arrayso as $key => $value) 
+    {
       if (isset($arrayso[$key]['id_user']) && $arrayso[$key]['id_user'] == $id_user_blocked)
-          {
-            $arrayso[$key] = NULL;
-            array_values($row);
-            break;
-        }
-      }
+        {
+          $arrayso[$key] = NULL;
+          array_values($row);
+          break;
+       }
+    }
   }
-
 }
-//print_r($row_usr_blocked);
-
-// j enleve mtn les users bloqué
-// print_r($arrayso);
-// return;
-//
-// if (array_empty($arrayso) == FALSE)
-// {
-//     echo'{
-// 	"data": {
-// 		"filtersEdgeValues": {
-// 			"ageMin": 16,
-// 			"ageMax": 120,
-// 			"distanceMax": 100,
-// 			"popularityMin": 0,
-// 			"popularityMax": 100
-// 		},
-// 		"pageContent": {
-// 			"pageAmount": 1,
-// 			"elemAmount": 1,
-// 			"users": []
-// 		}
-// 	},
-// 	"alert": {
-// 		"color": "DarkRed",
-// 		"message": "There isnt enoff users on our database come back later 2222!"
-// 	}
-// }';
-//     return;
-// }
-// ici je devrais faire 3 condition de retour de
-// message selon l orientation de l $usr
-
 
 $orientation_int = $usr->get_sexuality_orientation();
-// print_r($orientation_int);
-// return;
 $gender = $usr->get_gender();
 
-if ($gender['gender'] == 1)
+if ($gender['gender'] == 1)//men
   $gender_int = 1;
-  //men
 else
   $gender_int = 0;
-  //women
-
-  // if (array_empty($arrayso) == FALSE)
-  // {
-  //     echo'{
-  // 	"data": {
-  // 		"filtersEdgeValues": {
-  // 			"ageMin": 16,
-  // 			"ageMax": 120,
-  // 			"distanceMax": 100,
-  // 			"popularityMin": 0,
-  // 			"popularityMax": 100
-  // 		},
-  // 		"pageContent": {
-  // 			"pageAmount": 1,
-  // 			"elemAmount": 1,
-  // 			"users": []
-  // 		}
-  // 	},
-  // 	"alert": {
-  // 		"color": "DarkRed",
-  // 		"message": "There isnt enoff users on our database come back later 333 !"
-  // 	}
-  // }';
-  //     return;
-  // }
-
-foreach ($arrayso as $key => $value) {
-    $array[$key] = $arrayso[$key];
-}
-
 
 if ($orientation_int['orientation'] == 0)
 {
-///////////////////////////////
-
-$tab = array_values($array);
-
-foreach ($tab as $key => $value) {
-  if ($tab[$key] == NULL)
-    {
-        unset($tab[$key]);
-    }
+  //if bisexual
+  foreach ($arrayso as $key => $value)
+  {
+    if (isset($arrayso[$key]['gender']) &&  ($arrayso[$key]['orientation'] == 0 || ($arrayso[$key]['gender'] != $gender_int) && $arrayso[$key]['orientation'] == 1))
+      $arrayto[$key] = $arrayso[$key];
   }
-  $tab = array_values($tab);
-  // print_r($tab);
-  // return;
-  //
+ 
+  $tab = array_values($arrayto);
 
+  if (array_empty($tab) == false)
+  {
+    return_error("There is no user who can suggest to you, just make some search for find ur future love!");
+    return;
+  }
 
-foreach ($tab as $key => $value)
-{
-  $id =  $tab[$key]['id_user'];
-  $pseudo = $tab[$key]['pseudo'];
-
-    $path = $usr->get_picture_profil($id);
+  foreach ($tab as $key => $value)
+  {
     
-    //echo '<br>id :'. $id .'<br>' . $path['path'] . '<br>';
-    $liked = $usr->get_if_liked($id);
-    if ($liked == 1)
-      $liked = 'true';
-    else
-      $liked = 'false';
-
-    $rowtag = $usr->get_tag_of_this_id($id);
-      $output =' "tags" : [';
-      $x = 0;
-      foreach ($rowtag as $key => $value) {
-        $x = 1;
-        $output .=  '"'.$rowtag[$key]['tag'].'"';
-        $output .= ', ';
-      }
-      if ($x == 1)
-        $output = substr($output, 0 , -2);
-      $output .= ']';
-
-
-    $string .= '{
-      "id" : '.$id.',
-      "pseudo" : "'.$pseudo.'",
-      "picture" : "'.$path['path'].'",
-      '.$output.',
-      "liked" : '.$liked.'
-    },';
-}
-//echo $string;
-
-//echo 'br';
-//return;
-$string = substr($string, 0, -1);
-$string .= ']
-}
-}
-}';
-echo $string;
-return;
-}
-
-
-// heterosexuel
-// du coup je renvoi le sex different
-// ensuite je mettrais une tranche d age de 5 ans d ecart
-else if ($orientation_int['orientation'] == 1)
-{
-///////////////////////////////
-// var_dump($array);
-// return;
-foreach ($array as $key => $value) {
-  if (isset($array[$key]['gender']) && $array[$key]['gender'] != $gender_int)
-      $arraytoreturn[$key] = $array[$key];}
-
-      if (isset($arraytoreturn))
-        $tab = array_values($arraytoreturn);
-      else
-        {
-          echo'{
-            "data": {
-              "filtersEdgeValues": {
-                "ageMin": 16,
-                "ageMax": 120,
-                "distanceMax": 20000,
-                "popularityMin": 0,
-                "popularityMax": 100
-              },
-              "pageContent": {
-                "pageAmount": 1,
-                "elemAmount": 1,
-                "users": []
-              }
-            },
-            "alert": {
-              "color": "DarkRed",
-              "message": "There is no user who can suggest to you, just make some search for find ur future love!"
-            }
-            }';
-              return;
-        }
-      foreach ($tab as $key => $value) {
-        if ($tab[$key] == NULL)
-          {
-              unset($tab[$key]);
-          }
-        }
-        $tab = array_values($tab);
-        // print_r($tab);
-        // return;
-
-
-
-foreach ($tab as $key => $value)
-{
     $id =  $tab[$key]['id_user'];
     $pseudo = $tab[$key]['pseudo'];
-
-    // echo 'sosa';
-    // return;
-
-    // echo $id . ', ' . $pseudo . '<br><br>';
-    //
-    // return;
     $path = $usr->get_picture_profil($id);
+   
     $liked = $usr->get_if_liked($id);
     if ($liked == 1)
       $liked = 'true';
     else
       $liked = 'false';
 
-
     $rowtag = $usr->get_tag_of_this_id($id);
-      $output =' "tags" : [';
-      $x = 0;
-      foreach ($rowtag as $key => $value) {
-        $x = 1;
-        $output .=  '"'.$rowtag[$key]['tag'].'"';
-        $output .= ', ';
-      }
-      if ($x == 1)
-        $output = substr($output, 0 , -2);
-      $output .= ']';
-
+    $output =' "tags" : [';
+    $x = 0;
+    foreach ($rowtag as $key => $value) 
+    {
+      $x = 1;
+      $output .=  '"'.$rowtag[$key]['tag'].'"';
+      $output .= ', ';
+    }
+    if ($x == 1)
+      $output = substr($output, 0 , -2);
+    $output .= ']';
 
     $string .= '{
       "id" : '.$id.',
@@ -320,65 +142,55 @@ foreach ($tab as $key => $value)
       '.$output.',
       "liked" : '.$liked.'
     },';
-}
-$string = substr($string, 0, -1);
-$string .= ']
-}
-},
-"alert" : {
-"color" : "DarkGreen",
-"message" : "There is a list of users we suggest you !"
-}
-}';
-
-echo $string;
-return;
-}
-
-//homosexual
-else if ($orientation_int['orientation'] == 2)
-{
-///////////////////////////////
-
-foreach ($array as $key => $value)
-{
-  if ($array[$key]['gender'] == $gender_int)
-      {
-        $arrayto[$key] = $array[$key];
-      }
-}
-
-
-$tab = array_values($arrayto);
-
-foreach ($tab as $key => $value) {
-  if ($tab[$key] == NULL)
-    {
-        unset($tab[$key]);
-
-    }
   }
-  $tab = array_values($tab);
+  
+  $string = substr($string, 0, -1);
+  $string .= ']
+  }
+  },
+  "alert": {
+		"color": "DarkGreen",
+		"message": "There is a list of users we suggest you "
+	}
+  }';
 
+  echo $string;
+  return;
+}
 
-
-foreach ($tab as $key => $value)
+else if ($orientation_int['orientation'] == 1)
 {
-    $id_user = $tab[$key]['id_user'];
-    $pseudo = $tab[$key]['pseudo'];
+  //if hetero
+  foreach ($arrayso as $key => $value) 
+  {
+    if (isset($arrayso[$key]['gender']) && $arrayso[$key]['gender'] != $gender_int && ($arrayso[$key]['orientation'] == 1 || $arrayso[$key]['orientation'] == 0))
+      $arraytoreturn[$key] = $arrayso[$key];}
 
-  //  echo $id_user. ', ' . $pseudo . '<br><br>';
-    $path = $usr->get_picture_profil($tab[$key]['id_user']);
-    $liked = $usr->get_if_liked($tab[$key]['id_user']);
-    if ($liked == 1)
-      $liked = 'true';
-    else
-      $liked = 'false';
+    if (isset($arraytoreturn))
+      $tab = array_values($arraytoreturn);
+    
+    if (array_empty($tab) == false)
+    {
+      return_error("There is no user who can suggest to you, just make some search for find ur future love!");
+      return;
+    }
 
-    $rowtag = $usr->get_tag_of_this_id($tab[$key]['id_user']);
+    foreach ($tab as $key => $value)
+    {
+      $id =  $tab[$key]['id_user'];
+      $pseudo = $tab[$key]['pseudo'];
+      $path = $usr->get_picture_profil($id);
+      $liked = $usr->get_if_liked($id);
+      if ($liked == 1)
+        $liked = 'true';
+      else
+        $liked = 'false';
+
+      $rowtag = $usr->get_tag_of_this_id($id);
       $output =' "tags" : [';
       $x = 0;
-      foreach ($rowtag as $key => $value) {
+      foreach ($rowtag as $key => $value)
+      {
         $x = 1;
         $output .=  '"'.$rowtag[$key]['tag'].'"';
         $output .= ', ';
@@ -387,134 +199,95 @@ foreach ($tab as $key => $value)
         $output = substr($output, 0 , -2);
       $output .= ']';
 
-
     $string .= '{
-      "id" : '.$id_user.',
+      "id" : '.$id.',
       "pseudo" : "'.$pseudo.'",
       "picture" : "'.$path['path'].'",
       '.$output.',
       "liked" : '.$liked.'
     },';
-}
-$string = substr($string, 0, -1);
-$string .= ']
-}
-}
-}';
-echo $string;
-return;
-}
-else {
-  echo'{
-	"data": {
-		"filtersEdgeValues": {
-			"ageMin": 16,
-			"ageMax": 120,
-			"distanceMax": 20000,
-			"popularityMin": 0,
-			"popularityMax": 100
-		},
-		"pageContent": {
-			"pageAmount": 1,
-			"elemAmount": 1,
-			"users": []
-		}
-	},
-	"alert": {
-		"color": "DarkRed",
-		"message": "There is no profil we can suggest u because ur orientation isnt set"
-	}
-}';
+  }
+  $string = substr($string, 0, -1);
+  $string .= ']
+  }
+  },
+  "alert" : {
+  "color" : "DarkGreen",
+  "message" : "There is a list of users we suggest you !"
+  }
+  }';
+
+  echo $string;
   return;
 }
-//END OF PROGRAMMMMMM
-
-
-
-
-
-
-// echo '{
-//   "data" : {
-//     "filtersEdgeValues" : {
-//       "ageMin" : 16,
-//       "ageMax" : 120,
-//       "distanceMax" : 100,
-//       "popularityMin" : 0,
-//       "popularityMax" : 100
-//     },
-//     "pageContent" : {
-//       "pageAmount" : 1,
-//       "elemAmount" : 1,
-//       "users" : [
-//         {
-//           "id" : '.$row[0]['id_user'].',
-//           "pseudo" : "'.$row[0]['pseudo'].'",
-//           "picture" : "/Pictures/addpic.png",
-//           "tags" : ["geek ", "foot"],
-//           "liked" : false
-//         },
-//         {
-//           "id" : '.$row[1]['id_user'].',
-//           "pseudo" : "'.$row[1]['pseudo'].'",
-//           "picture" : "/Pictures/addpic.png",
-//           "tags" : ["boty ", "makup"],
-//           "liked" : false
-//         },
-//         {
-//           "id" : '.$row[2]['id_user'].',
-//           "pseudo" : "'.$row[2]['pseudo'].'",
-//           "picture" : "/Pictures/addpic.png",
-//           "tags" : ["tatoo ", "beer"],
-//           "liked" : false
-//         },
-//         {
-//           "id" : '.$row[3]['id_user'].',
-//           "pseudo" : "'.$row[3]['pseudo'].'",
-//           "picture" : "/Pictures/addpic.png",
-//           "tags" : ["geek ", "fun"],
-//           "liked" : true
-//         }
-//       ]
-//     }
-//   },
-//   "alert" : {
-//     "color" : "DarkBlue",
-//     "message" : "feed open call"
-//   }
-// }';
-//
-/*
+//if homosexual
+else if ($orientation_int['orientation'] == 2)
 {
-  -- mamybe "data" : {
-    "filtersEdgeValues" : {
-      "ageMin" : 12,
-      "ageMax" : 12,
-      "distanceMax" : 12,
-      "popularityMin" : 12,
-      "popularityMax" : 12
-    },
-    "pageContent" : {
-      "pageAmount" : 12,
-      "elemAmount" : 12,
-      "users" : [ // NB: only fully completed users accounts
-        {
-          "id" : 12,
-          "pseudo" : "myPseudo",
-          "picture" : "/data/name.png",
-          "tags" : ["#tag", ...],
-          "liked" : true or false
-        },
-        ...
-      ]
+  foreach ($arrayso as $key => $value)
+  {
+    if (isset($arrayso[$key]['gender']) && $arrayso[$key]['gender'] == $gender_int && ($arrayso[$key]['orientation'] == 2 || $arrayso[$key]['orientation'] == 0))
+    {
+      $arrayto[$key] = $arrayso[$key];
     }
-  },
-  -- mamybe "alert" : {
-    "color" : "DarkRed",
-    "message" : "message for the user"
   }
-}
-*/
+  if (isset($arrayto))
+    $tab = array_values($arrayto);
+  
+  if (array_empty($tab) == false)
+  {
+    return_error("There is no user who can suggest to you, just make some search for find ur future love!");
+    return;
+  }
 
-//ni: form not working for some reason
-?>
+  foreach ($tab as $key => $value)
+  {
+      $id_user = $tab[$key]['id_user'];
+      $pseudo = $tab[$key]['pseudo'];
+
+      $path = $usr->get_picture_profil($tab[$key]['id_user']);
+      $liked = $usr->get_if_liked($tab[$key]['id_user']);
+      if ($liked == 1)
+        $liked = 'true';
+      else
+        $liked = 'false';
+
+      $rowtag = $usr->get_tag_of_this_id($tab[$key]['id_user']);
+      $output =' "tags" : [';
+      $x = 0;
+
+      foreach ($rowtag as $key => $value) 
+      {
+        $x = 1;
+        $output .=  '"'.$rowtag[$key]['tag'].'"';
+        $output .= ', ';
+      }
+
+      if ($x == 1)
+        $output = substr($output, 0 , -2);
+      $output .= ']';
+
+      $string .= '{
+        "id" : '.$id_user.',
+        "pseudo" : "'.$pseudo.'",
+        "picture" : "'.$path['path'].'",
+        '.$output.',
+        "liked" : '.$liked.'
+      },';
+  }
+  $string = substr($string, 0, -1);
+  $string .= ']
+  }
+  },
+  "alert": {
+		"color": "DarkGreen",
+		"message": "There is a list of users we suggest you "
+	}
+  }';
+  echo $string;
+  return;
+}
+else 
+{
+  return_error("There is no profil we can suggest u because ur orientation isnt set");
+  return;
+}

@@ -128,10 +128,10 @@ if (!empty($_POST['orientation']))
   $usr->set_sexuality_orientation($orientatation);
 }
 
-if (!empty($_POST['biography']))
+if (isset($_POST['biography']))
 {
   $string = $_POST['biography'];
-  $string = str_replace("\n", " ", $string);
+  $string = str_replace("\n", "", strip_tags($string));
   $usr->set_biography($string);
 }
 
