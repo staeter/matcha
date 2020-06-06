@@ -546,54 +546,44 @@
 	}
 
 	public function set_a_like($idli)
+	{
+		// id user liking
+		// id user liked
+		// like 1 or 0
+		
+		$query = ('SELECT `liked` FROM `like` WHERE `id_user_liking` = :idliking AND `id_user_liked` = :idliked');
+		$this->_db->query($query, array(':idliking' => $this->get_id(), 'idliked' => $idli));
+		$row = $this->_db->fetch();
+
+
+		if (isset($row['liked']))
 		{
-			// id user liking
-			// id user liked
-			// like 1 or 0
-			// time current time stamp fera le job
-
-
-			$query = ('SELECT `liked` FROM `like` WHERE `id_user_liking` = :idliking AND `id_user_liked` = :idliked');
-			$this->_db->query($query, array(':idliking' => $this->get_id(), 'idliked' => $idli));
-			$row = $this->_db->fetch();
-
-
-			if (isset($row['liked']))
+			if ($row['liked'] == 1)
 			{
-						if ($row['liked'] == 1)
-						{
-
-								// je unlike ici
-								$value = 0;
-								$query = ('UPDATE `like`  SET `liked` = :likkk WHERE `id_user_liking` = :idliking AND `id_user_liked` = :idliked');
-								$this->_db->query($query, array(':likkk' => $value, ':idliking' => $this->get_id(), 'idliked' => $idli));
-								//$row = $this->_db->fetch();
-							//	$this->_db->execute();
-							return(1);
-							}
-						else {
-
-								// je like ici
-								$value = 1;
-								$query = ('UPDATE `like` SET `liked` = :likkk WHERE  `id_user_liking` = :idliking AND `id_user_liked` = :idliked ');
-								$this->_db->query($query, array(':likkk' => $value, ':idliking' => $this->get_id(), 'idliked' => $idli));
-								//$this->_db->execute();
-							//	$row = $this->_db->fetch();
-							return(2);
-					}
+				// je unlike ici quand il y a deja eu interaction
+				$value = 0;
+				$query = ('UPDATE `like`  SET `liked` = :likkk WHERE `id_user_liking` = :idliking AND `id_user_liked` = :idliked');
+				$this->_db->query($query, array(':likkk' => $value, ':idliking' => $this->get_id(), 'idliked' => $idli));
+				return(1);
+			}
+			else 
+			{
+				// je like ici quand il y a deja eu interaction
+				$value = 1;
+				$query = ('UPDATE `like` SET `liked` = :likkk WHERE  `id_user_liking` = :idliking AND `id_user_liked` = :idliked ');
+				$this->_db->query($query, array(':likkk' => $value, ':idliking' => $this->get_id(), 'idliked' => $idli));
+				return(2);
+			}
 		}
-		else {
-							// je like + j insere les donnes du nouveau like
+		else 
+		{
+			// je like + j insere les donnes du nouveau like
 			$value = 1;
 			$query = ('INSERT INTO `like` SET `id_user_liking` = :iduserlliking, `id_user_liked` = :iduserliked, `liked` = :likeornot; ');
 			$this->_db->query($query, array(':iduserlliking' => $this->_id, ':iduserliked' => $idli, ':likeornot' => $value));
 			return(3);
-			// je dois permettre qu un seul like
 		}
-
-
-			//comme ca je like unlike avec la mm fonction
-		}
+	}
 
 		/*
 		** -------------------- Message --------------------
@@ -777,22 +767,22 @@
 		public function set_a_notif_string($value, $message)
 		{
 			$idconcat = $this->_pseudo . $message;
-			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+			$query = ('INSERT INTO `notifications` SET `id_user` = :val, `notification` = :id');
+			$this->_db->query($query, array(':val' => $value, ':id' => $idconcat));
 		}
 
 		public function set_a_notif_for_like($value, $message)
 		{
 			$idconcat = $this->_pseudo . $message;
-			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+			$query = ('INSERT INTO `notifications` SET `id_user` = :val, `notification` = :id');
+			$this->_db->query($query, array(':val' => $value, ':id' => $idconcat));
 		}
 
 		public function set_a_notif_for_new_message($value)
 		{
 			$idconcat = $this->_pseudo . ' send u a message !';
-			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+			$query = ('INSERT INTO `notifications` SET `id_user` = :val, `notification` = :id');
+			$this->_db->query($query, array(':val' => $value, ':id' => $idconcat));
 		}
 
 		public function set_a_notif_for_match($value)
@@ -805,8 +795,8 @@
 
 			$row = $this->get_all_details_of_this_id($value);
 			$idconcat1 = 'U got a match with ' . $row['pseudo'];
-			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $this->_id, ':id' => $idconcat1));
+			$query = ('INSERT INTO `notifications` SET `id_user` = :val, `notification` = :id');
+			$this->_db->query($query, array(':val' => $this->_id, ':id' => $idconcat1));
 		}
 
 		public function set_a_notif_for_unmatch($value)
@@ -819,15 +809,15 @@
 
 			$row = $this->get_all_details_of_this_id($value);
 			$idconcat1 = 'U lost a match with ' . $row['pseudo'];
-			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $this->_id, ':id' => $idconcat1));
+			$query = ('INSERT INTO `notifications` SET `id_user` = :val, `notification` = :id');
+			$this->_db->query($query, array(':val' => $this->_id, ':id' => $idconcat1));
 		}
 
 		public function set_a_notif_for_profile_viewed($value)
 		{
 			$idconcat = $this->_pseudo . ' visit ur profile !';
-			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+			$query = ('INSERT INTO `notifications` SET `id_user` = :val, `notification` = :id');
+			$this->_db->query($query, array(':val' => $value, ':id' => $idconcat));
 		}
 
 		public function set_all_notif_readed()
