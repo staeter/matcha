@@ -12,4 +12,5 @@ Matcha is a dating site using an Elm, pure PHP, MySql stack. STTR13 learned the 
 5. Make sur your apache port is set on 8080 (needed !)
 7. On you browser, go to localhost:8080/config/setup.php to create the database
 8. You can seed the db with fake profile, go to localhost:8080/config/hydrate.php each reload will add 15 users.
-9. Go to localhost:8080, you will be redirect to home, then make an account confirm it with mail or delete the entry in db on table account_verification_key and Enjoy ! 
+9. Go to localhost:8080, you will be redirect to home, then make an account confirm it with mail or delete the entry in db on table account_verification_key.
+10. Enjoy !

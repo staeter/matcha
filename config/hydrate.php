@@ -48,7 +48,7 @@
         $bindVal[':ge'.$id] = rand(0, 1);
         $bindVal[':or'.$id] = rand(0, 2);
         $bindVal[':pw'.$id] = hash_password($bindVal[':em'.$id]);
-        $bindVal[':bio'.$id] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+        $bindVal[':bio'.$id] = "Je suis un faux compte ^^";
         $bindVal[':birth'.$id] = date("Y-m-d", rand(1, time()));
         $bindVal[':lo'.$id] = rand(-180000000, 180000000) / 1000000;
         $bindVal[':la'.$id] = rand(-90000000, 90000000) / 1000000;
