@@ -2399,7 +2399,11 @@ viewNotif notif =
 viewHeader : Route -> LModel -> Html Msg
 viewHeader route lmodel =
   div [ class "header" ]
-      [ div [class "header-right" ]
+      [ div [class "header-left" ]
+            [ a [ href "/" ]
+                [ Html.text "HYPERTUBE" ]
+            ]
+      , div [class "header-right" ]
             [ a [ href "/"
                 , if route == Home
                   then class "active"

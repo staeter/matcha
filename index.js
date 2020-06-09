@@ -24998,6 +24998,25 @@ var $author$project$Main$viewHeader = F2(
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
+							$elm$html$Html$Attributes$class('header-left')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$href('/')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('HYPERTUBE')
+								]))
+						])),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
 							$elm$html$Html$Attributes$class('header-right')
 						]),
 					_List_fromArray(
