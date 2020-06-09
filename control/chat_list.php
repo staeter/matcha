@@ -49,6 +49,8 @@ foreach ($arraytoconvertinJson as $key => $value)
   $id_pic = $arraytoconvertinJson[$key]['id_user_receiving'];
   
   $row = $usr->get_picture_profil($id_pic);
+  if ($row == NULL)
+    $row['path'] = '/Pictures/def.jpg';
 
   if ($ret['is_loged'] == 1)
     $stringlastlog = "Now";
@@ -57,6 +59,7 @@ foreach ($arraytoconvertinJson as $key => $value)
   
   $test = $usr->get_last_messages_between_two_user($arraytoconvertinJson[$key]['id_user_receiving']);
   $lastmsg = $test[0]['content'];
+  
 
   if ($test[0]['msg_read'] != 0)
     $unread = 'false';

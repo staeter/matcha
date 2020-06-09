@@ -73,11 +73,12 @@ $age_max = date_format($date, 'Y-m-d');
 
 $row_to_clear = $usr->get_all_details_of_all_id_between_age_min_max($age_max, $age_min);
 
-if (array_empty($row_to_clear) == false)
+if (!isset ($row_to_clear) || array_empty($row_to_clear) == false)
 {
-  return_error("There is no profil who match with your query of Age min/max");
+  return_error("There is no profil except you wtf ? Recommend us for have more users^^!");
   return;
 }
+
 
 $string = '{
   "data" : {
@@ -92,9 +93,10 @@ foreach ($row_to_clear as $key => $value)
   if ($row_to_clear[$key]['id_user'] != $_SESSION['id'] && isset($row_to_clear[$key]['biography']))
       $array[$key] = $row_to_clear[$key];
 }
+
 if (isset($array))
   $tab = array_values($array);
-if (array_empty($tab) == false)
+if (!isset ($tab) ||array_empty($tab) == false)
 {
   return_error("There is no profil except you wtf ? Recommend us for have more users^^");
   return;
@@ -330,6 +332,9 @@ foreach ($tab as $key => $value)
       if ($x == 1)
         $output = substr($output, 0 , -2);
       $output .= ']';
+
+      if ($path == NULL)
+      $path['path'] = '/Pictures/def.jpg';
 
     $string .= '{
       "id" : '.$id.',

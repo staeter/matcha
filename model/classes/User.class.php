@@ -680,9 +680,9 @@
 			$query = 'SELECT * FROM `picture` WHERE `id_user` = :id AND `is_profile-picture` = :bool';
 			$this->_db->query($query, array(':id' => $id, ':bool' => 1));
 			$row = $this->_db->fetch();
-			if ($row === false) {
-				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
-			}
+			// if ($row === false) {
+			// 	throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			// }
 			 return $row;
 		}
 

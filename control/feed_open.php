@@ -2,7 +2,7 @@
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);
-$row_test = $usr->get_all_details_of_this_id($usr->get_id());
+$row_test = $usr->get_all_details_of_this_id($_SESSION['id']);
 
 function array_empty($a)
 {
@@ -39,6 +39,7 @@ function return_error($error)
 if ($row_test['biography'] == NULL)
 {
   return_error("Go set some information of ur account and come back to find ur future love ! (like biography)");
+  return;
 }
 $row = $usr->get_all_details_of_all_id();
 $row_usr_blocked = $usr->get_all_users_blocked_by_user_connected();
@@ -62,10 +63,22 @@ foreach ($row as $key => $value)
   if ($row[$key]['id_user'] != $_SESSION['id'])
       $arrayxx[$key] = $row[$key];
 
-// ici j enleve les users sans bio
+if (!isset ($arrayxx) || array_empty($arrayxx) == false)
+{
+  return_error("There is no profil except you wtf ? Recommend us for have more users^^!");
+  return;
+}
+    
+      // ici j enleve les users sans bio
 foreach ($arrayxx as $key => $value)
   if ($arrayxx[$key]['biography'] != NULL)
       $arrayso[$key] = $arrayxx[$key];
+      
+if (!isset ($arrayxx) || array_empty($arrayxx) == false)
+{
+  return_error("There is no profil except you wtf ? Recommend us for have more users^^!");
+  return;
+}
 
 if (array_empty($row_usr_blocked) == true)
 {
@@ -114,8 +127,12 @@ if ($orientation_int['orientation'] == 0)
     
     $id =  $tab[$key]['id_user'];
     $pseudo = $tab[$key]['pseudo'];
+    
     $path = $usr->get_picture_profil($id);
    
+    if (!isset($path['path']))
+      $path['path'] = '';
+
     $liked = $usr->get_if_liked($id);
     if ($liked == 1)
       $liked = 'true';
@@ -180,6 +197,10 @@ else if ($orientation_int['orientation'] == 1)
       $id =  $tab[$key]['id_user'];
       $pseudo = $tab[$key]['pseudo'];
       $path = $usr->get_picture_profil($id);
+      
+      if ($path == NULL)
+        $path['path'] = '/Pictures/def.jpg';
+      
       $liked = $usr->get_if_liked($id);
       if ($liked == 1)
         $liked = 'true';
@@ -198,6 +219,8 @@ else if ($orientation_int['orientation'] == 1)
       if ($x == 1)
         $output = substr($output, 0 , -2);
       $output .= ']';
+
+      
 
     $string .= '{
       "id" : '.$id.',

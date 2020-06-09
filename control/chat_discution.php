@@ -37,6 +37,8 @@ if (empty($row))
 
 $row2 = $usr->get_all_details_of_this_id($_POST['id']);
 $row3 = $usr->get_picture_profil($_POST['id']);
+if ($row3 == NULL)
+  $row3['path'] = '/Pictures/def.jpg';
 
 if ($row2['is_loged'] == 1)
   $stringlastlog = "Now";
