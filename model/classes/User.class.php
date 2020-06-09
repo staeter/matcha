@@ -11,8 +11,7 @@
 
 
 
-		// quand on cree l objet user; l user est connecte via l objet
-		// ajouter certain parma SI y on utilise le meme souvent ex gender
+	
 		/*
 		** -------------------- Serialize --------------------
 		*/
@@ -351,11 +350,11 @@
 			}
 		}
 
-	public function set_location($pref_loc, $longitude, $latitude)
-	{
-			$query = 'UPDATE `user` SET `longitude` = :longitude,`latitude` = :latitude,`pref_localisation`= :pref_loc WHERE id_user = :idco';
-			$this->_db->query($query, array(':longitude' => $longitude, ':latitude' => $latitude, ':pref_loc' => $pref_loc, ':idco' => $this->_id));
-	}
+		public function set_location($pref_loc, $longitude, $latitude)
+		{
+				$query = 'UPDATE `user` SET `longitude` = :longitude,`latitude` = :latitude,`pref_localisation`= :pref_loc WHERE id_user = :idco';
+				$this->_db->query($query, array(':longitude' => $longitude, ':latitude' => $latitude, ':pref_loc' => $pref_loc, ':idco' => $this->_id));
+		}
 
 		public function  set_gender($bool)
 		{
@@ -437,122 +436,117 @@
 			// id user liked
 			// like 1 or 0
 			// time current time stamp fera le job
-
-
 			$query = ('SELECT `liked` FROM `like` WHERE `id_user_liking` = :idliking AND `id_user_liked` = :idliked');
 			$this->_db->query($query, array(':idliking' => $this->get_id(), 'idliked' => $idli));
 			$row = $this->_db->fetch();
 
 			if (isset($row['liked']))
-				{
+			{
 
-					if($row['liked']== 1)
-							return True;
-					else
-							return False;
+				if($row['liked']== 1)
+						return True;
+				else
+						return False;
 
-					// returne 1 si like   si dislike 0 si aucun like
-					// le dislike comptera pour le score de popularité
-				}
-				return False;
-	}
+				// returne 1 si like   si dislike 0 si aucun like
+			}
+			return False;
+		}
 
-	public function remove_like($id)
-	{
-		$query = "DELETE FROM `like` WHERE `id_user_liking` = :id AND `id_user_liked` = :idco ";
-		$this->_db->query($query, array(':id' => $id, 'idco' => $this->_id));
-	}
+		public function remove_like($id)
+		{
+			$query = "DELETE FROM `like` WHERE `id_user_liking` = :id AND `id_user_liked` = :idco ";
+			$this->_db->query($query, array(':id' => $id, 'idco' => $this->_id));
+		}
 
-	public function remove_like2($id)
-	{
-		$query = "DELETE FROM `like` WHERE `id_user_liking` = :idco AND `id_user_liked` = :id ";
-		$this->_db->query($query, array('idco' => $this->_id,':id' => $id));
-	}
+		public function remove_like2($id)
+		{
+			$query = "DELETE FROM `like` WHERE `id_user_liking` = :idco AND `id_user_liked` = :id ";
+			$this->_db->query($query, array('idco' => $this->_id,':id' => $id));
+		}
 
-	public	function get_who_liked_the_connected_user()
-	{
-		$query = 'SELECT * FROM `like` WHERE `id_user_liked` = :id AND `liked` = :true';
-		$this->_db->query($query, array(':id' => $this->_id, 'true' => 1));
-		$row = $this->_db->fetchAll();
-		return $row;
-	}
+		public	function get_who_liked_the_connected_user()
+		{
+			$query = 'SELECT * FROM `like` WHERE `id_user_liked` = :id AND `liked` = :true';
+			$this->_db->query($query, array(':id' => $this->_id, 'true' => 1));
+			$row = $this->_db->fetchAll();
+			return $row;
+		}
 
-	public function set_profile_viewed($id)
-	{
-		$query = 'INSERT INTO `profile_viewed`(`id_user_viewing`, `id_user_viewed`) VALUES (:idco, :id)';
-		$this->_db->query($query, array(':idco' => $this->_id, 'id' => $id));
-	}
+		public function set_profile_viewed($id)
+		{
+			$query = 'INSERT INTO `profile_viewed`(`id_user_viewing`, `id_user_viewed`) VALUES (:idco, :id)';
+			$this->_db->query($query, array(':idco' => $this->_id, 'id' => $id));
+		}
 
-	public function set_a_report($id)
-	{
-		$query = 'INSERT INTO `report`(`id_user_reporting`, `id_user_reported`, `description`) VALUES (:idco, :id, :string)';
-		$this->_db->query($query, array(':idco' => $this->_id, 'id' => $id, 'string' => 'Default Description By now'));
-	}
-	public function set_a_block($id)
-	{
-		$query = 'INSERT INTO `block`(`id_user_blocking`, `id_user_blocked`, `description`) VALUES (:idco, :id, :string)';
-		$this->_db->query($query, array(':idco' => $this->_id, 'id' => $id, 'string' => 'Default Description By now'));
-	}
+		public function set_a_report($id)
+		{
+			$query = 'INSERT INTO `report`(`id_user_reporting`, `id_user_reported`, `description`) VALUES (:idco, :id, :string)';
+			$this->_db->query($query, array(':idco' => $this->_id, 'id' => $id, 'string' => 'Default Description By now'));
+		}
+		public function set_a_block($id)
+		{
+			$query = 'INSERT INTO `block`(`id_user_blocking`, `id_user_blocked`, `description`) VALUES (:idco, :id, :string)';
+			$this->_db->query($query, array(':idco' => $this->_id, 'id' => $id, 'string' => 'Default Description By now'));
+		}
 
-	public function add_popularity()
-	{
-		$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
-		$this->_db->query($query, array(':idco' => $this->_id));
-		$row = $this->_db->fetch();
-		$int = 5 + $row['popularity_score'];
-		if ($int > 100)
-			$int = 100;
+		public function add_popularity()
+		{
+			$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
+			$this->_db->query($query, array(':idco' => $this->_id));
+			$row = $this->_db->fetch();
+			$int = 1 + $row['popularity_score'];
+			if ($int > 100)
+				$int = 100;
 
-		$query = 'UPDATE `user` SET `popularity_score` = :value WHERE id_user = :idco';
-		$this->_db->query($query, array(':idco' => $this->_id, 'value' => $int));
-	}
-	public function add_popularity_of_this_user($id)
-	{
-		$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
-		$this->_db->query($query, array(':idco' => $id));
-		$row = $this->_db->fetch();
-		$int = 5 + $row['popularity_score'];
-		if ($int > 100)
-			$int = 100;
+			$query = 'UPDATE `user` SET `popularity_score` = :value WHERE id_user = :idco';
+			$this->_db->query($query, array(':idco' => $this->_id, 'value' => $int));
+		}
+		public function add_popularity_of_this_user($id)
+		{
+			$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
+			$this->_db->query($query, array(':idco' => $id));
+			$row = $this->_db->fetch();
+			$int = 1 + $row['popularity_score'];
+			if ($int > 100)
+				$int = 100;
 
-		$query = 'UPDATE `user` SET `popularity_score` = :value WHERE id_user = :idco';
-		$this->_db->query($query, array(':idco' => $id, 'value' => $int));
-	}
+			$query = 'UPDATE `user` SET `popularity_score` = :value WHERE id_user = :idco';
+			$this->_db->query($query, array(':idco' => $id, 'value' => $int));
+		}
 
-	public function substract_popularity()
-	{
-		$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
-		$this->_db->query($query, array(':idco' => $this->_id));
-		$row = $this->_db->fetch();
-		$int = $row['popularity_score'] - 5;
-		if ($int < 0)
-			$int = 0;
+		public function substract_popularity()
+		{
+			$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
+			$this->_db->query($query, array(':idco' => $this->_id));
+			$row = $this->_db->fetch();
+			$int = $row['popularity_score'] - 1;
+			if ($int < 0)
+				$int = 0;
 
-		$query = 'UPDATE `user` SET `popularity_score` = :value WHERE id_user = :idco';
-		$this->_db->query($query, array(':idco' => $this->_id, 'value' => $int));
-	}
+			$query = 'UPDATE `user` SET `popularity_score` = :value WHERE id_user = :idco';
+			$this->_db->query($query, array(':idco' => $this->_id, 'value' => $int));
+		}
 
-	public function substract_popularity_of_this_user($id)
-	{
-		$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
-		$this->_db->query($query, array(':idco' => $id));
-		$row = $this->_db->fetch();
-		$int = $row['popularity_score'] - 5;
-		if ($int < 0)
-			$int = 0;
+		public function substract_popularity_of_this_user($id)
+		{
+			$query = 'SELECT `popularity_score` FROM `user` WHERE id_user = :idco';
+			$this->_db->query($query, array(':idco' => $id));
+			$row = $this->_db->fetch();
+			$int = $row['popularity_score'] - 1;
+			if ($int < 0)
+				$int = 0;
 
-		$query = 'UPDATE `user` SET `popularity_score` = :value WHERE id_user = :idco';
-		$this->_db->query($query, array(':idco' => $id, 'value' => $int));
-	}
+			$query = 'UPDATE `user` SET `popularity_score` = :value WHERE id_user = :idco';
+			$this->_db->query($query, array(':idco' => $id, 'value' => $int));
+		}
 
-	public function set_a_like($idli)
+		public function set_a_like($idli)
 		{
 			// id user liking
 			// id user liked
 			// like 1 or 0
-			// time current time stamp fera le job
-
-
+			
 			$query = ('SELECT `liked` FROM `like` WHERE `id_user_liking` = :idliking AND `id_user_liked` = :idliked');
 			$this->_db->query($query, array(':idliking' => $this->get_id(), 'idliked' => $idli));
 			$row = $this->_db->fetch();
@@ -560,39 +554,31 @@
 
 			if (isset($row['liked']))
 			{
-						if ($row['liked'] == 1)
-						{
-
-								// je unlike ici
-								$value = 0;
-								$query = ('UPDATE `like`  SET `liked` = :likkk WHERE `id_user_liking` = :idliking AND `id_user_liked` = :idliked');
-								$this->_db->query($query, array(':likkk' => $value, ':idliking' => $this->get_id(), 'idliked' => $idli));
-								//$row = $this->_db->fetch();
-							//	$this->_db->execute();
-							return(1);
-							}
-						else {
-
-								// je like ici
-								$value = 1;
-								$query = ('UPDATE `like` SET `liked` = :likkk WHERE  `id_user_liking` = :idliking AND `id_user_liked` = :idliked ');
-								$this->_db->query($query, array(':likkk' => $value, ':idliking' => $this->get_id(), 'idliked' => $idli));
-								//$this->_db->execute();
-							//	$row = $this->_db->fetch();
-							return(2);
-					}
-		}
-		else {
-							// je like + j insere les donnes du nouveau like
-			$value = 1;
-			$query = ('INSERT INTO `like` SET `id_user_liking` = :iduserlliking, `id_user_liked` = :iduserliked, `liked` = :likeornot; ');
-			$this->_db->query($query, array(':iduserlliking' => $this->_id, ':iduserliked' => $idli, ':likeornot' => $value));
-			return(3);
-			// je dois permettre qu un seul like
-		}
-
-
-			//comme ca je like unlike avec la mm fonction
+				if ($row['liked'] == 1)
+				{
+					// je unlike ici quand il y a deja eu interaction
+					$value = 0;
+					$query = ('UPDATE `like`  SET `liked` = :likkk WHERE `id_user_liking` = :idliking AND `id_user_liked` = :idliked');
+					$this->_db->query($query, array(':likkk' => $value, ':idliking' => $this->get_id(), 'idliked' => $idli));
+					return(1);
+				}
+				else 
+				{
+					// je like ici quand il y a deja eu interaction
+					$value = 1;
+					$query = ('UPDATE `like` SET `liked` = :likkk WHERE  `id_user_liking` = :idliking AND `id_user_liked` = :idliked ');
+					$this->_db->query($query, array(':likkk' => $value, ':idliking' => $this->get_id(), 'idliked' => $idli));
+					return(2);
+				}
+			}
+			else 
+			{
+				// je like + j insere les donnes du nouveau like
+				$value = 1;
+				$query = ('INSERT INTO `like` SET `id_user_liking` = :iduserlliking, `id_user_liked` = :iduserliked, `liked` = :likeornot; ');
+				$this->_db->query($query, array(':iduserlliking' => $this->_id, ':iduserliked' => $idli, ':likeornot' => $value));
+				return(3);
+			}
 		}
 
 		/*
@@ -643,6 +629,17 @@
 			}
 			 return $row;
 		}
+		public function get_last_messages_between_two_user($id)
+		{
+			$query = ('SELECT *  FROM `messages` WHERE id_user_sending = :idco AND id_user_receiving = :idvar OR id_user_sending = :idvar AND id_user_receiving = :idco  ORDER BY date DESC LIMIT 1');
+			$this->_db->query($query, array(':idco' => $this->_id, ':idvar' => $id));
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			}
+			 return $row;
+		}
+
 		public function set_msg_readed($id)
 		{
 			$query = ('UPDATE `messages` SET `msg_read` = :bool  WHERE id_user_sending = :idco AND id_user_receiving = :idvar OR id_user_sending = :idvar AND id_user_receiving = :idco');
@@ -658,7 +655,6 @@
 			//$query ()
 			$path = '/Pictures/def.jpg';
 			$query = 'INSERT INTO `picture` (`id_user`, `is_profile-picture`, `path`) VALUES (:id, :true, :pathf)';
-	//		$query = 'INSERT INTO `picture` (id_user, `path`) VALUES (:id, :pathfichier)';
 			$this->_db->query($query, array(':id' => $this->_id, ':true' => true, ':pathf' => $path));
 
 			$i = 0;
@@ -671,10 +667,6 @@
 
 				$i++;
 			}
-			// $modified_row_count = $this->_db->rowCount();
-			// if ($modified_row_count !== 1) {
-			// 	throw new DatabaseException("Fail setting picture in data base. " . $modified_row_count . " rows have been modified in the database.");
-			// }
 		}
 
 		public function set_is_picture_profil($bool, $id_picture)
@@ -688,9 +680,9 @@
 			$query = 'SELECT * FROM `picture` WHERE `id_user` = :id AND `is_profile-picture` = :bool';
 			$this->_db->query($query, array(':id' => $id, ':bool' => 1));
 			$row = $this->_db->fetch();
-			if ($row === false) {
-				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
-			}
+			// if ($row === false) {
+			// 	throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
+			// }
 			 return $row;
 		}
 
@@ -705,11 +697,6 @@
 				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
 			}
 			 return $row;
-
-			// $modified_row_count = $this->_db->rowCount();
-			// if ($modified_row_count !== 1) {
-			// 	throw new DatabaseException("Fail setting picture in data base. " . $modified_row_count . " rows have been modified in the database.");
-			// }
 		}
 		public function get_all_picture_of_this_id($id)
 		{
@@ -722,16 +709,10 @@
 				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
 			}
 			 return $row;
-
-			// $modified_row_count = $this->_db->rowCount();
-			// if ($modified_row_count !== 1) {
-			// 	throw new DatabaseException("Fail setting picture in data base. " . $modified_row_count . " rows have been modified in the database.");
-			// }
 		}
 
 		public function update_picture($id_photo, $path_fichier)
 		{
-			//UPDATE `picture` SET `path`= '/Pictures/reda.png' WHERE`id_picture`= 12
 			$query = 'UPDATE `picture` SET `path` = :pat WHERE `id_picture` = :idp';
 			$this->_db->query($query, array(':pat' => $path_fichier, ':idp' => $id_photo));
 		}
@@ -747,41 +728,26 @@
 		/*
 		** -------------------- Notif --------------------
 		*/
-
-
-
-		//j ai besoin de plusieurs fonction pour ajouter une notif selon le cas dans lequel on est
-		// pour resumer notif quand
-		// liked OK
-		// match OK mais pas encore utiliser
-
-	// fonction qui notif quand like & unlike
-		// profile viewed OK mais pas encore utiliser
-		// new message OK
-		// dislike OK
-
-
-
-											//SET
+											
 		public function set_a_notif_string($value, $message)
 		{
 			$idconcat = $this->_pseudo . $message;
-			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+			$query = ('INSERT INTO `notifications` SET `id_user` = :val, `notification` = :id');
+			$this->_db->query($query, array(':val' => $value, ':id' => $idconcat));
 		}
 
 		public function set_a_notif_for_like($value, $message)
 		{
 			$idconcat = $this->_pseudo . $message;
-			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+			$query = ('INSERT INTO `notifications` SET `id_user` = :val, `notification` = :id');
+			$this->_db->query($query, array(':val' => $value, ':id' => $idconcat));
 		}
 
 		public function set_a_notif_for_new_message($value)
 		{
 			$idconcat = $this->_pseudo . ' send u a message !';
-			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+			$query = ('INSERT INTO `notifications` SET `id_user` = :val, `notification` = :id');
+			$this->_db->query($query, array(':val' => $value, ':id' => $idconcat));
 		}
 
 		public function set_a_notif_for_match($value)
@@ -794,8 +760,8 @@
 
 			$row = $this->get_all_details_of_this_id($value);
 			$idconcat1 = 'U got a match with ' . $row['pseudo'];
-			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $this->_id, ':id' => $idconcat1));
+			$query = ('INSERT INTO `notifications` SET `id_user` = :val, `notification` = :id');
+			$this->_db->query($query, array(':val' => $this->_id, ':id' => $idconcat1));
 		}
 
 		public function set_a_notif_for_unmatch($value)
@@ -808,15 +774,15 @@
 
 			$row = $this->get_all_details_of_this_id($value);
 			$idconcat1 = 'U lost a match with ' . $row['pseudo'];
-			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $this->_id, ':id' => $idconcat1));
+			$query = ('INSERT INTO `notifications` SET `id_user` = :val, `notification` = :id');
+			$this->_db->query($query, array(':val' => $this->_id, ':id' => $idconcat1));
 		}
 
 		public function set_a_notif_for_profile_viewed($value)
 		{
 			$idconcat = $this->_pseudo . ' visit ur profile !';
-			$query = ('INSERT INTO `notifications` SET `id_user` = :value, `notification` = :id');
-			$this->_db->query($query, array(':value' => $value, ':id' => $idconcat));
+			$query = ('INSERT INTO `notifications` SET `id_user` = :val, `notification` = :id');
+			$this->_db->query($query, array(':val' => $value, ':id' => $idconcat));
 		}
 
 		public function set_all_notif_readed()
@@ -824,10 +790,6 @@
 			$query = 'UPDATE `notifications` SET readed = :val WHERE `id_user` = :id';
 			$this->_db->query($query, array(':val' => true, ':id' => $this->_id));
 		}
-
-
-												//GET
-
 
 
 		public function get_all_notif_of_user_connected()
@@ -851,73 +813,69 @@
 			return $row;
 		}
 
-		// profile viewed
-
-
-
 
 		/*
 		** ------------------- TAGS ---------------------
 		*/
 
-			public function get_tag()
-			{
-				$query = 'SELECT * FROM `intrests` WHERE id_user = :id';
-				$this->_db->query($query, array(':id' => $this->_id));
-				$row = $this->_db->fetchAll();
-			 	if ($row === false) {
-				 throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
-			 	}
-				return $row;
+		public function get_tag()
+		{
+			$query = 'SELECT * FROM `intrests` WHERE id_user = :id';
+			$this->_db->query($query, array(':id' => $this->_id));
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
 			}
+			return $row;
+		}
 
-			public function get_users_who_have_this_tag($tag)
-			{
-				$query = 'SELECT * FROM `intrests` WHERE `tag` = :tag';
-				$this->_db->query($query, array(':tag' => $tag));
-				$row = $this->_db->fetchAll();
-			 	if ($row === false) {
-				 throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
-			 	}
-				return $row;
+		public function get_users_who_have_this_tag($tag)
+		{
+			$query = 'SELECT * FROM `intrests` WHERE `tag` = :tag';
+			$this->_db->query($query, array(':tag' => $tag));
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
 			}
+			return $row;
+		}
 
-			public function get_tag_of_this_id($id)
-			{
-				$query = 'SELECT * FROM `intrests` WHERE id_user = :id';
-				$this->_db->query($query, array(':id' => $id));
-				$row = $this->_db->fetchAll();
-			 	if ($row === false) {
-				 throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
-			 	}
-				return $row;
+		public function get_tag_of_this_id($id)
+		{
+			$query = 'SELECT * FROM `intrests` WHERE id_user = :id';
+			$this->_db->query($query, array(':id' => $id));
+			$row = $this->_db->fetchAll();
+			if ($row === false) {
+				throw new InvalidParamException("Failed running " . __METHOD__ . ". Id not found in database.");
 			}
+			return $row;
+		}
 
 
-			public function delete_all_tag()
-			{
-				//$query = 'DELETE FROM `intrests` WHERE id_user = :id AND tag = :string)';
-				$query = 'DELETE FROM `intrests` WHERE `intrests`.`id_user` = :id';
-				$this->_db->query($query, array(':id' => $this->_id));
-				//$this->_db->execute();
-				// $row = $this->_db->fetch();
-				// return $row;
-			}
+		public function delete_all_tag()
+		{
+			//$query = 'DELETE FROM `intrests` WHERE id_user = :id AND tag = :string)';
+			$query = 'DELETE FROM `intrests` WHERE `intrests`.`id_user` = :id';
+			$this->_db->query($query, array(':id' => $this->_id));
+			//$this->_db->execute();
+			// $row = $this->_db->fetch();
+			// return $row;
+		}
 
-			public function set_tag($string)
-			{
-				$query = 'INSERT INTO `intrests` (id_user, tag) VALUES (:id, :string)';
-				$this->_db->query($query, array(':id' => $this->_id, ':string' => $string));
-				// $row = $this->_db->fetch();
-				// return $row;
-			}
-			public function get_if_tag_already_set($string)
-			{
-				$query = 'SELECT COUNT(*) FROM `intrests` WHERE id_user = :id AND tag = :string';
-				$this->_db->query($query, array(':id' => $this->_id, ':string' => $string));
-				$row = $this->_db->fetch();
-			 	return $row;
-			}
+		public function set_tag($string)
+		{
+			$query = 'INSERT INTO `intrests` (id_user, tag) VALUES (:id, :string)';
+			$this->_db->query($query, array(':id' => $this->_id, ':string' => $string));
+			// $row = $this->_db->fetch();
+			// return $row;
+		}
+		public function get_if_tag_already_set($string)
+		{
+			$query = 'SELECT COUNT(*) FROM `intrests` WHERE id_user = :id AND tag = :string';
+			$this->_db->query($query, array(':id' => $this->_id, ':string' => $string));
+			$row = $this->_db->fetch();
+			return $row;
+		}
 
 		/*
 		** -------------------- Get --------------------
@@ -1159,8 +1117,4 @@
 			}
 			return TRUE;
 		}
-
-
-
 }
-?>

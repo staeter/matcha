@@ -4,10 +4,10 @@ require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
 $usr = unserialize($_SESSION['user']);
 $id_file_to_update = $_POST['id'];
 
-//creer une fonction qui remove la photo est remet une photo add
 $usr->delete_picture($id_file_to_update);
 
 $rowpic = $usr->get_all_picture();
+$_SESSION['picture'] = $rowpic[0]['path'];
 
 echo '{
   "data" :  [
@@ -32,4 +32,3 @@ echo '{
     "message" : "Ur files was deleted"
   }
 }';
-?>

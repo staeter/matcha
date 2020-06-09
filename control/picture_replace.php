@@ -9,14 +9,10 @@ if (is_uploaded_file($_FILES['pictureFile']['tmp_name']))
 
 $path_fichier = "/Pictures" . '/' . $_FILES['pictureFile']['name'];
 
-// la photo est sauvee sur le serveur mtn e
-
-//  -> remplacer la photo dans la base de donnée
 $usr->update_picture($id_file_to_update, $path_fichier);
 
-// -> renvoyer le tableau avec les bonnes valeurs
 $rowpic = $usr->get_all_picture();
-
+$_SESSION['picture'] = $rowpic[0]['path'];
 
 echo '{
   "data" :  [
@@ -41,4 +37,3 @@ echo '{
     "message" : "Ur files was uploaded"
   }
 }';
-?>

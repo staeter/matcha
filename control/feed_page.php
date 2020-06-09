@@ -71,5 +71,3 @@ session_start();
 }
 /!\ modifs
 */
-
-?>

@@ -5,17 +5,19 @@ require '../model/classes/User.class.php';
 require '../model/functions/hash_password.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/config/database.php';
 
+//$x is the check value
 $x = -1;
-try {
+
+try 
+{
   $db = new Database($dsn . ";dbname=" . $dbname, $username, $password);
   $usr = new User($_POST['pseudo'], hash_password($_POST['password']), $db);
 
-
   if ($usr->is_validated_account())
       $x = 1;
-  else {
+  else
     $x = 6;
-  }
+
   if ($x == 1)
   {
     $_SESSION['id'] = $usr->get_id();
@@ -26,9 +28,9 @@ try {
     $_SESSION['picture'] = $pic['path'];
     $usr->set_log(true);
   }
-
-} catch (\Exception $e) {
-
+} 
+catch (\Exception $e) 
+{
   if ($e->getCode() == 30)
     $x = 2;
   else if ($e->getCode() == 31)
@@ -39,9 +41,10 @@ try {
     $x = 5;
 }
 
-if ($x == 1){
-
-  echo '{
+if ($x == 1)
+{
+  echo 
+  '{
     "data" : {
       "pseudo" : "'.$_SESSION['pseudo'].'",
       "picture" : "'.$_SESSION['picture'].'"
@@ -51,39 +54,39 @@ if ($x == 1){
       "message" : "Welcome!"
     }
   }';
-    }
-else if ($x == 2){
-  echo '{
+}
+else if ($x == 2)
+{
+  echo 
+  '{
     "data" : {},
     "alert" : {
       "color" : "DarkRed",
-      "message" : "Password and user doesnt match"
+      "message" : "Password and Pseudo doesnt match"
     }
   }';
-
 }
 else if ($x == 3)
 {
-  echo '{
+  echo 
+  '{
     "data" : {},
     "alert" : {
       "color" : "DarkRed",
-      "message" : "Your pseudo doesnt exist!"
+      "message" : "Your Pseudo doesnt exist in our database !"
     }
   }';
-
 }
 else if ($x == 4)
 {
-  echo '{
+  echo 
+  '{
     "data" : {},
     "alert" : {
       "color" : "DarkRed",
       "message" : "Your password is invalid"
     }
   }';
-
-
 }
 else if ($x == 5)
 {
@@ -94,23 +97,20 @@ else if ($x == 5)
       "message" : "Connection with DB failed!"
     }
   }';
-
-
 }
 else if ($x == 6)
 {
-  echo '{
+  echo 
+  '{
     "data" : {},
     "alert" : {
       "color" : "DarkRed",
-      "message" : "U must confirm ur account for login!"
+      "message" : "You must confirm your account for login!"
     }
   }';
-
-
 }
-
-else {
+else 
+{
   echo '{
     "data" : {},
     "alert" : {
@@ -118,16 +118,4 @@ else {
       "message" : "Undefined problem occur, pls contact the admin"
     }
   }';
-
 }
-
-
-// pseudo password
-/*
-{
-  "result" : "Success" or "Failure",
-  "message" : "This is a message I want the user to see",
-}
-*/
-
-?>

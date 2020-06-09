@@ -6,76 +6,90 @@ $usr = unserialize($_SESSION['user']);
 
 if (empty($_POST['oldpw']) || empty($_POST['newpw']) || empty($_POST['confirm']))
 {
-  echo '{
+  echo 
+  '{
     "result": "Failure",
-    "message": "Vous devez remplir tous les champs!",
-    "alert": {
+    "message": "You must fill all fields !",
+    "alert": 
+    {
       "color": "DarkRed",
-      "message": "Vous devez remplir tous les champs!"
-  }
+      "message": "You must fill all fields !"
+    }
   }';
   return;
 }
-
 else if (strcmp($_POST['confirm'], $_POST['newpw']) !== 0)
 {
-  echo '{
-  "result": "Failure",
-  "message": "New Password and Confirm doesnt match!",
-  "alert": {
-    "color": "DarkRed",
-    "message": "New Password and Confirm doesnt match!"
-}
-}';
-return;
-}
-else {
-
- try {
-    if ($usr->is_correct_password(hash_password($_POST['oldpw'])) == FALSE)
-{
-  echo '{
-  "result": "Failure",
-  "message": "Le mot de passe ne correspond pas à a celui enregistré",
-  "alert": {
-    "color": "DarkRed",
-    "message": "OLD OLD Password doesnt match!"
-}
-}';
-     return;
-   }
-  if (User::is_valid_password($_POST['newpw']) == FALSE)
-      {
-        echo '{
-        "result": "Failure",
-        "message": "The new password is not valid",
-        "alert": {
-          "color": "DarkRed",
-          "message": "OLD OLD Password doesnt match!"
-      }
-      }';
-      return;
+  echo 
+  '{
+    "result": "Failure",
+    "message": "New Password and Confirm doesnt match!",
+    "alert": 
+    {
+      "color": "DarkRed",
+      "message": "New Password and Confirm doesnt match!"
     }
-    $usr->set_password(hash_password($_POST['newpw']));
-    echo '{
+  }';
+  return;
+}
+else 
+{
+ try 
+ {
+  if ($usr->is_correct_password(hash_password($_POST['oldpw'])) == FALSE)
+  {
+    echo 
+    '{
+      "result": "Failure",
+      "message": "Password doesnt match with the old one",
+      "alert": 
+      {
+        "color": "DarkRed",
+        "message": "Password doesnt match with the old one !"
+      }
+    }';
+    return;
+  }
+  
+  if (User::is_valid_password($_POST['newpw']) == FALSE)
+  {
+    echo 
+    '{
+      "result": "Failure",
+      "message": "The new password is not valid",
+      "alert": 
+      {
+      "color": "DarkRed",
+      "message": "The new password is not valid!"
+      }
+    }';
+    return;
+  }
+
+  $usr->set_password(hash_password($_POST['newpw']));
+  echo 
+  '{
     "result": "Success",
-    "message": "Votre password à bien été mis à jour !",
-    "alert": {
+    "message": "Your password have been updated !",
+    "alert": 
+    {
       "color": "DarkGreen",
       "message": "Your Password Has beeen updated!"
     }
-    }';
-
-  } catch (Exception $e) {
-    echo '{
-    "result": "Failure",
-    "message": "'.$e->getMessage().'",
-    "alert": {
+  }';
+  } 
+  catch (Exception $e) 
+  {
+    echo 
+    '{
+      "result": "Failure",
+      "message": "'.$e->getMessage().'",
+      "alert": 
+      {
       "color": "DarkRed",
       "message": "A problem occur pls retry!"
-  }
-  }';
-  return;
+      }
+    }';
+    return;
   }
 }
-?>

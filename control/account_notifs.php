@@ -2,33 +2,44 @@
 
 session_start();
 require $_SERVER["DOCUMENT_ROOT"] . '/model/classes/User.class.php';
-$usr = unserialize($_SESSION['user']);
 
-// fonction qui recupere toutes les notifs de tel ID_user
+function enleve_virgule($string)
+{
+  $string = substr($string, 0, -11); 
+  $endofstring = '],
+  "alert" : {
+    "color" : "DarkGreen",
+    "message" : "There the list of your notifications"
+  }
+  }';
+  $string .= $endofstring;
+  echo $string;
+}
+
+$usr = unserialize($_SESSION['user']);
 $row = $usr->get_all_notif_of_user_connected();
-// var_dump($row);
-// return;
+
 if (empty($row))
 {
-  echo '{
-	"data": [],
-	"alert": {
-		"color": "DarkBlue",
-		"message": "There is no notification for u sorry !"
-	}
-}';
+  echo '
+  {
+	  "data": [],
+    "alert": 
+    {
+		  "color": "DarkBlue",
+		  "message": "There is no notification !"
+	  }
+  }';
   return;
 }
 else
 {
-//print_r($row);
-$string = '{
+  $string = '{
     "data" : [
       ';
 
-
-foreach ($row as $key => $value) {
-    // code...
+  foreach ($row as $key => $value) 
+  {
     if ($row[$key]['readed'] == false)
       $readed = 'false';
     else
@@ -43,25 +54,7 @@ foreach ($row as $key => $value) {
 
         },
         ';
-}
-// ok je dois enlever la virgule ici
-
-function enleve_virgule($string)
-{
-  // $nbchar = strlen($string);
-  
-  $string = substr($string, 0, -11);
-  
-  $endofstring = '],
-  "alert" : {
-    "color" : "DarkGreen",
-    "message" : "There the list of your notifications"
   }
-  }';
-  $string .= $endofstring;
-  echo $string;
+  $usr->set_all_notif_readed();
+  enleve_virgule($string);
 }
-$usr->set_all_notif_readed();
-enleve_virgule($string);
-}
-?>

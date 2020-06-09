@@ -6,9 +6,10 @@ $row = $usr->get_all_details();
 
 if (empty($_POST['pseudo']) || empty($_POST['email']) || empty($_POST['last_name']) || empty($_POST['first_name']))
 {
-  echo '{
+  echo 
+  '{
     "result" : "Failure",
-    "message" : "Empty value isnt possible dude"
+    "message" : "Empty value isnt possible"
   }';
   return;
 }
@@ -19,8 +20,10 @@ if ((!empty($_POST['pseudo']) && $_POST['pseudo'] != $_SESSION['pseudo']))
       $usr->set_pseudo($_POST['pseudo']);
       $_SESSION['pseudo'] = $_POST['pseudo'];
     }
-    else {
-      echo '{
+    else 
+    {
+      echo 
+      '{
         "result" : "Failure",
         "message" : "Pseudo is Invalid!"
       }';
@@ -34,8 +37,10 @@ if ((!empty($_POST['first_name']) && ($_POST['first_name'] != $row['firstname'])
 {
     if ($usr->is_valid_pseudo($_POST['first_name']))
       $usr->set_first_name($_POST['first_name']);
-    else {
-      echo '{
+    else 
+    {
+      echo 
+      '{
         "result" : "Failure",
         "message" : "First name is Invalid!"
       }';
@@ -47,8 +52,10 @@ if ((!empty($_POST['last_name']) && ($_POST['last_name'] != $row['lastname'])))
 {
     if ($usr->is_valid_pseudo($_POST['last_name']))
       $usr->set_last_name($_POST['last_name']);
-    else {
-      echo '{
+    else 
+    {
+      echo 
+      '{
         "result" : "Failure",
         "message" : "Last name is Invalid!"
       }';
@@ -63,15 +70,15 @@ if (!empty($_POST['birth']))
   $usr->set_birthdate($_POST['birth']);
 }
 
-
 // session
 if ((!empty($_POST['email'])) && ($_POST['email'] != $row['email']))
 {
   if ($usr->is_valid_email($_POST['email']) == FALSE)
   {
-    echo '{
+    echo 
+    '{
       "result" : "Failure",
-      "message" : "Le mail n est pas valide"
+      "message" : "The mail is not valid"
     }';
     return;
   }
@@ -83,22 +90,21 @@ if ((!empty($_POST['email'])) && ($_POST['email'] != $row['email']))
   else {
     echo '{
       "result" : "Failure",
-      "message" : "Le mail choisi est déjà utiliser"
+      "message" : "The mail input is already taken"
     }';
     return;
   }
 }
 if (!empty($_POST['gender']))
 {
-
   // 0 is for women
   // 1 for men
 
   if ($_POST['gender'] == 'man')
     $gender = 1;
-  else {
+  else 
     $gender = 0;
-  }
+  
   $usr->set_gender($gender);
 }
 
@@ -122,25 +128,19 @@ if (!empty($_POST['orientation']))
   $usr->set_sexuality_orientation($orientatation);
 }
 
-if (!empty($_POST['biography']))
+if (isset($_POST['biography']))
 {
   $string = $_POST['biography'];
-  $string = str_replace("\n", " ", $string);
-
+  $string = str_replace("\n", "", strip_tags($string));
   $usr->set_biography($string);
 }
-//
-// if (!(is_empty($_POST['birth'])))
-// {
-//   $usr->set_birthdate($POST['birth']);
-// }
-//
-//
-
 
 /// GESTION DES TAGS ici
-
-if (!empty($_POST['tags']))
+if (empty($_POST['tags']))
+{
+    $usr->delete_all_tag();
+}
+else
 {
   // je recois ici une string que je dois split avec espace
   $i = 0;
@@ -149,8 +149,9 @@ if (!empty($_POST['tags']))
   $string = trim($string);
   $array = explode(" ", $string);
   $usr->delete_all_tag();
-
-  foreach ($array as $key => $value) {
+  $tagstocheckifexist = '';
+  foreach ($array as $key => $value) 
+  {
     if ($array[$key] != '')
     {
       $tagstocheckifexist .= $array[$key] . ' ';
@@ -161,15 +162,7 @@ if (!empty($_POST['tags']))
       }
     }
   }
-  // ic je supprime les entres qui existe mais qui ne sont pas dans l array
-  //
-
 }
-
-
-// ["geoAuth"]=> string(4) "true"
-//["latitude"]=> string(9) "4.3172423"
-//["longitude"]=> string(10) "50.8882641"
 
 if (!empty($_POST['geoAuth']))
 {
@@ -183,10 +176,8 @@ if (!empty($_POST['geoAuth']))
   $usr->set_location($accord_loc, $_POST['longitude'], $_POST['latitude']);
 }
 
-
-echo '{
-  "result" : "Success",
-  "message" : "settings update success!"
-}';
-
-?>
+echo 
+    '{
+    "result" : "Success",
+    "message" : "settings update success!"
+    }';
