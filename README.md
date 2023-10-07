@@ -1,7 +1,7 @@
 # Matcha
 ## Second project of 42's Web cursus
 
-Matcha is a dating site using an Elm, pure PHP, MySql stack. STTR13 learned the functional logic proposed by Elm when building the client-side code. Reelbour focused on the server-side code. The challenges where to design a good client-server interface and communicate with the team to reach the end product in a limited time frame.
+Matcha is a dating site using an Elm, pure PHP, MySql stack. staeter learned the functional logic proposed by Elm when building the client-side code. Reelbour focused on the server-side code. The challenges where to design a good client-server interface and communicate with the team to reach the end product in a limited time frame.
 
 ## Installation
 
